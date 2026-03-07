@@ -1,4 +1,4 @@
-# Netlify CPQ — Product Catalog
+# Netlify Deal Studio
 
 Internal CPQ (Configure, Price, Quote) tool for Netlify Enterprise Sales.
 
@@ -6,17 +6,15 @@ Internal CPQ (Configure, Price, Quote) tool for Netlify Enterprise Sales.
 
 ```
 src/
-  data/catalog.js        — Product seed data & constants
-  styles/theme.js        — Design tokens & shared styles
+  data/catalog.js          — Product data model & constants
+  styles/app.css           — Design system CSS
   components/
-    Icons.jsx            — SVG icon components
-    ProductTable.jsx     — Product list table
-    ProductModal.jsx     — Add/edit product form
-    BundleList.jsx       — Bundle card list
-    BundleModal.jsx      — Create/edit bundle form
-    Confirm.jsx          — Delete confirmation dialog
-  App.jsx                — Main app (state, CRUD, routing)
-  main.jsx               — React entry point
+    NetlifyLogo.jsx        — Netlify Spark logo
+    ProductTable.jsx       — Product list table with expandable rows
+    ProductModal.jsx       — Add/edit product form (collapsible sections)
+    Confirm.jsx            — Delete confirmation dialog
+  App.jsx                  — Main app (state, CRUD, sidebar nav)
+  main.jsx                 — React entry point
 ```
 
 ## Setup
@@ -34,8 +32,7 @@ Connect the GitHub repo to Netlify. Build settings are in `netlify.toml`:
 
 ## Roadmap
 
-- [ ] Product Catalog (Products + Bundles) ✅
-- [ ] Quote Builder (bundle or à la carte line items)
+- [x] Product Catalog (Phase 1 data model)
+- [ ] Pricebooks
+- [ ] Quote Builder
 - [ ] Order Summary & Approval Flow
-- [ ] Deal Desk Integration
-- [ ] Netlify Blobs persistence

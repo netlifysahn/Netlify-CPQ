@@ -1,100 +1,70 @@
-// ─── Product Catalog Seed Data ────────────────────────────────
-// This is the source of truth for the initial product catalog.
-// Agent Runners and manual edits can extend this file.
+// Netlify Deal Studio — Product Catalog Data Model (Phase 1)
+// Empty catalog. No seed data. No SFDC dependencies.
 
-export const CATEGORIES = ['Platform', 'Bandwidth', 'Add-ons', 'Support', 'Security'];
-export const PRICING_MODELS = ['Flat Rate', 'Per Unit', 'Tiered'];
+export const PRODUCT_TYPES = ['platform', 'support', 'credits', 'addon'];
+export const PRICE_UNITS = ['flat', 'per_member', 'per_credit', 'per_gb', 'included'];
+export const PRICING_METHODS = ['list', 'cost'];
+export const TERM_BEHAVIORS = ['included', 'excluded'];
+
+export const TYPE_COLORS = {
+  platform: '#5cbbf6',
+  support: '#34d399',
+  credits: '#f5a623',
+  addon: '#a78bfa',
+};
+
+export const TYPE_ICONS = {
+  platform: 'fa-bolt',
+  support: 'fa-headset',
+  credits: 'fa-coins',
+  addon: 'fa-server',
+};
+
+export const UNIT_LABELS = {
+  flat: 'Flat',
+  per_member: '/member',
+  per_credit: '/credit',
+  per_gb: '/GB',
+  included: 'Included',
+};
 
 let _counter = 0;
 export const genId = () => 'id_' + Date.now().toString(36) + '_' + (++_counter).toString(36);
 
-export const SEED_PRODUCTS = [
-  {
-    id: genId(),
-    name: 'Netlify Pro',
-    sku: 'NTL-PRO',
-    category: 'Platform',
-    pricingModel: 'Flat Rate',
-    price: 19,
-    unit: '/member/mo',
-    active: true,
-    notes: '',
+export const emptyProduct = () => ({
+  id: genId(),
+  name: '',
+  sku: '',
+  description: '',
+  active: true,
+  hide: false,
+  type: 'platform',
+  is_service: true,
+  default_term: 12,
+  term_unit: 'month',
+  term_behavior: 'included',
+  default_price: {
+    amount: 0,
+    unit: 'flat',
+    pricing_method: 'list',
   },
-  {
-    id: genId(),
-    name: 'Netlify Enterprise',
-    sku: 'NTL-ENT',
-    category: 'Platform',
-    pricingModel: 'Flat Rate',
-    price: 0,
-    unit: 'custom',
-    active: true,
-    notes: 'Custom pricing — Deal Desk',
+  default_entitlements: '{}',
+  config: {
+    lock_quantity: false,
+    lock_price: false,
+    lock_discount: false,
+    lock_term: false,
+    default_quantity: 1,
+    min_quantity: 1,
+    max_quantity: 999,
+    edit_name: false,
+    default_description: '',
   },
-  {
-    id: genId(),
-    name: 'Simple Bandwidth',
-    sku: 'NTL-BW-SMP',
-    category: 'Bandwidth',
-    pricingModel: 'Tiered',
-    price: 0.20,
-    unit: '/GB',
-    active: true,
-    notes: 'Tier 1: $0.20 | Tier 2: $0.12 | Tier 3: $0.06',
-  },
-  {
-    id: genId(),
-    name: 'Unified Credits',
-    sku: 'NTL-CRD-UNI',
-    category: 'Platform',
-    pricingModel: 'Per Unit',
-    price: 500,
-    unit: '/10K block',
-    active: true,
-    notes: '',
-  },
-  {
-    id: genId(),
-    name: 'Enterprise Support',
-    sku: 'NTL-SUP-ENT',
-    category: 'Support',
-    pricingModel: 'Flat Rate',
-    price: 3000,
-    unit: '/mo',
-    active: true,
-    notes: '',
-  },
-  {
-    id: genId(),
-    name: 'High-Performance Edge',
-    sku: 'NTL-EDGE-HP',
-    category: 'Add-ons',
-    pricingModel: 'Flat Rate',
-    price: 1500,
-    unit: '/mo',
-    active: true,
-    notes: '',
-  },
-  {
-    id: genId(),
-    name: 'Private Connectivity',
-    sku: 'NTL-PRIV-CON',
-    category: 'Add-ons',
-    pricingModel: 'Flat Rate',
-    price: 2500,
-    unit: '/mo',
-    active: true,
-    notes: 'Dedicated private network peering',
-  },
-  {
-    id: genId(),
-    name: 'HIPAA Compliance Pack',
-    sku: 'NTL-SEC-HIPAA',
-    category: 'Security',
-    pricingModel: 'Flat Rate',
-    price: 5000,
-    unit: '/yr',
-    active: false,
-    notes: '',
-  },
-];
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+});
+
+export const fmtPrice = (v) => {
+  if (!v || v === 0) return 'Custom';
+  return v < 1 ? `$${v.toFixed(2)}` : `$${v.toLocaleString('en-US')}`;
+};
