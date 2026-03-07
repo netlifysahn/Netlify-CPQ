@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './styles/app.css';
 import { genId } from './data/catalog';
 import NetlifyLogo from './components/NetlifyLogo';
@@ -26,6 +26,50 @@ export default function App() {
   const [typeFilter, setTypeFilter] = useState('All');
   const [modal, setModal] = useState(null);
   const [confirm, setConfirm] = useState(null);
+  const hasLoadedCatalog = useRef(false);
+  const skipNextPersist = useRef(false);
+
+  const persistCatalog = useCallback(async (nextProducts) => {
+    await fetch('/api/catalog', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(nextProducts),
+    });
+  }, []);
+
+  useEffect(() => {
+    const loadCatalog = async () => {
+      try {
+        const res = await fetch('/api/catalog');
+
+        if (!res.ok) {
+          throw new Error('Failed to load catalog');
+        }
+
+        const loadedProducts = await res.json();
+        skipNextPersist.current = true;
+        setProducts(Array.isArray(loadedProducts) ? loadedProducts : []);
+      } catch {
+        skipNextPersist.current = true;
+        setProducts([]);
+      } finally {
+        hasLoadedCatalog.current = true;
+      }
+    };
+
+    loadCatalog();
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedCatalog.current) return;
+    if (skipNextPersist.current) {
+      skipNextPersist.current = false;
+      return;
+    }
+    persistCatalog(products).catch(() => {});
+  }, [products, persistCatalog]);
 
   const saveProd = (p) => {
     setProducts((prev) => {

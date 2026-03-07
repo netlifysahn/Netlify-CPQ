@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PRODUCT_TYPES, PRICE_UNITS, PRICING_METHODS, TERM_BEHAVIORS, UNIT_LABELS, emptyProduct, fmtPrice } from '../data/catalog';
+import { PRODUCT_TYPES, PRICE_UNITS, PRICING_METHODS, TERM_BEHAVIORS, UNIT_LABELS, emptyProduct } from '../data/catalog';
 
 function Section({ title, icon, defaultOpen = true, children }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -26,8 +26,6 @@ export default function ProductModal({ product, onSave, onClose }) {
   const sc = (k, v) => setF((p) => ({ ...p, config: { ...p.config, [k]: v } }));
 
   const ok = f.name.trim() && f.sku.trim();
-  const amount = parseFloat(f.default_price?.amount) || 0;
-
   const validateJson = (val) => {
     s('default_entitlements', val);
     if (!val.trim() || val.trim() === '{}') {
@@ -141,22 +139,6 @@ export default function ProductModal({ product, onSave, onClose }) {
             </div>
           </div>
 
-          {amount > 0 && (
-            <div className="price-preview">
-              <div className="price-preview-item">
-                <div className="price-preview-label">12mo</div>
-                <div className="price-preview-value">{fmtPrice(amount * 12)}</div>
-              </div>
-              <div className="price-preview-item">
-                <div className="price-preview-label">24mo</div>
-                <div className="price-preview-value">{fmtPrice(amount * 24)}</div>
-              </div>
-              <div className="price-preview-item">
-                <div className="price-preview-label">36mo</div>
-                <div className="price-preview-value">{fmtPrice(amount * 36)}</div>
-              </div>
-            </div>
-          )}
         </Section>
 
         {/* Service */}
