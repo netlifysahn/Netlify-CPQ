@@ -84,8 +84,11 @@ export default function App() {
       <main className="main-content">
         {page === 'products' && (
           <>
-            <h1 className="page-title">Products</h1>
-            <p className="page-subtitle">Manage your product catalog</p>
+            <div className="page-header">
+              <div className="page-label">Product Catalog</div>
+              <h1 className="page-title">Products</h1>
+              <p className="page-subtitle">Define and manage your product catalog for quotes and orders</p>
+            </div>
 
             <div className="toolbar">
               <div className="search-wrap">

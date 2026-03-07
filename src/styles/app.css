@@ -1,22 +1,24 @@
 /* ─── Netlify Deal Studio — Global Styles ─────────────────── */
-/* Design System: Dieter Rams / Apple / Linear / Stripe      */
+/* Athena-quality. Dieter Rams / Apple / Linear / Stripe.     */
 
 :root {
-  /* Base */
+  /* Base — adapted from Athena's dark palette for Netlify */
   --bg: #0e1e25;
-  --surface: #15262e;
-  --border: #243640;
+  --surface: #152028;
+  --surface-raised: #1a2830;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.10);
 
   /* Text */
   --text-strong: #f0f4f8;
   --text-body: #b8c4ce;
-  --text-muted: #6e8898;
-  --text-faint: #4a6475;
+  --text-muted: rgba(255, 255, 255, 0.50);
+  --text-faint: rgba(255, 255, 255, 0.30);
 
   /* Accent */
   --teal: #32e6e2;
   --teal-dark: #00c7b7;
-  --teal-muted: rgba(50, 230, 226, 0.12);
+  --teal-muted: rgba(50, 230, 226, 0.10);
 
   /* Semantic */
   --blue: #5cbbf6;
@@ -25,9 +27,34 @@
   --purple: #a78bfa;
   --red: #f87171;
 
+  /* Typography — from Athena */
+  --font-heading: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Mulish', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Menlo', ui-monospace, SFMono-Regular, monospace;
+  --letter-spacing-heading: -0.01em;
+
+  /* Scale — from Athena */
+  --text-page-title: 1.805rem;
+  --text-section-header: 1.375rem;
+  --text-body-size: 0.9375rem;
+  --text-body-sm: 0.875rem;
+  --text-label: 0.6875rem;
+  --text-micro: 0.625rem;
+
+  /* Spacing — from Athena */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
   /* Sizing */
   --sidebar-width: 240px;
-  --transition: 200ms ease;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-pill: 100px;
+  --transition: 0.2s ease;
 }
 
 /* ─── Layout ──────────────────────────────────────────────── */
@@ -35,19 +62,19 @@
 .app-layout {
   display: flex;
   min-height: 100vh;
-  font-family: 'Mulish', system-ui, sans-serif;
+  font-family: var(--font-body);
   background: var(--bg);
   color: var(--text-body);
 }
 
-/* ─── Sidebar ─────────────────────────────────────────────── */
+/* ─── Sidebar — Athena pattern ────────────────────────────── */
 
 .sidebar {
   width: var(--sidebar-width);
   min-height: 100vh;
-  background: var(--surface);
+  background: #0a1419;
   border-right: 1px solid var(--border);
-  padding: 24px 0;
+  padding: var(--space-xl) 0;
   position: fixed;
   top: 0;
   left: 0;
@@ -58,13 +85,13 @@
 .sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 20px;
-  margin-bottom: 32px;
+  gap: 12px;
+  padding: 0 var(--space-lg);
+  margin-bottom: var(--space-2xl);
 }
 
 .sidebar-brand-text {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-heading);
   font-weight: 600;
   font-size: 15px;
   color: var(--text-strong);
@@ -74,25 +101,26 @@
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
 }
 
 .sidebar-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 20px;
-  font-size: 13px;
-  font-weight: 500;
+  gap: 12px;
+  padding: 12px var(--space-lg);
+  min-height: 44px;
+  font-size: var(--text-body-size);
+  font-weight: 400;
   color: var(--text-muted);
   cursor: pointer;
   border: none;
   background: none;
-  font-family: 'Mulish', sans-serif;
+  font-family: var(--font-body);
   width: 100%;
   text-align: left;
-  transition: color var(--transition), background var(--transition);
-  border-left: 4px solid transparent;
+  transition: all var(--transition);
+  border-left: 3px solid transparent;
 }
 
 .sidebar-item:hover {
@@ -101,16 +129,26 @@
 }
 
 .sidebar-item.active {
-  color: var(--teal);
-  background: var(--teal-muted);
+  color: var(--text-strong);
   border-left-color: var(--teal);
   font-weight: 600;
+  background: transparent;
 }
 
 .sidebar-item i {
-  width: 18px;
+  width: 22px;
   text-align: center;
-  font-size: 14px;
+  font-size: 16px;
+  opacity: 0.6;
+}
+
+.sidebar-item:hover i {
+  opacity: 0.9;
+}
+
+.sidebar-item.active i {
+  opacity: 1;
+  color: var(--teal);
 }
 
 /* ─── Main Content ────────────────────────────────────────── */
@@ -118,31 +156,47 @@
 .main-content {
   margin-left: var(--sidebar-width);
   flex: 1;
-  padding: 36px 40px;
-  max-width: 1100px;
+  padding: var(--space-2xl);
+  max-width: 1200px;
+  width: 100%;
+}
+
+.page-header {
+  margin-bottom: var(--space-xl);
+}
+
+.page-label {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: var(--space-xs);
 }
 
 .page-title {
-  font-family: 'Poppins', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
+  font-family: var(--font-heading);
+  font-size: var(--text-page-title);
+  font-weight: 300;
   color: var(--text-strong);
-  letter-spacing: -0.5px;
-  margin-bottom: 4px;
+  letter-spacing: var(--letter-spacing-heading);
+  margin-bottom: var(--space-xs);
 }
 
 .page-subtitle {
-  font-size: 13px;
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
   color: var(--text-muted);
-  margin-bottom: 28px;
+  margin-bottom: var(--space-2xl);
 }
 
 /* ─── Toolbar ─────────────────────────────────────────────── */
 
 .toolbar {
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xl);
   flex-wrap: wrap;
   align-items: center;
 }
@@ -152,16 +206,21 @@
   min-width: 180px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: var(--surface);
+  gap: var(--space-sm);
+  background: transparent;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 8px 12px;
+  transition: border-color var(--transition);
+}
+
+.search-wrap:focus-within {
+  border-color: var(--text-muted);
 }
 
 .search-wrap i {
   color: var(--text-faint);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .search-input {
@@ -169,30 +228,31 @@
   border: none;
   outline: none;
   color: var(--text-body);
-  font-size: 13px;
+  font-size: 14px;
   width: 100%;
-  font-family: 'Mulish', sans-serif;
+  font-family: var(--font-body);
 }
 
 .search-input::placeholder {
+  font-family: var(--font-body);
   color: var(--text-faint);
 }
 
 .filter-btn {
   padding: 7px 14px;
   font-size: 12px;
-  border-radius: 7px;
+  border-radius: 2px;
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: transparent;
   color: var(--text-muted);
   cursor: pointer;
   font-weight: 500;
-  font-family: 'Mulish', sans-serif;
+  font-family: var(--font-body);
   transition: all var(--transition);
 }
 
 .filter-btn:hover {
-  border-color: var(--text-faint);
+  border-color: var(--border-default);
   color: var(--text-body);
 }
 
@@ -203,53 +263,54 @@
 }
 
 .btn-primary {
-  padding: 8px 18px;
+  padding: 8px 16px;
   font-size: 13px;
-  border-radius: 8px;
-  border: none;
-  background: linear-gradient(135deg, var(--teal), var(--teal-dark));
-  color: var(--bg);
+  border-radius: 2px;
+  border: 1px solid var(--border-default);
+  background: var(--surface-raised);
+  color: var(--text-strong);
   cursor: pointer;
-  font-weight: 600;
-  font-family: 'Mulish', sans-serif;
+  font-weight: 500;
+  font-family: var(--font-body);
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: opacity var(--transition);
+  transition: all var(--transition);
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--text-faint);
 }
 
 .btn-secondary {
   padding: 9px 20px;
   font-size: 13px;
-  border-radius: 8px;
+  border-radius: 2px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
   font-weight: 500;
-  font-family: 'Mulish', sans-serif;
+  font-family: var(--font-body);
   transition: all var(--transition);
 }
 
 .btn-secondary:hover {
-  border-color: var(--text-faint);
+  border-color: var(--border-default);
   color: var(--text-body);
 }
 
 .btn-destructive {
   padding: 9px 22px;
   font-size: 13px;
-  border-radius: 8px;
+  border-radius: 2px;
   border: none;
   background: var(--red);
   color: var(--text-strong);
   cursor: pointer;
   font-weight: 600;
-  font-family: 'Mulish', sans-serif;
+  font-family: var(--font-body);
   transition: opacity var(--transition);
 }
 
@@ -260,26 +321,33 @@
 .btn-save {
   padding: 9px 22px;
   font-size: 13px;
-  border-radius: 8px;
-  border: none;
-  background: linear-gradient(135deg, var(--teal), var(--teal-dark));
-  color: var(--bg);
+  border-radius: 2px;
+  border: 1px solid var(--teal);
+  background: rgba(50, 230, 226, 0.08);
+  color: var(--teal);
   cursor: pointer;
   font-weight: 600;
-  font-family: 'Mulish', sans-serif;
-  transition: opacity var(--transition);
+  font-family: var(--font-body);
+  transition: all var(--transition);
 }
 
 .btn-save:hover {
-  opacity: 0.9;
+  background: rgba(50, 230, 226, 0.14);
 }
 
 .btn-save:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: default;
 }
 
-/* ─── Table ───────────────────────────────────────────────── */
+/* ─── Table — Athena-style ────────────────────────────────── */
+
+.table-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
 
 .data-table {
   width: 100%;
@@ -289,20 +357,20 @@
 
 .data-table th {
   text-align: left;
-  padding: 10px 14px;
-  font-size: 11px;
-  font-weight: 600;
+  padding: var(--space-md) var(--space-lg);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  border-bottom: 1px solid var(--border);
-  font-family: 'Mulish', sans-serif;
+  letter-spacing: 0.08em;
+  background: transparent;
 }
 
 .data-table td {
-  padding: 12px 14px;
-  font-size: 13px;
-  border-bottom: 1px solid rgba(36, 54, 64, 0.5);
+  padding: 14px var(--space-lg);
+  font-size: var(--text-body-sm);
+  border-top: 1px solid var(--border);
   vertical-align: middle;
 }
 
@@ -317,42 +385,48 @@
 .cell-name {
   font-weight: 600;
   color: var(--text-strong);
+  font-size: var(--text-body-sm);
 }
 
 .cell-sku {
-  font-size: 11px;
+  font-size: var(--text-label);
   color: var(--text-faint);
-  font-family: 'Menlo', monospace;
+  font-family: var(--font-mono);
+  margin-top: 2px;
 }
 
 .cell-description {
-  font-size: 11px;
+  font-size: var(--text-label);
   color: var(--text-faint);
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .cell-price {
   font-weight: 600;
   color: var(--text-strong);
-  font-size: 14px;
+  font-size: var(--text-body-sm);
 }
 
 .cell-unit {
-  font-size: 11px;
+  font-size: var(--text-label);
   color: var(--text-muted);
   margin-left: 2px;
 }
 
-/* ─── Badges ──────────────────────────────────────────────── */
+/* ─── Badges — Athena pill style ──────────────────────────── */
 
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 9px;
-  border-radius: 5px;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
 }
 
 .badge-platform {
@@ -377,13 +451,15 @@
 
 .unit-badge {
   display: inline-block;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.06);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text-muted);
-  margin-left: 4px;
+  margin-left: 6px;
+  letter-spacing: 0.02em;
 }
 
 /* ─── Status ──────────────────────────────────────────────── */
@@ -411,10 +487,15 @@
   border: none;
   color: var(--text-faint);
   cursor: pointer;
-  padding: 4px;
+  padding: 4px 6px;
   border-radius: 4px;
   font-size: 13px;
-  transition: color var(--transition);
+  transition: color var(--transition), opacity var(--transition);
+  opacity: 0;
+}
+
+.data-table tbody tr:hover .action-btn {
+  opacity: 1;
 }
 
 .action-btn:hover {
@@ -438,7 +519,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(8, 10, 14, 0.70);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -447,75 +528,83 @@
 
 .modal {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 28px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-xl);
   width: 100%;
-  max-width: 520px;
+  max-width: 540px;
   max-height: 85vh;
   overflow-y: auto;
 }
 
 .modal-title {
-  font-family: 'Poppins', sans-serif;
-  font-size: 17px;
-  font-weight: 700;
+  font-family: var(--font-heading);
+  font-size: var(--text-section-header);
+  font-weight: 300;
   color: var(--text-strong);
-  margin-bottom: 22px;
+  letter-spacing: var(--letter-spacing-heading);
+  margin-bottom: var(--space-lg);
 }
 
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 24px;
+  gap: var(--space-sm);
+  margin-top: var(--space-xl);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border);
 }
 
 /* ─── Form ────────────────────────────────────────────────── */
 
 .field {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-md);
 }
 
 .field-label {
   display: block;
-  font-size: 12px;
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: 500;
   color: var(--text-muted);
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   text-transform: uppercase;
-  letter-spacing: 0.4px;
-  font-family: 'Mulish', sans-serif;
+  letter-spacing: 0.08em;
 }
 
 .field-input {
   width: 100%;
-  padding: 9px 12px;
-  font-size: 13px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 7px;
+  padding: 10px 12px;
+  font-size: 14px;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: 2px;
   color: var(--text-strong);
   outline: none;
-  font-family: 'Mulish', sans-serif;
+  font-family: var(--font-body);
   box-sizing: border-box;
   transition: border-color var(--transition);
 }
 
 .field-input:focus {
-  border-color: var(--teal);
+  border-color: var(--text-muted);
+}
+
+.field-input::placeholder {
+  color: var(--text-faint);
+  font-family: var(--font-body);
 }
 
 .field-textarea {
   width: 100%;
-  padding: 9px 12px;
-  font-size: 13px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 7px;
+  padding: 10px 12px;
+  font-size: 14px;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: 2px;
   color: var(--text-strong);
   outline: none;
-  font-family: 'Mulish', sans-serif;
+  font-family: var(--font-body);
   min-height: 60px;
   resize: vertical;
   box-sizing: border-box;
@@ -523,65 +612,82 @@
 }
 
 .field-textarea:focus {
-  border-color: var(--teal);
+  border-color: var(--text-muted);
+}
+
+.field-textarea::placeholder {
+  color: var(--text-faint);
+  font-family: var(--font-body);
 }
 
 .field-select {
   width: 100%;
-  padding: 9px 12px;
-  font-size: 13px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 7px;
+  padding: 10px 12px;
+  font-size: 14px;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: 2px;
   color: var(--text-strong);
   outline: none;
-  font-family: 'Mulish', sans-serif;
+  font-family: var(--font-body);
   box-sizing: border-box;
   transition: border-color var(--transition);
 }
 
 .field-select:focus {
-  border-color: var(--teal);
+  border-color: var(--text-muted);
+}
+
+.field-select option {
+  background: var(--surface);
+  color: var(--text-strong);
 }
 
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: var(--space-md);
 }
 
 .grid-3 {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 12px;
+  gap: var(--space-md);
 }
 
-/* ─── Collapsible Section ─────────────────────────────────── */
+/* ─── Collapsible Section — Athena sub-label style ────────── */
 
 .section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 0;
+  padding: var(--space-md) 0 var(--space-sm);
   cursor: pointer;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 14px;
+  margin-bottom: var(--space-md);
+  margin-top: var(--space-sm);
   user-select: none;
 }
 
 .section-title {
-  font-family: 'Poppins', sans-serif;
-  font-size: 13px;
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
   font-weight: 600;
-  color: var(--text-strong);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-sm);
+}
+
+.section-title i {
+  font-size: 11px;
+  color: var(--text-faint);
 }
 
 .section-toggle {
   color: var(--text-faint);
-  font-size: 12px;
+  font-size: 10px;
   transition: transform var(--transition);
 }
 
@@ -594,8 +700,8 @@
 .checkbox-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
 }
 
 .checkbox-row input[type="checkbox"] {
@@ -603,7 +709,7 @@
 }
 
 .checkbox-label {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-muted);
   cursor: pointer;
 }
@@ -614,7 +720,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 6px;
+  margin-top: var(--space-sm);
 }
 
 .entitlement-pill {
@@ -622,12 +728,13 @@
   align-items: center;
   gap: 4px;
   padding: 3px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-pill);
   background: var(--teal-muted);
   color: var(--teal);
-  font-size: 11px;
+  font-size: var(--text-micro);
   font-weight: 500;
-  font-family: 'Menlo', monospace;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
 }
 
 .entitlement-pill .pill-key {
@@ -644,11 +751,13 @@
 }
 
 .config-indicator {
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.04);
   color: var(--text-faint);
+  letter-spacing: 0.02em;
 }
 
 /* ─── Expandable Row ──────────────────────────────────────── */
@@ -659,7 +768,7 @@
   color: var(--text-faint);
   cursor: pointer;
   padding: 2px 4px;
-  font-size: 11px;
+  font-size: 10px;
   transition: color var(--transition);
 }
 
@@ -668,7 +777,7 @@
 }
 
 .expanded-row td {
-  padding: 12px 14px 16px;
+  padding: 14px var(--space-lg) 20px;
   background: rgba(255, 255, 255, 0.01);
 }
 
@@ -676,11 +785,11 @@
 
 .price-preview {
   display: flex;
-  gap: 16px;
-  margin-top: 8px;
-  padding: 10px 12px;
+  gap: var(--space-lg);
+  margin-top: var(--space-sm);
+  padding: 12px var(--space-md);
   background: rgba(255, 255, 255, 0.02);
-  border-radius: 7px;
+  border-radius: 2px;
   border: 1px solid var(--border);
 }
 
@@ -689,18 +798,19 @@
 }
 
 .price-preview-label {
-  font-size: 10px;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
   color: var(--text-faint);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.08em;
   margin-bottom: 2px;
 }
 
 .price-preview-value {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-strong);
-  font-family: 'Menlo', monospace;
+  font-family: var(--font-mono);
 }
 
 /* ─── JSON Validation ─────────────────────────────────────── */
@@ -714,35 +824,39 @@
 }
 
 .json-error {
-  font-size: 11px;
+  font-size: var(--text-label);
   color: var(--red);
-  margin-top: 4px;
+  margin-top: var(--space-xs);
 }
 
-/* ─── Empty State ─────────────────────────────────────────── */
+/* ─── Empty State — Athena card treatment ─────────────────── */
 
 .empty-state {
+  background: var(--surface);
+  border: 0.5px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-2xl) var(--space-xl);
   text-align: center;
-  padding: 48px 20px;
-  color: var(--text-faint);
+  border-left: 3px solid var(--teal);
 }
 
 .empty-state-icon {
-  font-size: 32px;
-  opacity: 0.3;
-  margin-bottom: 12px;
+  font-size: 28px;
+  opacity: 0.25;
+  margin-bottom: var(--space-md);
   color: var(--text-faint);
 }
 
 .empty-state-title {
-  font-size: 15px;
-  font-weight: 600;
+  font-family: var(--font-heading);
+  font-size: var(--text-body-size);
+  font-weight: 400;
   color: var(--text-muted);
-  margin-bottom: 6px;
+  margin-bottom: var(--space-xs);
 }
 
 .empty-state-text {
-  font-size: 13px;
+  font-size: var(--text-body-sm);
   color: var(--text-faint);
 }
 
@@ -754,50 +868,71 @@
 }
 
 .confirm-title {
-  font-family: 'Poppins', sans-serif;
-  font-size: 15px;
+  font-family: var(--font-heading);
+  font-size: var(--text-section-header);
   color: var(--text-strong);
-  font-weight: 600;
-  margin-bottom: 8px;
+  font-weight: 300;
+  letter-spacing: var(--letter-spacing-heading);
+  margin-bottom: var(--space-sm);
 }
 
 .confirm-message {
-  font-size: 13px;
+  font-size: var(--text-body-sm);
   color: var(--text-muted);
-  margin-bottom: 24px;
+  margin-bottom: var(--space-lg);
 }
 
 .confirm-actions {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: var(--space-sm);
 }
 
-/* ─── Coming Soon ─────────────────────────────────────────── */
+/* ─── Coming Soon — Athena card style ─────────────────────── */
 
 .coming-soon {
+  background: var(--surface);
+  border: 0.5px solid var(--border-default);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--teal);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80px 20px;
-  color: var(--text-faint);
+  padding: 80px var(--space-xl);
 }
 
 .coming-soon-icon {
-  font-size: 36px;
+  font-size: 28px;
   opacity: 0.2;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-md);
+  color: var(--text-faint);
 }
 
 .coming-soon-title {
-  font-family: 'Poppins', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
+  font-family: var(--font-heading);
+  font-size: var(--text-body-size);
+  font-weight: 400;
   color: var(--text-muted);
-  margin-bottom: 6px;
+  margin-bottom: var(--space-xs);
 }
 
 .coming-soon-text {
-  font-size: 13px;
+  font-size: var(--text-body-sm);
+  color: var(--text-faint);
+}
+
+/* ─── Scrollbar — subtle ──────────────────────────────────── */
+
+.modal::-webkit-scrollbar {
+  width: 4px;
+}
+
+.modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 2px;
 }

@@ -36,7 +36,7 @@ export default function ProductTable({ products, onEdit, onDupe, onDelete }) {
   };
 
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div className="table-card">
       <table className="data-table">
         <thead>
           <tr>
