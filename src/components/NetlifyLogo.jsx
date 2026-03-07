@@ -1,27 +1,32 @@
 import React from 'react';
 
-// Netlify Spark — the converging-lines N mark
-// Simplified SVG interpretation of the official Spark logo
+// Netlify Spark mark — teal gradient square with dark N letterform
 export default function NetlifyLogo({ size = 32 }) {
+  const id = 'ntl-spark-grad';
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 40 40"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Netlify"
+    >
       <defs>
-        <linearGradient id="ntl-grad" x1="0" y1="0" x2="40" y2="40">
+        <linearGradient id={id} x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#32e6e2" />
           <stop offset="100%" stopColor="#00c7b7" />
         </linearGradient>
       </defs>
-      <rect width="40" height="40" rx="9" fill="url(#ntl-grad)" />
-      {/* Stylized N with converging lines */}
+      <rect width="40" height="40" rx="9" fill={`url(#${id})`} />
       <path
-        d="M12 28V12l6.5 10.5L25 12v16"
-        stroke="#0e1e25"
-        strokeWidth="3.2"
+        d="M13 27 L13 13 L20 23 L27 13 L27 27"
+        stroke="#0a0c10"
+        strokeWidth="3"
         strokeLinecap="round"
         strokeLinejoin="round"
-        fill="none"
       />
-      <line x1="28" y1="14" x2="28" y2="26" stroke="#0e1e25" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
     </svg>
   );
 }

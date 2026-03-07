@@ -211,14 +211,14 @@
   align-items: center;
   gap: var(--space-sm);
   background: transparent;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 2px;
   padding: 8px 12px;
   transition: border-color var(--transition);
 }
 
 .search-wrap:focus-within {
-  border-color: var(--text-muted);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 .search-wrap i {
@@ -242,10 +242,10 @@
 }
 
 .filter-btn {
-  padding: 7px 14px;
+  padding: 6px 12px;
   font-size: 12px;
-  border-radius: 2px;
-  border: 1px solid var(--border);
+  border-radius: 4px;
+  border: none;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
@@ -255,23 +255,22 @@
 }
 
 .filter-btn:hover {
-  border-color: var(--border-default);
   color: var(--text-body);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .filter-btn.active {
-  border-color: var(--teal);
-  background: var(--teal-muted);
-  color: var(--teal);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-strong);
 }
 
 .btn-primary {
-  padding: 8px 16px;
+  padding: 7px 14px;
   font-size: 13px;
-  border-radius: 2px;
-  border: 1px solid var(--border-default);
-  background: var(--surface);
-  color: var(--text-strong);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: var(--text-body);
   cursor: pointer;
   font-weight: 500;
   font-family: var(--font-body);
@@ -282,8 +281,8 @@
 }
 
 .btn-primary:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: var(--text-faint);
+  border-color: rgba(255, 255, 255, 0.20);
+  color: var(--text-strong);
 }
 
 .btn-secondary {
@@ -836,8 +835,8 @@
 
 .empty-state {
   background: var(--surface);
-  border: 0.5px solid var(--border);
-  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-sm);
   padding: var(--space-3xl) var(--space-xl);
   text-align: center;
 }
