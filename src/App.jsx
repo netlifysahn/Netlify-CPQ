@@ -26,7 +26,23 @@ const COMING_SOON_META = {
   orders: { icon: 'fa-cart-shopping', title: 'Orders' },
 };
 
+function useTheme() {
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('deal-studio-theme');
+    return saved || 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('deal-studio-theme', theme);
+  }, [theme]);
+
+  const toggle = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+  return { theme, toggle };
+}
+
 export default function App() {
+  const { theme, toggle: toggleTheme } = useTheme();
   const [page, setPage] = useState('products');
   const [products, setProducts] = useState([]);
   const [pricebooks, setPricebooks] = useState([]);
@@ -294,6 +310,12 @@ export default function App() {
               {item.label}
             </button>
           ))}
+        </div>
+        <div className="theme-toggle">
+          <button className="theme-toggle-btn" onClick={toggleTheme}>
+            <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'}`} />
+            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          </button>
         </div>
       </nav>
 
