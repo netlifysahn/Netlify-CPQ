@@ -22,8 +22,8 @@ const NAV_ITEMS = [
 ];
 
 const COMING_SOON_META = {
-  scope: { icon: 'fa-bullseye', title: 'Scope' },
-  orders: { icon: 'fa-cart-shopping', title: 'Orders' },
+  scope: { icon: 'fa-bullseye', title: 'Scope', label: 'Deal Scope', subtitle: 'Define and manage deal scope for quotes' },
+  orders: { icon: 'fa-cart-shopping', title: 'Orders', label: 'Order Management', subtitle: 'Track and manage customer orders' },
 };
 
 function useTheme() {
@@ -458,13 +458,20 @@ export default function App() {
 
         {/* Coming Soon */}
         {COMING_SOON_META[page] && (
-          <div className="coming-soon">
-            <div className="coming-soon-icon">
-              <i className={`fa-solid ${COMING_SOON_META[page].icon}`} />
+          <>
+            <div className="page-header">
+              <div className="page-label">{COMING_SOON_META[page].label}</div>
+              <h1 className="page-title">{COMING_SOON_META[page].title}</h1>
+              <div className="page-subtitle">{COMING_SOON_META[page].subtitle}</div>
             </div>
-            <div className="coming-soon-title">{COMING_SOON_META[page].title}</div>
-            <div className="coming-soon-text">Coming soon</div>
-          </div>
+            <div className="coming-soon">
+              <div className="coming-soon-icon">
+                <i className={`fa-solid ${COMING_SOON_META[page].icon}`} />
+              </div>
+              <div className="coming-soon-title">{COMING_SOON_META[page].title}</div>
+              <div className="coming-soon-text">Coming soon</div>
+            </div>
+          </>
         )}
       </main>
 
