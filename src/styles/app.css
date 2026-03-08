@@ -1397,6 +1397,51 @@
   max-width: 100%;
 }
 
+/* Customer info section */
+.qd-customer-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xl);
+  margin-bottom: 40px;
+  padding: var(--space-lg);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+}
+
+.qd-customer-company {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-strong);
+  margin-bottom: 6px;
+}
+
+.qd-customer-address {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.qd-customer-section-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.30);
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  margin-bottom: 6px;
+}
+
+.qd-customer-field {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
 .qd-header {
   margin-bottom: 40px;
 }
@@ -2379,6 +2424,16 @@
 /* Picker */
 [data-theme="light"] .picker-item:hover {
   background: rgba(0, 0, 0, 0.04);
+}
+
+/* Customer info */
+[data-theme="light"] .qd-customer-info {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .qd-customer-section-label {
+  color: rgba(0, 0, 0, 0.35);
 }
 
 /* Scrollbar */

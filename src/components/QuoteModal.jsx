@@ -45,20 +45,46 @@ export default function QuoteModal({ quote, existingQuotes, onSave, onClose }) {
           <input className="field-input" value={f.name} onChange={(e) => s('name', e.target.value)} placeholder="e.g. Riot Games — Enterprise Renewal" />
         </div>
 
-        <div className="grid-2">
+        <div className="modal-section">
+          <div className="modal-section-label"><i className="fa-solid fa-building" /> Customer Information</div>
           <div className="field">
-            <label className="field-label">Customer Name</label>
+            <label className="field-label">Company Name</label>
             <input className="field-input" value={f.customer_name} onChange={(e) => s('customer_name', e.target.value)} placeholder="Company name" />
           </div>
           <div className="field">
-            <label className="field-label">Customer Contact</label>
-            <input className="field-input" value={f.customer_contact} onChange={(e) => s('customer_contact', e.target.value)} placeholder="Contact name or email" />
+            <label className="field-label">Company Address</label>
+            <textarea className="field-textarea" value={f.customer_address} onChange={(e) => s('customer_address', e.target.value)} placeholder="Street, City, State, ZIP, Country" />
           </div>
         </div>
 
-        <div className="field">
-          <label className="field-label">Prepared By</label>
-          <input className="field-input" value={f.prepared_by} onChange={(e) => s('prepared_by', e.target.value)} placeholder="Your name" />
+        <div className="modal-section">
+          <div className="modal-section-label"><i className="fa-solid fa-file-invoice" /> Billing Contact</div>
+          <div className="grid-2">
+            <div className="field">
+              <label className="field-label">Billing Contact Name</label>
+              <input className="field-input" value={f.billing_contact_name} onChange={(e) => s('billing_contact_name', e.target.value)} placeholder="Full name" />
+            </div>
+            <div className="field">
+              <label className="field-label">Billing Contact Email</label>
+              <input className="field-input" type="email" value={f.billing_contact_email} onChange={(e) => s('billing_contact_email', e.target.value)} placeholder="billing@company.com" />
+            </div>
+          </div>
+          <div className="field">
+            <label className="field-label">Billing Contact Phone</label>
+            <input className="field-input" value={f.billing_contact_phone} onChange={(e) => s('billing_contact_phone', e.target.value)} placeholder="+1 (555) 000-0000" />
+          </div>
+        </div>
+
+        <div className="modal-section">
+          <div className="modal-section-label"><i className="fa-solid fa-user" /> Internal</div>
+          <div className="field">
+            <label className="field-label">Prepared By</label>
+            <input className="field-input" value={f.prepared_by} onChange={(e) => s('prepared_by', e.target.value)} placeholder="Your name" />
+          </div>
+          <div className="field">
+            <label className="field-label">Customer Contact (legacy)</label>
+            <input className="field-input" value={f.customer_contact} onChange={(e) => s('customer_contact', e.target.value)} placeholder="Contact name or email" />
+          </div>
         </div>
 
         <div className="grid-3">

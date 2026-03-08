@@ -3,6 +3,8 @@ import autoTable from 'jspdf-autotable';
 import { calcLineMonthly, calcLineTotal, calcQuoteTotals, fmtCurrency } from '../data/quotes';
 
 export function generateQuotePdf(quote) {
+  console.log('[PDF] generateQuotePdf called', quote?.quote_number);
+  try {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 20;
@@ -52,9 +54,10 @@ export function generateQuotePdf(quote) {
   doc.text(`Status: ${statusLabel}`, margin, y);
   y += 12;
 
-  // Two-column info section
+  // Two-column: Netlify (left) / Customer (right)
   const col1x = margin;
   const col2x = pageWidth / 2 + 10;
+  const colWidth = pageWidth / 2 - margin - 10;
   const infoFontSize = 9;
   const labelColor = [120, 120, 120];
   const valueColor = [30, 30, 30];
@@ -69,18 +72,50 @@ export function generateQuotePdf(quote) {
     return yPos + 6;
   };
 
-  // Left column
-  let ly = y;
-  if (quote.customer_name) ly = drawInfoRow('Customer', quote.customer_name, col1x, ly);
-  if (quote.customer_contact) ly = drawInfoRow('Contact', quote.customer_contact, col1x, ly);
-  if (quote.prepared_by) ly = drawInfoRow('Prepared by', quote.prepared_by, col1x, ly);
+  const drawSectionLabel = (text, x, yPos) => {
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(100, 100, 100);
+    doc.text(text.toUpperCase(), x, yPos);
+    return yPos + 7;
+  };
 
-  // Right column
+  // Left column — Netlify / quote info
+  let ly = y;
+  ly = drawSectionLabel('From', col1x, ly);
+  ly = drawInfoRow('Company', 'Netlify, Inc.', col1x, ly);
+  if (quote.prepared_by) ly = drawInfoRow('Prepared by', quote.prepared_by, col1x, ly);
+  ly += 4;
+  ly = drawInfoRow('Term', `${quote.term_months} months`, col1x, ly);
+  if (quote.start_date) ly = drawInfoRow('Start date', quote.start_date, col1x, ly);
+  if (quote.end_date) ly = drawInfoRow('End date', quote.end_date, col1x, ly);
+  if (quote.header_discount > 0) ly = drawInfoRow('Discount', `${quote.header_discount}%`, col1x, ly);
+
+  // Right column — Customer info
   let ry = y;
-  ry = drawInfoRow('Term', `${quote.term_months} months`, col2x, ry);
-  if (quote.start_date) ry = drawInfoRow('Start date', quote.start_date, col2x, ry);
-  if (quote.end_date) ry = drawInfoRow('End date', quote.end_date, col2x, ry);
-  if (quote.header_discount > 0) ry = drawInfoRow('Discount', `${quote.header_discount}%`, col2x, ry);
+  ry = drawSectionLabel('To', col2x, ry);
+  if (quote.customer_name) ry = drawInfoRow('Company', quote.customer_name, col2x, ry);
+
+  // Multi-line address
+  if (quote.customer_address) {
+    doc.setFontSize(infoFontSize);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...labelColor);
+    doc.text('Address', col2x, ry);
+    doc.setTextColor(...valueColor);
+    const addrLines = doc.splitTextToSize(quote.customer_address, colWidth - 45);
+    doc.text(addrLines, col2x + 45, ry);
+    ry += addrLines.length * 5 + 1;
+  }
+
+  if (quote.billing_contact_name) ry = drawInfoRow('Contact', quote.billing_contact_name, col2x, ry);
+  if (quote.billing_contact_email) ry = drawInfoRow('Email', quote.billing_contact_email, col2x, ry);
+  if (quote.billing_contact_phone) ry = drawInfoRow('Phone', quote.billing_contact_phone, col2x, ry);
+
+  // Legacy fallback
+  if (!quote.billing_contact_name && quote.customer_contact) {
+    ry = drawInfoRow('Contact', quote.customer_contact, col2x, ry);
+  }
 
   y = Math.max(ly, ry) + 8;
 
@@ -102,7 +137,7 @@ export function generateQuotePdf(quote) {
       ];
     });
 
-    const lineResult = autoTable(doc, {
+    autoTable(doc, {
       startY: y,
       head: tableHead,
       body: tableBody,
@@ -132,7 +167,7 @@ export function generateQuotePdf(quote) {
       },
     });
 
-    y = lineResult.finalY + 8;
+    y = doc.lastAutoTable.finalY + 8;
 
     // Totals
     const totalsData = [
@@ -141,7 +176,7 @@ export function generateQuotePdf(quote) {
       [`TCV (${quote.term_months}mo)`, fmtCurrency(totals.tcv)],
     ];
 
-    const totalsResult = autoTable(doc, {
+    autoTable(doc, {
       startY: y,
       body: totalsData,
       margin: { left: pageWidth - margin - 80, right: margin },
@@ -157,7 +192,7 @@ export function generateQuotePdf(quote) {
       },
     });
 
-    y = totalsResult.finalY + 10;
+    y = doc.lastAutoTable.finalY + 10;
   }
 
   // Comments
@@ -208,4 +243,8 @@ export function generateQuotePdf(quote) {
   }
 
   doc.save(`${quote.quote_number}.pdf`);
+  console.log('[PDF] save complete');
+  } catch (err) {
+    console.error('[PDF] generation failed:', err);
+  }
 }

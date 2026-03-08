@@ -61,6 +61,76 @@ BundleMember {
 }
 ```
 
+## Quote Schema
+
+```js
+Quote {
+  id: string,
+  quote_number: string,           // auto-generated "QUO-0001"
+  name: string,                   // quote name (required)
+  status: "draft" | "submitted" | "won" | "lost" | "cancelled",
+
+  // Customer Information
+  customer_name: string,          // company name
+  customer_address: string,       // full address (street, city, state, zip, country)
+  customer_contact: string,       // legacy contact field
+
+  // Billing Contact
+  billing_contact_name: string,
+  billing_contact_email: string,
+  billing_contact_phone: string,
+
+  // Internal
+  prepared_by: string,
+  pricebook_id: string | null,
+
+  // Term & Pricing
+  term_months: number,            // 12, 24, or 36
+  start_date: string,             // ISO date
+  end_date: string,               // auto-calculated
+  header_discount: number,        // percentage (0-100)
+
+  // Content
+  comments: string,
+  terms_conditions: string,
+
+  // Children
+  line_items: LineItem[],
+  groups: Group[],
+
+  created_at: string,
+  updated_at: string
+}
+
+LineItem {
+  id: string,
+  product_id: string,
+  product_name: string,
+  product_sku: string,
+  product_type: string,
+  group_id: string | null,
+  quantity: number,
+  list_price: number,
+  sales_price: number,
+  line_discount: number,
+  term_months: number,
+  term_behavior: "included" | "excluded",
+  config: {
+    lock_quantity: boolean,
+    lock_price: boolean,
+    lock_discount: boolean
+  },
+  sort_order: number
+}
+
+Group {
+  id: string,
+  name: string,
+  description: string,
+  sort_order: number
+}
+```
+
 ## Constraints
 
 - No pre-defined products. Empty catalog.

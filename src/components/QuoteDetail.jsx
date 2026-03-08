@@ -253,6 +253,24 @@ export default function QuoteDetail({ quote, products, onSave, onBack, onDelete 
         </div>
       </div>
 
+      {/* Customer Info */}
+      {(q.customer_name || q.customer_address || q.billing_contact_name || q.billing_contact_email || q.billing_contact_phone) && (
+        <div className="qd-customer-info">
+          <div className="qd-customer-col">
+            {q.customer_name && <div className="qd-customer-company">{q.customer_name}</div>}
+            {q.customer_address && <div className="qd-customer-address">{q.customer_address}</div>}
+          </div>
+          {(q.billing_contact_name || q.billing_contact_email || q.billing_contact_phone) && (
+            <div className="qd-customer-col">
+              <div className="qd-customer-section-label">Billing Contact</div>
+              {q.billing_contact_name && <div className="qd-customer-field">{q.billing_contact_name}</div>}
+              {q.billing_contact_email && <div className="qd-customer-field">{q.billing_contact_email}</div>}
+              {q.billing_contact_phone && <div className="qd-customer-field">{q.billing_contact_phone}</div>}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Summary — flat, breathing numbers */}
       <div className="qd-summary">
         <div className="qd-summary-item">
