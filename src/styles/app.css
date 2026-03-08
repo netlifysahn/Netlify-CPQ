@@ -2,10 +2,10 @@
 /* Netlify brand palette. Dieter Rams restraint.              */
 
 :root {
-  /* Base — Netlify dark: teal-tinted, not generic dark */
-  --bg: #0C2A2A;
-  --bg-secondary: #0A2222;
-  --surface: #14302F;
+  /* Base — deep cool navy, no green tint */
+  --bg: #0f1117;
+  --bg-secondary: #13151f;
+  --surface: #1a1d2b;
   --border: rgba(255, 255, 255, 0.08);
   --border-default: rgba(255, 255, 255, 0.12);
 
@@ -424,7 +424,7 @@
 }
 
 .toolbar-picklist.toolbar-picklist option {
-  background: #14302F;
+  background: #1a1d2b;
   color: #ffffff;
 }
 
@@ -942,7 +942,7 @@
 }
 
 .modal {
-  background: #14302F;
+  background: #1a1d2b;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 24px 48px rgba(0, 0, 0, 0.35);
@@ -1057,7 +1057,7 @@
 }
 
 .field-select option {
-  background: #14302F;
+  background: #1a1d2b;
   color: #ffffff;
 }
 
@@ -1149,7 +1149,7 @@
   top: 1.5px;
   width: 5px;
   height: 9px;
-  border: solid #0C2A2A;
+  border: solid #0f1117;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
@@ -1348,7 +1348,7 @@
   top: calc(100% + 8px);
   width: 100%;
   z-index: 10;
-  background: #14302F;
+  background: #1a1d2b;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
   padding: 12px;
@@ -1475,7 +1475,7 @@
 /* ─── Entitlements JSON textarea ──────────────────────────── */
 
 .entitlements-json {
-  background: #0A2222 !important;
+  background: #13151f !important;
   border: 1px solid rgba(255, 255, 255, 0.06) !important;
   border-radius: 6px !important;
   font-family: var(--font-mono) !important;
@@ -1935,7 +1935,7 @@
   position: absolute;
   right: 0;
   top: calc(100% + 4px);
-  background: #14302F;
+  background: #1a1d2b;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
   padding: 4px;
