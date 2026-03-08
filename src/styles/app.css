@@ -1412,31 +1412,51 @@
 /* ─── Empty State ─────────────────────────────────────────── */
 
 .empty-state {
-  background: var(--surface);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: var(--radius-sm);
-  padding: var(--space-3xl) var(--space-xl);
+  padding: 80px var(--space-xl);
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .empty-state-icon {
-  font-size: 28px;
-  opacity: 0.25;
-  margin-bottom: var(--space-md);
-  color: var(--text-faint);
+  font-size: 40px;
+  margin-bottom: var(--space-lg);
+  color: #9ca3af;
 }
 
 .empty-state-title {
   font-family: var(--font-heading);
-  font-size: var(--text-body-size);
-  font-weight: 400;
-  color: var(--text-muted);
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
   margin-bottom: var(--space-xs);
 }
 
 .empty-state-text {
-  font-size: var(--text-body-sm);
-  color: var(--text-faint);
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: var(--space-lg);
+}
+
+.empty-state-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: var(--teal);
+  color: #ffffff;
+  transition: background 150ms ease;
+}
+
+.empty-state-cta:hover {
+  background: var(--teal-dark);
 }
 
 /* ─── Confirm Modal ───────────────────────────────────────── */
@@ -2679,11 +2699,7 @@
   color: #1B1A1C;
 }
 
-/* Empty state */
-[data-theme="light"] .empty-state {
-  background: #FFFFFF;
-  border-color: #E9EBED;
-}
+/* Empty state — no overrides needed, uses fixed colors */
 
 /* Entitlements JSON */
 [data-theme="light"] .entitlements-json {

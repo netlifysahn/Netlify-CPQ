@@ -348,6 +348,7 @@ export default function App() {
               onEdit={(product) => setModal({ type: 'product', data: product })}
               onDupe={dupeProd}
               onDelete={delProd}
+              onAdd={() => setModal({ type: 'product' })}
             />
           </>
         )}
@@ -383,6 +384,7 @@ export default function App() {
                   onOpen={setActivePricebookId}
                   onEdit={(pricebook) => setModal({ type: 'pricebook', data: pricebook })}
                   onDelete={deletePricebook}
+                  onAdd={() => setModal({ type: 'pricebook' })}
                 />
               </>
             )}

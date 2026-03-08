@@ -1,12 +1,18 @@
 import React from 'react';
 import { getPricebookStatus } from '../data/pricebooks';
 
-export default function PricebookTable({ pricebooks, onOpen, onEdit, onDelete }) {
+export default function PricebookTable({ pricebooks, onOpen, onEdit, onDelete, onAdd }) {
   if (pricebooks.length === 0) {
     return (
       <div className="empty-state">
         <div className="empty-state-icon"><i className="fa-solid fa-book" /></div>
-        <div className="empty-state-title">No pricebooks found. Create your first pricebook to get started.</div>
+        <div className="empty-state-title">No pricebooks yet</div>
+        <div className="empty-state-text">Create your first pricebook to get started</div>
+        {onAdd && (
+          <button className="empty-state-cta" onClick={onAdd}>
+            <i className="fa-solid fa-plus" /> Create Pricebook
+          </button>
+        )}
       </div>
     );
   }

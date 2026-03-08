@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TYPE_LABELS, calcBundleMonthlyTotal, fmtPrice, getProductCategory, isBundleProduct } from '../data/catalog';
 
-export default function ProductTable({ products, allProducts, onEdit, onDupe, onDelete }) {
+export default function ProductTable({ products, allProducts, onEdit, onDupe, onDelete, onAdd }) {
   const [expanded, setExpanded] = useState(null);
   const productMap = new Map((allProducts || products).map((product) => [product.id, product]));
 
@@ -9,8 +9,13 @@ export default function ProductTable({ products, allProducts, onEdit, onDupe, on
     return (
       <div className="empty-state">
         <div className="empty-state-icon"><i className="fa-solid fa-box" /></div>
-        <div className="empty-state-title">No products found</div>
+        <div className="empty-state-title">No products yet</div>
         <div className="empty-state-text">Add your first product to get started</div>
+        {onAdd && (
+          <button className="empty-state-cta" onClick={onAdd}>
+            <i className="fa-solid fa-plus" /> Add Product
+          </button>
+        )}
       </div>
     );
   }
