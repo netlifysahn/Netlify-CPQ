@@ -516,20 +516,22 @@
 }
 
 .btn-save {
-  padding: 10px 24px;
-  font-size: 13px;
+  padding: 8px 16px;
+  height: 36px;
+  font-size: 14px;
   border-radius: 6px;
   border: none;
-  background: #32E6E2;
-  color: #0C2A2A;
+  background: var(--teal);
+  color: #ffffff;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 500;
   font-family: var(--font-body);
-  transition: all var(--transition);
+  box-sizing: border-box;
+  transition: background 150ms ease;
 }
 
 .btn-save:hover {
-  background: #8EFBF7;
+  background: var(--teal-dark);
 }
 
 .btn-save:disabled {
@@ -919,10 +921,10 @@
 
 .modal {
   background: #14302F;
-  border: none;
-  border-radius: 12px;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
-  padding: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 24px 48px rgba(0, 0, 0, 0.35);
+  padding: 24px;
   width: 100%;
   max-width: 600px;
   max-height: 85vh;
@@ -932,41 +934,39 @@
 .modal-title {
   font-family: var(--font-heading);
   font-size: 20px;
-  font-weight: 400;
+  font-weight: 600;
   color: #ffffff;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 32px;
-  padding-top: 24px;
+  margin-top: 24px;
+  padding-top: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* ─── Form ────────────────────────────────────────────────── */
 
 .field {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .field-label {
   display: block;
   font-family: var(--font-body);
-  font-size: 10px;
-  font-weight: 600;
-  color: rgba(50, 230, 226, 0.5);
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 6px;
 }
 
 .field-input {
   width: 100%;
-  padding: 0 12px;
-  height: 42px;
+  padding: 8px 12px;
+  height: 36px;
   font-size: 14px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -975,11 +975,12 @@
   outline: none;
   font-family: var(--font-body);
   box-sizing: border-box;
-  transition: border-color var(--transition);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 .field-input:focus {
-  border-color: rgba(50, 230, 226, 0.35);
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.08);
 }
 
 .field-input::placeholder {
@@ -989,7 +990,7 @@
 
 .field-textarea {
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 12px;
   font-size: 14px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1000,11 +1001,12 @@
   min-height: 60px;
   resize: vertical;
   box-sizing: border-box;
-  transition: border-color var(--transition);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 .field-textarea:focus {
-  border-color: rgba(50, 230, 226, 0.35);
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.08);
 }
 
 .field-textarea::placeholder {
@@ -1015,7 +1017,7 @@
 .field-select {
   width: 100%;
   padding: 0 12px;
-  height: 42px;
+  height: 36px;
   font-size: 14px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1024,11 +1026,12 @@
   outline: none;
   font-family: var(--font-body);
   box-sizing: border-box;
-  transition: border-color var(--transition);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 .field-select:focus {
-  border-color: rgba(50, 230, 226, 0.35);
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.08);
 }
 
 .field-select option {
@@ -1039,26 +1042,26 @@
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 16px;
 }
 
 .grid-3 {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 20px;
+  gap: 16px;
 }
 
 .grid-4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  gap: 16px;
 }
 
 /* ─── Modal Section Dividers ──────────────────────────────── */
 
 .modal-section {
-  padding-top: 32px;
-  margin-top: 32px;
+  padding-top: 24px;
+  margin-top: 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -1070,12 +1073,14 @@
 
 .modal-section-label {
   font-family: var(--font-body);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  color: rgba(50, 230, 226, 0.5);
+  color: rgba(255, 255, 255, 0.40);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  margin-bottom: 20px;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1083,7 +1088,7 @@
 
 .modal-section-label i {
   font-size: 11px;
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
 /* ─── Checkbox ────────────────────────────────────────────── */
@@ -1634,16 +1639,18 @@
 /* ─── Modal Cancel Button ─────────────────────────────────── */
 
 .btn-cancel {
-  padding: 10px 20px;
-  font-size: 13px;
+  padding: 8px 16px;
+  height: 36px;
+  font-size: 14px;
   border-radius: 6px;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   background: transparent;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
   font-weight: 500;
   font-family: var(--font-body);
-  transition: color var(--transition);
+  box-sizing: border-box;
+  transition: color 150ms ease, border-color 150ms ease;
 }
 
 .btn-cancel:hover {
@@ -2560,8 +2567,8 @@
 
 [data-theme="light"] .modal {
   background: #FFFFFF;
-  border: 1px solid #E9EBED;
-  box-shadow: 0 24px 48px #1B1A1C1a;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 24px 48px #1B1A1C1a;
 }
 
 [data-theme="light"] .modal-title {
@@ -2569,23 +2576,23 @@
 }
 
 [data-theme="light"] .modal-actions {
-  border-top-color: #E9EBED;
+  border-top-color: #e5e7eb;
 }
 
-/* Form — white inputs, Neutral 300 borders */
+/* Form — white inputs, clean borders */
 [data-theme="light"] .field-label {
-  color: #778099;
+  color: #374151;
 }
 
 [data-theme="light"] .field-input {
   background: #FFFFFF;
-  border-color: #D1D5DA;
-  color: #1B1A1C;
+  border-color: #e5e7eb;
+  color: #111827;
 }
 
 [data-theme="light"] .field-input:focus {
   border-color: #05BDBA;
-  box-shadow: 0 0 0 3px #05BDBA1a;
+  box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.08);
 }
 
 [data-theme="light"] .field-input::placeholder {
@@ -2594,13 +2601,13 @@
 
 [data-theme="light"] .field-textarea {
   background: #FFFFFF;
-  border-color: #D1D5DA;
-  color: #1B1A1C;
+  border-color: #e5e7eb;
+  color: #111827;
 }
 
 [data-theme="light"] .field-textarea:focus {
   border-color: #05BDBA;
-  box-shadow: 0 0 0 3px #05BDBA1a;
+  box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.08);
 }
 
 [data-theme="light"] .field-textarea::placeholder {
@@ -2609,12 +2616,13 @@
 
 [data-theme="light"] .field-select {
   background: #FFFFFF;
-  border-color: #D1D5DA;
-  color: #1B1A1C;
+  border-color: #e5e7eb;
+  color: #111827;
 }
 
 [data-theme="light"] .field-select:focus {
   border-color: #05BDBA;
+  box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.08);
 }
 
 [data-theme="light"] .field-select option {
@@ -2624,11 +2632,12 @@
 
 /* Modal sections */
 [data-theme="light"] .modal-section {
-  border-top-color: #E9EBED;
+  border-top-color: #e5e7eb;
 }
 
 [data-theme="light"] .modal-section-label {
-  color: #778099;
+  color: #6b7280;
+  border-bottom-color: #e5e7eb;
 }
 
 /* Checkbox — Teal 400 when checked */
@@ -2783,11 +2792,13 @@
 
 /* Cancel button */
 [data-theme="light"] .btn-cancel {
-  color: #778099;
+  border-color: #e5e7eb;
+  color: #374151;
 }
 
 [data-theme="light"] .btn-cancel:hover {
-  color: #353A3E;
+  border-color: #d1d5da;
+  color: #111827;
 }
 
 /* Quote list */
