@@ -1,12 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './styles/app.css';
 import { PRODUCT_TYPES, genId, sortProductsByType } from './data/catalog';
+import { genQuoteNumber } from './data/quotes';
 import NetlifyLogo from './components/NetlifyLogo';
 import ProductTable from './components/ProductTable';
 import ProductModal from './components/ProductModal';
 import PricebookTable from './components/PricebookTable';
 import PricebookModal from './components/PricebookModal';
 import PricebookDetail from './components/PricebookDetail';
+import QuoteList from './components/QuoteList';
+import QuoteModal from './components/QuoteModal';
+import QuoteDetail from './components/QuoteDetail';
 import Confirm from './components/Confirm';
 
 const NAV_ITEMS = [
@@ -19,7 +23,6 @@ const NAV_ITEMS = [
 
 const COMING_SOON_META = {
   scope: { icon: 'fa-bullseye', title: 'Scope' },
-  quotes: { icon: 'fa-file-invoice-dollar', title: 'Quotes' },
   orders: { icon: 'fa-cart-shopping', title: 'Orders' },
 };
 
@@ -27,21 +30,25 @@ export default function App() {
   const [page, setPage] = useState('products');
   const [products, setProducts] = useState([]);
   const [pricebooks, setPricebooks] = useState([]);
+  const [quotes, setQuotes] = useState([]);
   const [search, setSearch] = useState('');
   const [pricebookSearch, setPricebookSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [activePricebookId, setActivePricebookId] = useState(null);
   const [modal, setModal] = useState(null);
   const [confirm, setConfirm] = useState(null);
+  const [activeQuote, setActiveQuote] = useState(null);
   const hasLoadedCatalog = useRef(false);
+  const hasLoadedQuotes = useRef(false);
   const skipNextPersist = useRef(false);
+  const skipNextPersistQuotes = useRef(false);
 
+  // Catalog persistence (products + pricebooks)
   const persistCatalog = useCallback(async (nextProducts, nextPricebooks) => {
     await fetch('/api/catalog', {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ products: nextProducts, pricebooks: nextPricebooks }),
     });
   }, []);
@@ -50,14 +57,9 @@ export default function App() {
     const loadCatalog = async () => {
       try {
         const res = await fetch('/api/catalog');
-
-        if (!res.ok) {
-          throw new Error('Failed to load catalog');
-        }
-
+        if (!res.ok) throw new Error('Failed to load catalog');
         const loadedCatalog = await res.json();
         skipNextPersist.current = true;
-
         if (Array.isArray(loadedCatalog)) {
           setProducts(loadedCatalog);
           setPricebooks([]);
@@ -73,19 +75,49 @@ export default function App() {
         hasLoadedCatalog.current = true;
       }
     };
-
     loadCatalog();
   }, []);
 
   useEffect(() => {
     if (!hasLoadedCatalog.current) return;
-    if (skipNextPersist.current) {
-      skipNextPersist.current = false;
-      return;
-    }
+    if (skipNextPersist.current) { skipNextPersist.current = false; return; }
     persistCatalog(products, pricebooks).catch(() => {});
   }, [products, pricebooks, persistCatalog]);
 
+  // Quotes persistence
+  const persistQuotes = useCallback(async (nextQuotes) => {
+    await fetch('/api/quotes', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(nextQuotes),
+    });
+  }, []);
+
+  useEffect(() => {
+    const loadQuotes = async () => {
+      try {
+        const res = await fetch('/api/quotes');
+        if (!res.ok) throw new Error('Failed to load quotes');
+        const loaded = await res.json();
+        skipNextPersistQuotes.current = true;
+        setQuotes(Array.isArray(loaded) ? loaded : []);
+      } catch {
+        skipNextPersistQuotes.current = true;
+        setQuotes([]);
+      } finally {
+        hasLoadedQuotes.current = true;
+      }
+    };
+    loadQuotes();
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedQuotes.current) return;
+    if (skipNextPersistQuotes.current) { skipNextPersistQuotes.current = false; return; }
+    persistQuotes(quotes).catch(() => {});
+  }, [quotes, persistQuotes]);
+
+  // Product CRUD
   const saveProd = (p) => {
     setProducts((prev) => {
       const i = prev.findIndex((x) => x.id === p.id);
@@ -115,6 +147,7 @@ export default function App() {
       { ...p, id: genId(), name: p.name + ' (copy)', sku: p.sku + '-COPY', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
     ]);
 
+  // Pricebook CRUD
   const savePricebook = (pricebook) => {
     setPricebooks((prev) => {
       const next = [...prev];
@@ -157,6 +190,49 @@ export default function App() {
     });
   };
 
+  // Quote CRUD
+  const saveQuote = (q) => {
+    setQuotes((prev) => {
+      const i = prev.findIndex((x) => x.id === q.id);
+      return i >= 0 ? prev.map((x) => (x.id === q.id ? { ...q, updated_at: new Date().toISOString() } : x)) : [...prev, q];
+    });
+    setModal(null);
+  };
+
+  const saveQuoteFromDetail = (q) => {
+    setQuotes((prev) => {
+      const i = prev.findIndex((x) => x.id === q.id);
+      return i >= 0 ? prev.map((x) => (x.id === q.id ? q : x)) : [...prev, q];
+    });
+    setActiveQuote(q);
+  };
+
+  const delQuote = (id) =>
+    setConfirm({
+      msg: 'Delete this quote? This action cannot be undone.',
+      fn: () => {
+        setQuotes((p) => p.filter((x) => x.id !== id));
+        setActiveQuote(null);
+        setConfirm(null);
+      },
+    });
+
+  const dupeQuote = (q) => {
+    const newQ = {
+      ...q,
+      id: genId(),
+      quote_number: genQuoteNumber(quotes),
+      name: q.name + ' (copy)',
+      status: 'draft',
+      line_items: q.line_items.map((l) => ({ ...l, id: genId() })),
+      groups: q.groups.map((g) => ({ ...g, id: genId() })),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    setQuotes((prev) => [...prev, newQ]);
+  };
+
+  // Filters
   const filteredProducts = useMemo(
     () =>
       sortProductsByType(
@@ -182,12 +258,22 @@ export default function App() {
 
   const types = ['All', ...PRODUCT_TYPES.filter((t) => products.some((p) => p.type === t))];
 
+  const fq = quotes.filter((q) => {
+    if (statusFilter !== 'All' && q.status !== statusFilter) return false;
+    if (search && !q.name.toLowerCase().includes(search.toLowerCase()) && !(q.quote_number || '').toLowerCase().includes(search.toLowerCase()) && !(q.customer_name || '').toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const statuses = ['All', ...['draft', 'submitted', 'won', 'lost', 'cancelled'].filter((s) => quotes.some((q) => q.status === s))];
+
   const handleNavClick = (nextPage) => {
     setPage(nextPage);
     setSearch('');
     setPricebookSearch('');
     setTypeFilter('All');
+    setStatusFilter('All');
     setActivePricebookId(null);
+    setActiveQuote(null);
   };
 
   return (
@@ -212,6 +298,7 @@ export default function App() {
       </nav>
 
       <main className="main-content">
+        {/* Products Page */}
         {page === 'products' && (
           <>
             <div className="page-header">
@@ -255,6 +342,7 @@ export default function App() {
           </>
         )}
 
+        {/* Pricebooks Page */}
         {page === 'pricebooks' && (
           <>
             {!selectedPricebook && (
@@ -300,6 +388,63 @@ export default function App() {
           </>
         )}
 
+        {/* Quotes Page */}
+        {page === 'quotes' && !activeQuote && (
+          <>
+            <div className="page-header">
+              <div className="page-label">Deal Management</div>
+              <h1 className="page-title">Quotes</h1>
+              <p className="page-subtitle">Create and manage quotes for your customers</p>
+            </div>
+
+            <div className="toolbar">
+              <div className="search-wrap">
+                <i className="fa-solid fa-magnifying-glass" />
+                <input
+                  className="search-input"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search quotes..."
+                />
+              </div>
+              {statuses.map((s) => (
+                <button
+                  key={s}
+                  className={`filter-btn${statusFilter === s ? ' active' : ''}`}
+                  onClick={() => setStatusFilter(s)}
+                >
+                  {s === 'All' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+                </button>
+              ))}
+              <button className="btn-primary" onClick={() => setModal({ type: 'quote' })}>
+                <i className="fa-solid fa-plus" />
+                New Quote
+              </button>
+            </div>
+
+            <QuoteList
+              quotes={fq}
+              onNew={() => setModal({ type: 'quote' })}
+              onOpen={(q) => setActiveQuote(q)}
+              onDupe={dupeQuote}
+              onDelete={delQuote}
+            />
+          </>
+        )}
+
+        {/* Quote Detail */}
+        {page === 'quotes' && activeQuote && (
+          <QuoteDetail
+            key={activeQuote.id}
+            quote={activeQuote}
+            products={products}
+            onSave={saveQuoteFromDetail}
+            onBack={() => setActiveQuote(null)}
+            onDelete={delQuote}
+          />
+        )}
+
+        {/* Coming Soon */}
         {COMING_SOON_META[page] && (
           <div className="coming-soon">
             <div className="coming-soon-icon">
@@ -316,6 +461,14 @@ export default function App() {
       )}
       {modal?.type === 'pricebook' && (
         <PricebookModal pricebook={modal.data} onSave={savePricebook} onClose={() => setModal(null)} />
+      )}
+      {modal?.type === 'quote' && (
+        <QuoteModal
+          quote={modal.data}
+          existingQuotes={quotes}
+          onSave={(q) => { saveQuote(q); setActiveQuote(q); }}
+          onClose={() => setModal(null)}
+        />
       )}
       {confirm && <Confirm msg={confirm.msg} onYes={confirm.fn} onNo={() => setConfirm(null)} />}
     </div>

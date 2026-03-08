@@ -1256,15 +1256,29 @@
   color: var(--text-faint);
 }
 
+/* ─── Pricebook Detail ───────────────────────────────────── */
+
 .pricebook-detail {
   width: 100%;
 }
 
 .back-btn {
-  margin-bottom: var(--space-xl);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: var(--space-lg);
+  transition: color var(--transition);
+}
+
+.back-btn:hover {
+  color: var(--text-strong);
 }
 
 .tabs-row {
@@ -1319,6 +1333,472 @@
 
 .btn-cancel:hover {
   color: rgba(255, 255, 255, 0.7);
+}
+
+/* ─── Quote Status Badges ────────────────────────────────── */
+
+.status-grey {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.50);
+}
+
+.status-blue {
+  background: rgba(92, 187, 246, 0.10);
+  color: rgba(92, 187, 246, 0.70);
+}
+
+.status-green {
+  background: rgba(52, 211, 153, 0.10);
+  color: rgba(52, 211, 153, 0.70);
+}
+
+.status-red {
+  background: rgba(248, 113, 113, 0.10);
+  color: rgba(248, 113, 113, 0.70);
+}
+
+.status-muted {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.30);
+}
+
+/* ─── Quote List ─────────────────────────────────────────── */
+
+.cell-quote-number {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.50);
+}
+
+.cell-customer {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.60);
+}
+
+.cell-term {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* ─── Quote Detail ───────────────────────────────────────── */
+
+.quote-detail {
+  max-width: 100%;
+}
+
+.detail-header {
+  margin-bottom: var(--space-xl);
+}
+
+.detail-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-lg);
+}
+
+.detail-quote-number {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-xs);
+}
+
+.detail-title {
+  font-family: var(--font-heading);
+  font-size: var(--text-page-title);
+  font-weight: 300;
+  color: var(--text-strong);
+  letter-spacing: var(--letter-spacing-heading);
+  margin-bottom: var(--space-sm);
+}
+
+.detail-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.detail-actions {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.btn-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all var(--transition);
+}
+
+.btn-status-blue {
+  background: rgba(92, 187, 246, 0.10);
+  color: rgba(92, 187, 246, 0.80);
+}
+
+.btn-status-blue:hover {
+  background: rgba(92, 187, 246, 0.18);
+}
+
+.btn-status-green {
+  background: rgba(52, 211, 153, 0.10);
+  color: rgba(52, 211, 153, 0.80);
+}
+
+.btn-status-green:hover {
+  background: rgba(52, 211, 153, 0.18);
+}
+
+.btn-status-red {
+  background: rgba(248, 113, 113, 0.10);
+  color: rgba(248, 113, 113, 0.80);
+}
+
+.btn-status-red:hover {
+  background: rgba(248, 113, 113, 0.18);
+}
+
+.btn-status-muted {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.40);
+}
+
+.btn-status-muted:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.60);
+}
+
+/* ─── Summary Cards ──────────────────────────────────────── */
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.summary-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-lg);
+}
+
+.summary-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  font-weight: 500;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-sm);
+}
+
+.summary-value {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 300;
+  color: var(--text-strong);
+  letter-spacing: -0.02em;
+}
+
+/* ─── Line Editor ────────────────────────────────────────── */
+
+.line-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.line-editor-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.line-editor-actions {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.inline-group-add {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.inline-group-add .field-input {
+  width: 160px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.inline-group-add .btn-save,
+.inline-group-add .btn-secondary {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.line-editor-table-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.line-table th {
+  font-size: 9px;
+}
+
+.line-table td {
+  height: 48px;
+}
+
+/* ─── Inline Editing ─────────────────────────────────────── */
+
+.cell-editable {
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 3px;
+  transition: background var(--transition);
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-strong);
+}
+
+.cell-editable:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cell-locked {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-faint);
+  padding: 4px 6px;
+}
+
+.inline-edit {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+  color: var(--text-strong);
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 4px 6px;
+  width: 80px;
+  outline: none;
+}
+
+.inline-edit:focus {
+  border-color: var(--teal);
+}
+
+/* ─── Line Groups ────────────────────────────────────────── */
+
+.line-group {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.line-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px var(--space-md);
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--border);
+}
+
+.line-group-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.line-group-name i {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.line-group-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.line-group-subtotal {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.line-group-empty {
+  padding: var(--space-lg);
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.line-group .data-table {
+  margin: 0;
+}
+
+.line-group .data-table th:first-child,
+.line-group .data-table td:first-child {
+  padding-left: var(--space-md);
+}
+
+.group-assign {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 10px;
+  padding: 2px 4px;
+  cursor: pointer;
+  outline: none;
+}
+
+.group-assign option {
+  background: var(--bg-secondary);
+  color: var(--text-strong);
+}
+
+/* ─── Product Picker ─────────────────────────────────────── */
+
+.picker-modal {
+  max-width: 480px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.picker-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.picker-empty {
+  text-align: center;
+  padding: var(--space-xl);
+  color: var(--text-faint);
+  font-size: 13px;
+}
+
+.picker-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: var(--font-body);
+  transition: background var(--transition);
+}
+
+.picker-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.picker-item-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.picker-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.picker-item-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.picker-item-sku {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.picker-item-price {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ─── Quote Info Section ─────────────────────────────────── */
+
+.quote-info-section {
+  margin-top: var(--space-xl);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border);
+}
+
+.quote-info-row {
+  display: flex;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+  font-size: 13px;
+  color: var(--text-body);
+}
+
+.quote-info-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  min-width: 120px;
+  flex-shrink: 0;
 }
 
 /* ─── Scrollbar ───────────────────────────────────────────── */
