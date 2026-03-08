@@ -421,7 +421,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               </div>
             </div>
             <div className="qd-actions">
-              <button className="qd-status-btn qd-edit-lines-btn" onClick={enterEditMode}>
+              <button className="qd-status-btn qd-edit-lines-btn" onClick={enterEditMode} style={{ background: '#05BDBA', color: '#fff', fontWeight: 600, border: 'none', borderRadius: '6px', padding: '8px 16px', height: '36px', cursor: 'pointer' }}>
                 <i className="fa-solid fa-pen-to-square" /> Edit Lines
               </button>
               {statusOptions().map((s) => (
