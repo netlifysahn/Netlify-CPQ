@@ -286,12 +286,13 @@
   min-width: 180px;
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  position: relative;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 6px;
-  min-height: 40px;
-  padding: 0 12px;
+  height: 36px;
+  padding: 0 12px 0 36px;
+  box-sizing: border-box;
   transition: border-color var(--transition);
 }
 
@@ -300,8 +301,13 @@
 }
 
 .search-wrap i {
-  color: var(--text-faint);
-  font-size: 12px;
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 13px;
+  pointer-events: none;
 }
 
 .search-input {
@@ -351,18 +357,19 @@
   background-color: white;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
-  padding: 0 34px 0 12px;
-  height: 40px;
-  font-size: 13px;
+  padding: 0 28px 0 12px;
+  height: 36px;
+  font-size: 14px;
   color: #374151;
   cursor: pointer;
   line-height: 1.2;
   font-family: var(--font-body);
   box-sizing: border-box;
+  transition: border-color 150ms ease;
 }
 
 .toolbar-picklist:focus {
-  border-color: #e5e7eb;
+  border-color: var(--teal);
   outline: none;
 }
 
@@ -381,20 +388,20 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #9DA7B2;
+  color: #9ca3af;
   line-height: 1;
   pointer-events: none;
 }
 
 .toolbar-select-icon i {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
 }
 
 .btn-primary {
   padding: 0 16px;
-  min-height: 40px;
-  font-size: 13px;
+  height: 36px;
+  font-size: 14px;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: transparent;
@@ -405,6 +412,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  box-sizing: border-box;
   transition: all var(--transition);
 }
 
@@ -2200,10 +2208,10 @@
   color: #778099;
 }
 
-/* Search — white bg, Neutral 300 border */
+/* Search — white bg, matching border */
 [data-theme="light"] .search-wrap {
   background: #FFFFFF;
-  border-color: #D1D5DA;
+  border-color: #e5e7eb;
 }
 
 [data-theme="light"] .search-wrap:focus-within {
@@ -2211,15 +2219,15 @@
 }
 
 [data-theme="light"] .search-wrap i {
-  color: #9DA7B2;
+  color: #9ca3af;
 }
 
 [data-theme="light"] .search-input {
-  color: #1B1A1C;
+  color: #374151;
 }
 
 [data-theme="light"] .search-input::placeholder {
-  color: #9DA7B2;
+  color: #9ca3af;
 }
 
 /* Filter buttons */
