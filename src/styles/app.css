@@ -2448,18 +2448,8 @@
   font-weight: 600;
 }
 
-[data-theme="light"] .toolbar-picklist {
-  background-color: #FFFFFF;
-  border-color: #e5e7eb;
-  color: #374151;
-}
-
 [data-theme="light"] .toolbar-picklist:focus {
   border-color: #e5e7eb;
-}
-
-[data-theme="light"] .toolbar-select-icon {
-  color: #9DA7B2;
 }
 
 /* Buttons — Neutral 000 bg, Neutral 300 border, Neutral 700 text */
