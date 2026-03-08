@@ -132,7 +132,6 @@
   font-family: var(--font-body);
   width: 100%;
   text-align: left;
-  transition: all var(--transition);
   border-left: 3px solid transparent;
 }
 
@@ -572,10 +571,6 @@
   text-align: right;
 }
 
-.data-table tbody tr {
-  transition: background var(--transition);
-}
-
 .data-table tbody tr:hover {
   background: rgba(255, 255, 255, 0.02);
 }
@@ -759,7 +754,6 @@
   cursor: pointer;
   padding: 4px;
   font-size: 13px;
-  transition: color var(--transition);
 }
 
 .data-table tbody tr:hover .action-btn {
@@ -2956,4 +2950,148 @@
 
 [data-theme="light"] .main-content.section-pricebooks .name-link:hover {
   color: var(--section-accent);
+}
+
+/* ─── Motion & Micro-interactions ────────────────────────── */
+
+/* 1. Table rows — smooth hover bg, action icons fade in */
+.data-table tbody tr {
+  transition: background 150ms ease;
+}
+
+.data-table tbody tr .actions-group .action-btn {
+  opacity: 0;
+  transition: opacity 150ms ease, color 150ms ease;
+}
+
+.data-table tbody tr:hover .actions-group .action-btn {
+  opacity: 1;
+}
+
+.data-table tbody tr .actions-group .action-btn.delete:hover {
+  color: var(--red);
+}
+
+/* 2. Page load — stagger rows in */
+@keyframes row-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.data-table tbody tr {
+  animation: row-enter 200ms ease-out both;
+}
+
+.data-table tbody tr:nth-child(1) { animation-delay: 0ms; }
+.data-table tbody tr:nth-child(2) { animation-delay: 40ms; }
+.data-table tbody tr:nth-child(3) { animation-delay: 80ms; }
+.data-table tbody tr:nth-child(4) { animation-delay: 120ms; }
+.data-table tbody tr:nth-child(5) { animation-delay: 160ms; }
+.data-table tbody tr:nth-child(6) { animation-delay: 200ms; }
+.data-table tbody tr:nth-child(7) { animation-delay: 240ms; }
+.data-table tbody tr:nth-child(8) { animation-delay: 280ms; }
+.data-table tbody tr:nth-child(9) { animation-delay: 320ms; }
+.data-table tbody tr:nth-child(10) { animation-delay: 360ms; }
+.data-table tbody tr:nth-child(n+11) { animation-delay: 400ms; }
+
+/* 3. Buttons — subtle scale on click */
+.btn-primary,
+.btn-secondary,
+.btn-save,
+.btn-destructive,
+.btn-product-add,
+.qd-status-btn,
+.filter-btn,
+.back-btn,
+.theme-toggle-btn,
+.qd-new-group-link {
+  transition: all 150ms ease;
+}
+
+.btn-primary:active,
+.btn-secondary:active,
+.btn-save:active:not(:disabled),
+.btn-destructive:active,
+.btn-product-add:active,
+.qd-status-btn:active,
+.filter-btn:active,
+.back-btn:active {
+  transform: scale(0.97);
+  transition: transform 100ms ease;
+}
+
+/* 4. Form inputs — smooth border focus */
+.field-input,
+.field-textarea,
+.field-select,
+.inline-edit,
+.group-assign,
+.search-wrap {
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+/* 5. Modal — ease in with opacity + slide */
+@keyframes modal-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes overlay-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-overlay {
+  animation: overlay-enter 200ms ease both;
+}
+
+.modal {
+  animation: modal-enter 200ms ease both;
+}
+
+/* 6. Nav item — crossfade highlight */
+.sidebar-item {
+  transition: color 150ms ease, background 150ms ease, border-left-color 150ms ease;
+}
+
+/* 7. Active status dot — subtle pulse */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.status-dot.active {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Dropdown menus — slide in */
+@keyframes dropdown-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.qd-more-menu {
+  animation: dropdown-enter 150ms ease both;
+}
+
+.bundle-picker {
+  animation: dropdown-enter 150ms ease both;
 }
