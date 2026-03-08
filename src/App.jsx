@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import './styles/app.css';
-import { PRODUCT_TYPES, genId, sortProductsByType } from './data/catalog';
+import { PRODUCT_TYPES, TYPE_LABELS, genId, getProductCategory, sortProductsByType } from './data/catalog';
 import { genQuoteNumber } from './data/quotes';
 import NetlifyLogo from './components/NetlifyLogo';
 import ProductTable from './components/ProductTable';
@@ -16,7 +16,7 @@ import Confirm from './components/Confirm';
 const NAV_ITEMS = [
   { key: 'products', label: 'Products', icon: 'fa-box' },
   { key: 'pricebooks', label: 'Pricebooks', icon: 'fa-book' },
-  { key: 'scope', label: 'Scope (coming soon)', icon: 'fa-bullseye' },
+  { key: 'scope', label: 'Scope', icon: 'fa-bullseye' },
   { key: 'quotes', label: 'Quotes', icon: 'fa-file-invoice-dollar' },
   { key: 'orders', label: 'Orders', icon: 'fa-cart-shopping' },
 ];
@@ -29,7 +29,7 @@ const COMING_SOON_META = {
 function useTheme() {
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('deal-studio-theme');
-    return saved || 'dark';
+    return saved || 'light';
   });
 
   useEffect(() => {
@@ -60,78 +60,53 @@ export default function App() {
   const skipNextPersist = useRef(false);
   const skipNextPersistQuotes = useRef(false);
 
-  // Catalog persistence (products + pricebooks)
-  const persistCatalog = useCallback(async (nextProducts, nextPricebooks) => {
-    await fetch('/api/catalog', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ products: nextProducts, pricebooks: nextPricebooks }),
-    });
-  }, []);
-
+  // Catalog persistence (products + pricebooks) via localStorage
   useEffect(() => {
-    const loadCatalog = async () => {
-      try {
-        const res = await fetch('/api/catalog');
-        if (!res.ok) throw new Error('Failed to load catalog');
-        const loadedCatalog = await res.json();
-        skipNextPersist.current = true;
-        if (Array.isArray(loadedCatalog)) {
-          setProducts(loadedCatalog);
-          setPricebooks([]);
+    try {
+      const raw = localStorage.getItem('deal-studio-catalog');
+      if (raw) {
+        const loaded = JSON.parse(raw);
+        if (Array.isArray(loaded)) {
+          skipNextPersist.current = true;
+          setProducts(loaded);
         } else {
-          setProducts(Array.isArray(loadedCatalog?.products) ? loadedCatalog.products : []);
-          setPricebooks(Array.isArray(loadedCatalog?.pricebooks) ? loadedCatalog.pricebooks : []);
+          skipNextPersist.current = true;
+          setProducts(Array.isArray(loaded?.products) ? loaded.products : []);
+          setPricebooks(Array.isArray(loaded?.pricebooks) ? loaded.pricebooks : []);
         }
-      } catch {
-        skipNextPersist.current = true;
-        setProducts([]);
-        setPricebooks([]);
-      } finally {
-        hasLoadedCatalog.current = true;
       }
-    };
-    loadCatalog();
+    } catch { /* ignore corrupt data */ }
+    hasLoadedCatalog.current = true;
   }, []);
 
   useEffect(() => {
     if (!hasLoadedCatalog.current) return;
     if (skipNextPersist.current) { skipNextPersist.current = false; return; }
-    persistCatalog(products, pricebooks).catch(() => {});
-  }, [products, pricebooks, persistCatalog]);
+    try {
+      localStorage.setItem('deal-studio-catalog', JSON.stringify({ products, pricebooks }));
+    } catch { /* ignore quota errors */ }
+  }, [products, pricebooks]);
 
-  // Quotes persistence
-  const persistQuotes = useCallback(async (nextQuotes) => {
-    await fetch('/api/quotes', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(nextQuotes),
-    });
-  }, []);
-
+  // Quotes persistence via localStorage
   useEffect(() => {
-    const loadQuotes = async () => {
-      try {
-        const res = await fetch('/api/quotes');
-        if (!res.ok) throw new Error('Failed to load quotes');
-        const loaded = await res.json();
+    try {
+      const raw = localStorage.getItem('deal-studio-quotes');
+      if (raw) {
+        const loaded = JSON.parse(raw);
         skipNextPersistQuotes.current = true;
         setQuotes(Array.isArray(loaded) ? loaded : []);
-      } catch {
-        skipNextPersistQuotes.current = true;
-        setQuotes([]);
-      } finally {
-        hasLoadedQuotes.current = true;
       }
-    };
-    loadQuotes();
+    } catch { /* ignore corrupt data */ }
+    hasLoadedQuotes.current = true;
   }, []);
 
   useEffect(() => {
     if (!hasLoadedQuotes.current) return;
     if (skipNextPersistQuotes.current) { skipNextPersistQuotes.current = false; return; }
-    persistQuotes(quotes).catch(() => {});
-  }, [quotes, persistQuotes]);
+    try {
+      localStorage.setItem('deal-studio-quotes', JSON.stringify(quotes));
+    } catch { /* ignore quota errors */ }
+  }, [quotes]);
 
   // Product CRUD
   const saveProd = (p) => {
@@ -253,13 +228,29 @@ export default function App() {
     () =>
       sortProductsByType(
         products.filter((p) => {
-          if (typeFilter !== 'All' && p.type !== typeFilter) return false;
+          if (typeFilter !== 'All' && getProductCategory(p) !== typeFilter) return false;
           if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.sku.toLowerCase().includes(search.toLowerCase())) return false;
           return true;
         }),
       ),
     [products, search, typeFilter],
   );
+
+  const productTypePicklist = useMemo(() => {
+    const categories = [...PRODUCT_TYPES];
+    const seen = new Set(categories);
+    products.forEach((product) => {
+      const category = getProductCategory(product);
+      if (!seen.has(category)) {
+        seen.add(category);
+        categories.push(category);
+      }
+    });
+    return [
+      { value: 'All', label: 'All' },
+      ...categories.map((category) => ({ value: category, label: TYPE_LABELS[category] || category })),
+    ];
+  }, [products]);
 
   const filteredPricebooks = useMemo(() => {
     if (!pricebookSearch.trim()) return pricebooks;
@@ -271,8 +262,6 @@ export default function App() {
     () => pricebooks.find((pricebook) => pricebook.id === activePricebookId) || null,
     [pricebooks, activePricebookId],
   );
-
-  const types = ['All', ...PRODUCT_TYPES.filter((t) => products.some((p) => p.type === t))];
 
   const fq = quotes.filter((q) => {
     if (statusFilter !== 'All' && q.status !== statusFilter) return false;
@@ -296,14 +285,14 @@ export default function App() {
     <div className="app-layout">
       <nav className="sidebar">
         <div className="sidebar-brand">
-          <NetlifyLogo size={34} />
+          <NetlifyLogo size={34} theme={theme} />
           <span className="sidebar-brand-text">Deal Studio</span>
         </div>
         <div className="sidebar-nav">
           {NAV_ITEMS.map((item) => (
             <button
               key={item.key}
-              className={`sidebar-item${page === item.key ? ' active' : ''}`}
+              className={`sidebar-item section-${item.key}${page === item.key ? ' active' : ''}`}
               onClick={() => handleNavClick(item.key)}
             >
               <i className={`fa-solid ${item.icon}`} />
@@ -319,14 +308,13 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="main-content">
+      <main className={`main-content section-${page}`}>
         {/* Products Page */}
         {page === 'products' && (
           <>
             <div className="page-header">
               <div className="page-label">Product Catalog</div>
               <h1 className="page-title">Products</h1>
-              <p className="page-subtitle">Define and manage your product catalog for quotes and orders</p>
             </div>
 
             <div className="toolbar">
@@ -339,18 +327,18 @@ export default function App() {
                   placeholder="Search products..."
                 />
               </div>
-              {types.map((t) => (
-                <button
-                  key={t}
-                  className={`filter-btn${typeFilter === t ? ' active' : ''}`}
-                  onClick={() => setTypeFilter(t)}
-                >
-                  {t === 'All' ? 'All' : t.charAt(0).toUpperCase() + t.slice(1)}
-                </button>
-              ))}
-              <button className="btn-primary" onClick={() => setModal({ type: 'product' })}>
-                <i className="fa-solid fa-plus" />
-                + Add Product
+              <div className="toolbar-select-wrap">
+                <select className="field-select toolbar-picklist" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+                  {productTypePicklist.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+                <span className="toolbar-select-icon" aria-hidden="true">
+                  <i className="fa-solid fa-chevron-down" />
+                </span>
+              </div>
+              <button className="btn-primary btn-product-add" onClick={() => setModal({ type: 'product' })}>
+                Add Product
               </button>
             </div>
 
@@ -372,7 +360,6 @@ export default function App() {
                 <div className="page-header">
                   <div className="page-label">Catalog Pricing</div>
                   <h1 className="page-title">Pricebooks</h1>
-                  <p className="page-subtitle">Manage pricing collections for products, territories, and deal motions</p>
                 </div>
 
                 <div className="toolbar">
@@ -416,7 +403,6 @@ export default function App() {
             <div className="page-header">
               <div className="page-label">Deal Management</div>
               <h1 className="page-title">Quotes</h1>
-              <p className="page-subtitle">Create and manage quotes for your customers</p>
             </div>
 
             <div className="toolbar">
