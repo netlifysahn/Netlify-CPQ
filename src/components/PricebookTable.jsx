@@ -18,52 +18,60 @@ export default function PricebookTable({ pricebooks, onOpen, onEdit, onDelete, o
   }
 
   return (
-    <table className="data-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Description</th>
-          <th>Products</th>
-          <th>Currency</th>
-          <th>Status</th>
-          <th className="col-actions">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {pricebooks.map((pricebook) => (
-          <tr key={pricebook.id}>
-            <td>
-              <button className="name-link" onClick={() => onOpen(pricebook.id)}>
-                {pricebook.name}
-              </button>
-            </td>
-            <td>
-              <div className="cell-description cell-description-static">
-                {pricebook.description || '—'}
-              </div>
-            </td>
-            <td>
-              <span className="status-label">{Array.isArray(pricebook.entries) ? pricebook.entries.length : 0}</span>
-            </td>
-            <td>
-              <span className="cell-sku">{pricebook.currency || 'USD'}</span>
-            </td>
-            <td>
-              <span className={`status-badge${pricebook.active ? ' active' : ''}`}>{getPricebookStatus(pricebook)}</span>
-            </td>
-            <td className="col-actions">
-              <div className="actions-group">
-                <button className="action-btn edit" title="Edit" onClick={() => onEdit(pricebook)}>
-                  <i className="fa-solid fa-pen-to-square" />
-                </button>
-                <button className="action-btn delete" title="Delete" onClick={() => onDelete(pricebook.id)}>
-                  <i className="fa-solid fa-trash-can" />
-                </button>
-              </div>
-            </td>
+    <div className="table-card">
+      <table className="data-table data-table-pricebooks">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Products</th>
+            <th>Currency</th>
+            <th>Status</th>
+            <th className="col-actions">Actions</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {pricebooks.map((pricebook) => (
+            <tr key={pricebook.id}>
+              <td>
+                <button className="name-link" onClick={() => onOpen(pricebook.id)}>
+                  {pricebook.name}
+                </button>
+              </td>
+              <td>
+                <div className="cell-description cell-description-static">
+                  {pricebook.description || '—'}
+                </div>
+              </td>
+              <td>
+                <span className="cell-count">{Array.isArray(pricebook.entries) ? pricebook.entries.length : 0}</span>
+              </td>
+              <td>
+                <span className="cell-sku">{pricebook.currency || 'USD'}</span>
+              </td>
+              <td>
+                <div className="cell-status">
+                  <span className={`status-dot ${pricebook.active ? 'active' : 'inactive'}`} />
+                  <span className="status-label">
+                    {pricebook.active ? 'Active' : 'Inactive'}
+                    {pricebook.active && pricebook.is_default && <span className="status-default-tag"> · Default</span>}
+                  </span>
+                </div>
+              </td>
+              <td className="col-actions">
+                <div className="actions-group">
+                  <button className="action-btn edit" title="Edit" onClick={() => onEdit(pricebook)}>
+                    <i className="fa-solid fa-pen-to-square" />
+                  </button>
+                  <button className="action-btn delete" title="Delete" onClick={() => onDelete(pricebook.id)}>
+                    <i className="fa-solid fa-trash-can" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

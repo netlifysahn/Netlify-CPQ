@@ -587,6 +587,57 @@
   color: #9ca3af;
 }
 
+/* ─── Pricebooks Table — matches Products card style ─────── */
+
+.data-table.data-table-pricebooks th,
+.data-table.data-table-pricebooks td {
+  padding: 16px 24px;
+  height: auto;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.data-table.data-table-pricebooks th {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+}
+
+.data-table-pricebooks .name-link {
+  font-weight: 600;
+  color: #111827;
+}
+
+.data-table-pricebooks .cell-description {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.data-table-pricebooks .cell-count {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: #374151;
+}
+
+.data-table-pricebooks .cell-sku {
+  color: #9ca3af;
+}
+
+.data-table-pricebooks .status-label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.data-table-pricebooks .status-dot.active + .status-label {
+  color: #059669;
+}
+
+.status-default-tag {
+  font-size: 11px;
+  font-weight: 400;
+  color: #9ca3af;
+}
+
 .data-table th {
   text-align: left;
   padding: 12px 0;

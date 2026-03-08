@@ -373,9 +373,8 @@ export default function App() {
                       placeholder="Search pricebooks..."
                     />
                   </div>
-                  <button className="btn-primary" onClick={() => setModal({ type: 'pricebook' })}>
-                    <i className="fa-solid fa-plus" />
-                    + Create Pricebook
+                  <button className="btn-primary btn-product-add" onClick={() => setModal({ type: 'pricebook' })}>
+                    Create Pricebook
                   </button>
                 </div>
 
