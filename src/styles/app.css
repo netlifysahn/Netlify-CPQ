@@ -350,7 +350,7 @@
   color: var(--text-strong);
 }
 
-.toolbar-picklist {
+.toolbar-picklist.toolbar-picklist {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -370,7 +370,7 @@
   transition: border-color 150ms ease;
 }
 
-.toolbar-picklist:focus {
+.toolbar-picklist.toolbar-picklist:focus {
   border-color: var(--teal);
   outline: none;
 }
