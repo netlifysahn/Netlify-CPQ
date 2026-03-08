@@ -503,7 +503,7 @@
 .data-table.data-table-products td {
   padding: 16px 24px;
   height: auto;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .data-table.data-table-products th {
@@ -525,6 +525,7 @@
 .data-table.data-table-products td.col-monthly,
 .data-table.data-table-products td.col-annual {
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .data-table.data-table-products th.col-annual,
@@ -599,11 +600,38 @@
 
 .data-table-products .cell-sku {
   font-size: 11px;
+  font-weight: 400;
   color: #9ca3af;
 }
 
 .data-table-products .cell-name {
   font-weight: 600;
+  color: #111827;
+}
+
+.data-table-products .cell-description {
+  font-size: 11px;
+  font-weight: 400;
+  font-style: italic;
+  color: #9ca3af;
+}
+
+.data-table-products .price-monthly {
+  color: #111827;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table-products .price-annual {
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table-products .status-label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.data-table-products .status-dot.active + .status-label {
+  color: #059669;
 }
 
 .cell-description {
@@ -2306,7 +2334,7 @@
 }
 
 [data-theme="light"] .data-table-products td {
-  border-bottom-color: #e5e7eb;
+  border-bottom-color: #f3f4f6;
 }
 
 /* Cells */
