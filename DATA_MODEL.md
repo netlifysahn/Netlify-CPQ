@@ -15,15 +15,17 @@ Product {
 
   is_service: true,        // all products are services
 
-  default_term: number,    // term length in months
+  default_term: number,    // term length in months (default: 12)
   term_unit: "month",      // always months
   term_behavior: "included" | "excluded",
 
   default_price: {
     amount: number,        // price amount
-    unit: "flat" | "per_member" | "per_credit" | "per_gb" | "included",
+    unit: "flat" | "per_member" | "per_credit" | "included",
     pricing_method: "list" | "cost"
   },
+
+  unit_of_measure: string, // display label for quantity (e.g. "credits", "members", "instances")
 
   default_entitlements: json,  // key-value pairs (e.g. {"builds": 1000})
 
@@ -39,8 +41,23 @@ Product {
     default_description: string
   },
 
+  configuration_method: "none" | "bundle",      // default: "none"
+  bundle_pricing: "header_only" | "header_plus_members" | "members_only",
+  print_members: boolean,                        // show members on quote documents
+  members: BundleMember[],
+
   created_at: string,      // ISO timestamp
   updated_at: string       // ISO timestamp
+}
+
+BundleMember {
+  product_id: string,      // references an existing product
+  required: boolean,
+  default_quantity: number,
+  quantity_editable: boolean,
+  sort_order: number,
+  price_behavior: "included" | "discounted" | "related",
+  discount_percent: number // used when price_behavior = "discounted"
 }
 ```
 
