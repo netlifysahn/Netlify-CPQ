@@ -317,6 +317,8 @@
   color: var(--text-body);
   font-size: 14px;
   width: 100%;
+  height: 36px;
+  box-sizing: border-box;
   font-family: var(--font-body);
 }
 
