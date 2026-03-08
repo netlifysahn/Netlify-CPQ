@@ -167,9 +167,13 @@
 
 .sidebar-item i {
   width: 22px;
-  text-align: left;
   font-size: 18px;
   opacity: 0.9;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
 }
 
 .sidebar-item:hover i {
