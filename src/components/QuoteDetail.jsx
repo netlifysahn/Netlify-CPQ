@@ -3,6 +3,7 @@ import {
   calcQuoteTotals, calcLineMonthly, calcLineTotal,
   fmtCurrency, STATUS_META, emptyLineItem, emptyGroup,
 } from '../data/quotes';
+import { generateQuotePdf } from '../utils/quotePdf';
 import ProductPicker from './ProductPicker';
 import Confirm from './Confirm';
 
@@ -212,6 +213,9 @@ export default function QuoteDetail({ quote, products, onSave, onBack, onDelete 
                 Cancel
               </button>
             )}
+            <button className="btn-status btn-status-muted" onClick={() => generateQuotePdf(q)}>
+              <i className="fa-solid fa-file-pdf" /> PDF
+            </button>
             <button className="btn-status btn-status-muted" onClick={() => onDelete(q.id)}>
               <i className="fa-solid fa-trash-can" />
             </button>
