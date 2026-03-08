@@ -6,7 +6,7 @@ import {
 import { generateQuotePdf } from '../utils/quotePdf';
 import ProductPicker from './ProductPicker';
 
-export default function QuoteDetail({ quote, products, onSave, onBack, onDelete }) {
+export default function QuoteDetail({ quote, products, pricebooks, onSave, onBack, onDelete }) {
   const [q, setQ] = useState(quote);
   const [showPicker, setShowPicker] = useState(false);
   const [editingCell, setEditingCell] = useState(null);
@@ -33,12 +33,31 @@ export default function QuoteDetail({ quote, products, onSave, onBack, onDelete 
     });
   };
 
+  const getSelectedPricebook = () => {
+    if (!q.pricebook_id) return null;
+    return (pricebooks || []).find((pb) => pb.id === q.pricebook_id) || null;
+  };
+
   const addLine = (product) => {
+    const pb = getSelectedPricebook();
+    const entry = pb?.entries?.find((e) => e.product_id === product.id);
+    const line = emptyLineItem(product);
+    if (entry && entry.price_override != null) {
+      line.list_price = entry.price_override;
+      line.sales_price = entry.price_override;
+    }
     update((prev) => ({
       ...prev,
-      line_items: [...prev.line_items, { ...emptyLineItem(product), sort_order: prev.line_items.length }],
+      line_items: [...prev.line_items, { ...line, sort_order: prev.line_items.length }],
     }));
   };
+
+  const availableProducts = (() => {
+    const pb = getSelectedPricebook();
+    if (!pb || !pb.entries?.length) return products;
+    const pbProductIds = new Set(pb.entries.map((e) => e.product_id));
+    return products.filter((p) => pbProductIds.has(p.id));
+  })();
 
   const updateLine = (lineId, field, value) => {
     update((prev) => ({
@@ -378,7 +397,7 @@ export default function QuoteDetail({ quote, products, onSave, onBack, onDelete 
       {/* Modals */}
       {showPicker && (
         <ProductPicker
-          products={products}
+          products={availableProducts}
           onAdd={addLine}
           onClose={() => setShowPicker(false)}
         />

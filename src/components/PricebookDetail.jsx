@@ -1,12 +1,48 @@
 import React, { useMemo, useState } from 'react';
-import { PRICEBOOK_TABS, getPricebookStatus } from '../data/pricebooks';
+import { getPricebookStatus } from '../data/pricebooks';
+import { fmtPrice } from '../data/catalog';
+import ProductPicker from './ProductPicker';
 
-export default function PricebookDetail({ pricebook, products, onBack }) {
-  const [tab, setTab] = useState('entries');
+export default function PricebookDetail({ pricebook, products, onBack, onUpdate }) {
+  const [showPicker, setShowPicker] = useState(false);
 
   const productMap = useMemo(() => new Map((products || []).map((product) => [product.id, product])), [products]);
   const entries = Array.isArray(pricebook?.entries) ? pricebook.entries : [];
-  const tiers = Array.isArray(pricebook?.tiered_pricing) ? pricebook.tiered_pricing : [];
+
+  const getEffectivePrice = (entry) => {
+    if (entry.price_override != null) return entry.price_override;
+    const product = productMap.get(entry.product_id);
+    return product?.default_price?.amount || 0;
+  };
+
+  const addProduct = (product) => {
+    if (entries.some((e) => e.product_id === product.id)) return;
+    onUpdate({
+      ...pricebook,
+      entries: [...entries, { product_id: product.id, price_override: null }],
+      updated_at: new Date().toISOString(),
+    });
+  };
+
+  const removeEntry = (productId) => {
+    onUpdate({
+      ...pricebook,
+      entries: entries.filter((e) => e.product_id !== productId),
+      updated_at: new Date().toISOString(),
+    });
+  };
+
+  const updateOverride = (productId, value) => {
+    const parsed = value === '' ? null : parseFloat(value);
+    const override = parsed != null && Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+    onUpdate({
+      ...pricebook,
+      entries: entries.map((e) =>
+        e.product_id === productId ? { ...e, price_override: override } : e
+      ),
+      updated_at: new Date().toISOString(),
+    });
+  };
 
   return (
     <div className="pricebook-detail">
@@ -21,73 +57,88 @@ export default function PricebookDetail({ pricebook, products, onBack }) {
         <span className={`status-badge status-badge-inline${pricebook.active ? ' active' : ''}`}>{getPricebookStatus(pricebook)}</span>
       </div>
 
-      <div className="tabs-row">
-        {PRICEBOOK_TABS.map((item) => (
-          <button key={item.key} className={`tab-btn${tab === item.key ? ' active' : ''}`} onClick={() => setTab(item.key)}>
-            {item.label}
-          </button>
-        ))}
-      </div>
+      <div className="detail-section">
+        <div className="line-editor-header">
+          <div className="line-editor-title">Products ({entries.length})</div>
+          <div className="line-editor-actions">
+            <button className="btn-primary" onClick={() => setShowPicker(true)}>
+              <i className="fa-solid fa-plus" /> Add Product
+            </button>
+          </div>
+        </div>
 
-      {tab === 'entries' && (
-        <div className="detail-section">
-          {entries.length === 0 && <div className="empty-state-text">No price book entries found.</div>}
-          {entries.length > 0 && (
-            <table className="data-table">
+        {entries.length === 0 && (
+          <div className="empty-state">
+            <div className="empty-state-icon"><i className="fa-solid fa-box" /></div>
+            <div className="empty-state-title">No products in this pricebook</div>
+            <div className="empty-state-text">Add products to define pricing for this pricebook</div>
+            <button className="empty-state-cta" onClick={() => setShowPicker(true)}>
+              <i className="fa-solid fa-plus" /> Add Product
+            </button>
+          </div>
+        )}
+
+        {entries.length > 0 && (
+          <div className="table-card">
+            <table className="data-table data-table-pricebooks">
               <thead>
                 <tr>
                   <th>Product</th>
                   <th>SKU</th>
-                  <th>Price</th>
+                  <th>Base Price</th>
+                  <th>Override Price</th>
+                  <th>Effective Price</th>
+                  <th className="col-actions">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {entries.map((entry) => {
                   const product = productMap.get(entry.product_id);
+                  const basePrice = product?.default_price?.amount || 0;
+                  const effective = getEffectivePrice(entry);
                   return (
-                    <tr key={`${pricebook.id}_${entry.product_id}`}>
-                      <td>{product?.name || 'Unknown Product'}</td>
+                    <tr key={entry.product_id}>
+                      <td>
+                        <div className="cell-name">{product?.name || 'Unknown Product'}</div>
+                      </td>
                       <td><span className="cell-sku">{product?.sku || '—'}</span></td>
-                      <td><span className="status-label">{entry.price ?? 'Custom'}</span></td>
+                      <td><span className="price-monthly">{basePrice > 0 ? fmtPrice(basePrice) + '/mo' : '—'}</span></td>
+                      <td>
+                        <input
+                          className="inline-edit"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="Inherit"
+                          value={entry.price_override != null ? entry.price_override : ''}
+                          onChange={(e) => updateOverride(entry.product_id, e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <span className="price-monthly">{effective > 0 ? fmtPrice(effective) + '/mo' : '—'}</span>
+                      </td>
+                      <td className="col-actions">
+                        <div className="actions-group">
+                          <button className="action-btn delete" title="Remove" onClick={() => removeEntry(entry.product_id)}>
+                            <i className="fa-solid fa-trash-can" />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
-      {tab === 'tiered' && (
-        <div className="detail-section">
-          {tiers.length === 0 && <div className="empty-state-text">No tiered pricing rules found.</div>}
-          {tiers.length > 0 && (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Min Quantity</th>
-                  <th>Max Quantity</th>
-                  <th>Discount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tiers.map((tier, index) => (
-                  <tr key={`${pricebook.id}_tier_${index}`}>
-                    <td>{tier.min_quantity}</td>
-                    <td>{tier.max_quantity}</td>
-                    <td>{tier.discount_percent}%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
-
-      {tab === 'accounts' && (
-        <div className="detail-section">
-          <div className="empty-state-text">Account-level pricebook assignment is coming soon.</div>
-        </div>
+      {showPicker && (
+        <ProductPicker
+          products={products.filter((p) => !entries.some((e) => e.product_id === p.id))}
+          onAdd={addProduct}
+          onClose={() => setShowPicker(false)}
+        />
       )}
     </div>
   );

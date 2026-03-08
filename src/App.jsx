@@ -393,6 +393,7 @@ export default function App() {
                 pricebook={selectedPricebook}
                 products={products}
                 onBack={() => setActivePricebookId(null)}
+                onUpdate={savePricebook}
               />
             )}
           </>
@@ -447,6 +448,7 @@ export default function App() {
             key={activeQuote.id}
             quote={activeQuote}
             products={products}
+            pricebooks={pricebooks}
             onSave={saveQuoteFromDetail}
             onBack={() => setActiveQuote(null)}
             onDelete={delQuote}
@@ -475,6 +477,7 @@ export default function App() {
         <QuoteModal
           quote={modal.data}
           existingQuotes={quotes}
+          pricebooks={pricebooks}
           onSave={(q) => { saveQuote(q); setActiveQuote(q); }}
           onClose={() => setModal(null)}
         />

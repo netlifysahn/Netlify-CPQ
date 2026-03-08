@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
 import { TERM_OPTIONS, calcEndDate, emptyQuote } from '../data/quotes';
 
-export default function QuoteModal({ quote, existingQuotes, onSave, onClose }) {
-  const [f, setF] = useState(quote || emptyQuote(existingQuotes));
+export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, onClose }) {
+  const activePricebooks = (pricebooks || []).filter((pb) => pb.active);
+  const defaultPb = activePricebooks.find((pb) => pb.is_default);
+  const initialQuote = quote || emptyQuote(existingQuotes);
+  if (!quote && !initialQuote.pricebook_id && defaultPb) {
+    initialQuote.pricebook_id = defaultPb.id;
+  }
+  const [f, setF] = useState(initialQuote);
 
   const s = (k, v) => setF((p) => ({ ...p, [k]: v }));
 
@@ -86,6 +92,18 @@ export default function QuoteModal({ quote, existingQuotes, onSave, onClose }) {
             <input className="field-input" value={f.customer_contact} onChange={(e) => s('customer_contact', e.target.value)} placeholder="Contact name or email" />
           </div>
         </div>
+
+        {activePricebooks.length > 0 && (
+          <div className="field">
+            <label className="field-label">Pricebook</label>
+            <select className="field-select" value={f.pricebook_id || ''} onChange={(e) => s('pricebook_id', e.target.value || null)}>
+              <option value="">No pricebook</option>
+              {activePricebooks.map((pb) => (
+                <option key={pb.id} value={pb.id}>{pb.name}{pb.is_default ? ' (Default)' : ''}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="grid-3">
           <div className="field">
