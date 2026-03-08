@@ -142,9 +142,15 @@
   color: var(--text-body);
 }
 
+.sidebar-item:focus {
+  outline: none;
+}
+
 .sidebar-item.active {
   color: var(--text-strong);
   font-weight: 600;
+  outline: none;
+  box-shadow: none;
 }
 
 .sidebar-item i {
