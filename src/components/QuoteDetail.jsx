@@ -69,6 +69,14 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
   };
 
   const updateLineField = (lineId, field, value) => {
+    if (field === 'list_price') {
+      const line = q.line_items.find((l) => l.id === lineId);
+      if (!line) return;
+      const newList = Math.max(0, value);
+      const synced = syncDiscountFromPercent(newList, line.discount_percent);
+      updateLine(lineId, { list_price: newList, ...synced });
+      return;
+    }
     updateLine(lineId, { [field]: value });
   };
 
@@ -215,7 +223,7 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
           {included ? (
             <span className="price-annual">—</span>
           ) : (
-            <span className="price-annual">{fmtCurrency(line.list_price)}</span>
+            renderEditableCell(line, 'list_price', { step: '0.01', min: '0' })
           )}
         </td>
         <td>
@@ -406,9 +414,14 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
           </div>
         )}
 
-        <button className="qd-new-group-link" onClick={() => setShowGroupModal(true)}>
-          + New Group
-        </button>
+        <div className="qd-line-footer-actions">
+          <button className="btn-primary" onClick={() => setShowPicker(true)}>
+            <i className="fa-solid fa-plus" /> Add Product
+          </button>
+          <button className="qd-new-group-link" onClick={() => setShowGroupModal(true)}>
+            + New Group
+          </button>
+        </div>
       </div>
 
       {/* Quote Summary */}

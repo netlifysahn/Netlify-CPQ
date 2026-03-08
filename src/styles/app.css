@@ -2085,6 +2085,14 @@
   opacity: 1;
 }
 
+/* Line footer actions (Add Product + New Group) */
+.qd-line-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
 /* New Group link below line items */
 .qd-new-group-link {
   display: inline-block;
