@@ -417,15 +417,16 @@ export default function App() {
                   placeholder="Search quotes..."
                 />
               </div>
-              {statuses.map((s) => (
-                <button
-                  key={s}
-                  className={`filter-btn${statusFilter === s ? ' active' : ''}`}
-                  onClick={() => setStatusFilter(s)}
-                >
-                  {s === 'All' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
-                </button>
-              ))}
+              <div className="toolbar-select-wrap">
+                <select className="field-select toolbar-picklist" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                  {statuses.map((s) => (
+                    <option key={s} value={s}>{s === 'All' ? 'All Statuses' : s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                  ))}
+                </select>
+                <span className="toolbar-select-icon" aria-hidden="true">
+                  <i className="fa-solid fa-chevron-down" />
+                </span>
+              </div>
               <button className="btn-primary btn-quote-add" onClick={() => setModal({ type: 'quote' })}>
                 <i className="fa-solid fa-plus" />
                 New Quote
