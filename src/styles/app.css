@@ -1839,6 +1839,53 @@
   line-height: 1.6;
 }
 
+/* Edit Lines button highlight */
+.qd-edit-lines-btn {
+  font-weight: 600;
+}
+
+/* Edit mode header */
+.qd-edit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+[data-theme="light"] .qd-edit-header {
+  border-bottom-color: #E9EBED;
+}
+.qd-edit-title {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+[data-theme="light"] .qd-edit-title {
+  color: #1A1A2E;
+}
+.qd-edit-quote-name {
+  font-weight: 400;
+  opacity: 0.7;
+}
+.qd-edit-subtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 2px;
+}
+[data-theme="light"] .qd-edit-subtitle {
+  color: #9DA7B2;
+}
+.qd-edit-header-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+.qd-discount-input {
+  width: 64px;
+  text-align: center;
+}
+
 .qd-header {
   margin-bottom: 40px;
 }

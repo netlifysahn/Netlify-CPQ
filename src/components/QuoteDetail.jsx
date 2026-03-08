@@ -33,9 +33,6 @@ class QuoteDetailErrorBoundary extends Component {
           <pre style={{ marginTop: 12, padding: 16, background: 'rgba(0,0,0,0.05)', borderRadius: 8, whiteSpace: 'pre-wrap', fontSize: 13 }}>
             {this.state.error?.message || String(this.state.error)}
           </pre>
-          <pre style={{ marginTop: 8, padding: 16, background: 'rgba(0,0,0,0.05)', borderRadius: 8, whiteSpace: 'pre-wrap', fontSize: 11, color: '#888' }}>
-            {this.state.error?.stack}
-          </pre>
         </div>
       );
     }
@@ -43,13 +40,12 @@ class QuoteDetailErrorBoundary extends Component {
   }
 }
 
-// Backfill missing fields on older quotes so the component never hits undefined
+// Backfill missing fields on older quotes
 const normalizeQuote = (q) => {
   if (!q || typeof q !== 'object') {
-    console.error('[QuoteDetail] normalizeQuote received invalid quote:', q);
     return { id: 'error', quote_number: 'ERR', name: 'Invalid Quote', status: 'draft', term_months: 12, header_discount: 0, line_items: [], groups: [], start_date: '', end_date: '', customer_name: '', customer_address: '', customer_contact: '', billing_contact_name: '', billing_contact_email: '', billing_contact_phone: '', prepared_by: '', comments: '', terms_conditions: '', pricebook_id: null, created_at: '', updated_at: '' };
   }
-  const safe = {
+  return {
     ...q,
     status: q.status || 'draft',
     term_months: q.term_months || 12,
@@ -69,7 +65,6 @@ const normalizeQuote = (q) => {
     })),
     groups: q.groups || [],
   };
-  return safe;
 };
 
 export default function QuoteDetail(props) {
@@ -82,6 +77,8 @@ export default function QuoteDetail(props) {
 
 function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelete }) {
   const [q, setQ] = useState(() => normalizeQuote(quote));
+  const [mode, setMode] = useState('view'); // 'view' | 'edit'
+  const [draft, setDraft] = useState(null); // working copy in edit mode
   const [showPicker, setShowPicker] = useState(false);
   const [editingCell, setEditingCell] = useState(null);
   const [confirm, setConfirm] = useState(null);
@@ -99,7 +96,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const update = (fn) => {
+  // ── Persist (view-mode status changes) ──
+  const persistQuote = (fn) => {
     setQ((prev) => {
       const next = fn(prev);
       next.updated_at = new Date().toISOString();
@@ -108,48 +106,46 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     });
   };
 
+  // ── Edit mode: enter / save / cancel ──
+  const enterEditMode = () => {
+    setDraft({
+      line_items: JSON.parse(JSON.stringify(q.line_items)),
+      groups: JSON.parse(JSON.stringify(q.groups)),
+      header_discount: q.header_discount || 0,
+    });
+    setEditingCell(null);
+    setMode('edit');
+  };
+
+  const saveEdit = () => {
+    const updated = {
+      ...q,
+      line_items: draft.line_items,
+      groups: draft.groups,
+      header_discount: draft.header_discount,
+      updated_at: new Date().toISOString(),
+    };
+    setQ(updated);
+    onSave(updated);
+    setDraft(null);
+    setEditingCell(null);
+    setMode('view');
+  };
+
+  const cancelEdit = () => {
+    setDraft(null);
+    setEditingCell(null);
+    setMode('view');
+  };
+
+  // ── Draft mutation helpers (edit mode only) ──
+  const updateDraft = (fn) => {
+    setDraft((prev) => fn({ ...prev }));
+  };
+
   const getSelectedPricebook = () => {
     if (!q.pricebook_id) return null;
     return (pricebooks || []).find((pb) => pb.id === q.pricebook_id) || null;
-  };
-
-  const addLine = (product) => {
-    const pb = getSelectedPricebook();
-    const getPriceOverride = (prodId) => {
-      const entry = pb?.entries?.find((e) => e.product_id === prodId);
-      return entry?.price_override != null ? entry.price_override : undefined;
-    };
-
-    if (isBundleProduct(product) && product.members?.length > 0) {
-      // Package: create parent + sub-line items
-      const parentLine = emptyPackageLine(product);
-      const productMap = new Map((products || []).map((p) => [p.id, p]));
-      const subLines = product.members
-        .filter((m) => productMap.has(m.product_id))
-        .map((m) => {
-          const memberProduct = productMap.get(m.product_id);
-          return emptySubLineItem(memberProduct, m, parentLine.id, getPriceOverride(m.product_id));
-        });
-
-      update((prev) => {
-        const base = prev.line_items.length;
-        return {
-          ...prev,
-          line_items: [
-            ...prev.line_items,
-            { ...parentLine, sort_order: base },
-            ...subLines.map((sl, i) => ({ ...sl, sort_order: base + 1 + i })),
-          ],
-        };
-      });
-    } else {
-      // Standalone line item
-      const line = emptyLineItem(product, getPriceOverride(product.id));
-      update((prev) => ({
-        ...prev,
-        line_items: [...prev.line_items, { ...line, sort_order: prev.line_items.length }],
-      }));
-    }
   };
 
   const availableProducts = (() => {
@@ -159,87 +155,112 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     return products.filter((p) => pbProductIds.has(p.id));
   })();
 
-  const updateLine = (lineId, updates) => {
-    update((prev) => ({
-      ...prev,
-      line_items: prev.line_items.map((l) =>
-        l.id === lineId ? { ...l, ...updates } : l
-      ),
-    }));
+  const addLineToDraft = (product) => {
+    const pb = getSelectedPricebook();
+    const getPriceOverride = (prodId) => {
+      const entry = pb?.entries?.find((e) => e.product_id === prodId);
+      return entry?.price_override != null ? entry.price_override : undefined;
+    };
+
+    if (isBundleProduct(product) && product.members?.length > 0) {
+      const parentLine = emptyPackageLine(product);
+      const productMap = new Map((products || []).map((p) => [p.id, p]));
+      const subLines = product.members
+        .filter((m) => productMap.has(m.product_id))
+        .map((m) => emptySubLineItem(productMap.get(m.product_id), m, parentLine.id, getPriceOverride(m.product_id)));
+
+      updateDraft((d) => {
+        const base = d.line_items.length;
+        d.line_items = [
+          ...d.line_items,
+          { ...parentLine, sort_order: base },
+          ...subLines.map((sl, i) => ({ ...sl, sort_order: base + 1 + i })),
+        ];
+        return d;
+      });
+    } else {
+      const line = emptyLineItem(product, getPriceOverride(product.id));
+      updateDraft((d) => {
+        d.line_items = [...d.line_items, { ...line, sort_order: d.line_items.length }];
+        return d;
+      });
+    }
+  };
+
+  const updateDraftLine = (lineId, updates) => {
+    updateDraft((d) => {
+      d.line_items = d.line_items.map((l) => l.id === lineId ? { ...l, ...updates } : l);
+      return d;
+    });
     setEditingCell(null);
   };
 
-  const updateLineField = (lineId, field, value) => {
+  const updateDraftLineField = (lineId, field, value) => {
     if (field === 'list_price') {
-      const line = q.line_items.find((l) => l.id === lineId);
+      const line = draft.line_items.find((l) => l.id === lineId);
       if (!line) return;
       const newList = Math.max(0, value);
       const synced = syncDiscountFromPercent(newList, line.discount_percent || 0);
-      updateLine(lineId, { list_price: newList, ...synced });
+      updateDraftLine(lineId, { list_price: newList, ...synced });
       return;
     }
-    updateLine(lineId, { [field]: value });
+    updateDraftLine(lineId, { [field]: value });
   };
 
-  const updateDiscount = (lineId, field, value) => {
-    const line = q.line_items.find((l) => l.id === lineId);
+  const updateDraftDiscount = (lineId, field, value) => {
+    const line = draft.line_items.find((l) => l.id === lineId);
     if (!line) return;
     const val = parseFloat(value) || 0;
     const synced = field === 'discount_percent'
       ? syncDiscountFromPercent(line.list_price || 0, val)
       : syncDiscountFromAmount(line.list_price || 0, val);
-    updateLine(lineId, synced);
+    updateDraftLine(lineId, synced);
   };
 
-  const removeLine = (lineId) => {
-    update((prev) => ({
-      ...prev,
-      // Remove the line and any sub-items that belong to it (if it's a package)
-      line_items: prev.line_items.filter((l) => l.id !== lineId && l.parent_line_id !== lineId),
-    }));
+  const removeDraftLine = (lineId) => {
+    updateDraft((d) => {
+      d.line_items = d.line_items.filter((l) => l.id !== lineId && l.parent_line_id !== lineId);
+      return d;
+    });
   };
 
-  const addGroup = () => {
+  const addDraftGroup = () => {
     if (!groupName.trim()) return;
-    update((prev) => ({
-      ...prev,
-      groups: [...prev.groups, { ...emptyGroup(), name: groupName.trim(), sort_order: prev.groups.length }],
-    }));
+    updateDraft((d) => {
+      d.groups = [...d.groups, { ...emptyGroup(), name: groupName.trim(), sort_order: d.groups.length }];
+      return d;
+    });
     setGroupName('');
     setShowGroupModal(false);
   };
 
-  const removeGroup = (groupId) => {
-    update((prev) => ({
-      ...prev,
-      groups: prev.groups.filter((g) => g.id !== groupId),
-      line_items: prev.line_items.map((l) =>
-        l.group_id === groupId ? { ...l, group_id: null } : l
-      ),
-    }));
+  const removeDraftGroup = (groupId) => {
+    updateDraft((d) => {
+      d.groups = d.groups.filter((g) => g.id !== groupId);
+      d.line_items = d.line_items.map((l) => l.group_id === groupId ? { ...l, group_id: null } : l);
+      return d;
+    });
   };
 
+  // ── Status changes (view mode) ──
   const changeStatus = (newStatus) => {
     const labels = { submitted: 'Submit', won: 'Mark as Won', lost: 'Mark as Lost', cancelled: 'Cancel' };
     setConfirm({
       msg: `${labels[newStatus] || 'Change status of'} this quote?`,
       label: labels[newStatus] || 'Confirm',
       fn: () => {
-        update((prev) => ({ ...prev, status: newStatus }));
+        persistQuote((prev) => ({ ...prev, status: newStatus }));
         setConfirm(null);
       },
     });
   };
 
-  const totals = calcQuoteTotals(q);
+  // ── Derived data ──
+  const liveData = mode === 'edit' && draft
+    ? { line_items: draft.line_items, groups: draft.groups, header_discount: draft.header_discount, term_months: q.term_months }
+    : q;
+  const totals = calcQuoteTotals(liveData);
   const meta = STATUS_META[q.status] || STATUS_META.draft;
-
-  // Top-level lines: exclude sub-components (they render under their parent)
-  const ungrouped = q.line_items.filter((l) => !l.group_id && !l.parent_line_id);
-  const groupedLines = (groupId) => q.line_items.filter((l) => l.group_id === groupId && !l.parent_line_id);
-  const groupSubtotal = (groupId) => {
-    return groupedLines(groupId).reduce((s, l) => s + calcLineMonthly(l, q.header_discount), 0);
-  };
 
   const statusOptions = () => {
     const opts = [];
@@ -249,29 +270,27 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     return opts;
   };
 
+  // ── Package helpers ──
   const togglePackage = (lineId) => {
     setCollapsedPkgs((prev) => {
       const next = new Set(prev);
-      if (next.has(lineId)) next.delete(lineId);
-      else next.add(lineId);
+      next.has(lineId) ? next.delete(lineId) : next.add(lineId);
       return next;
     });
   };
 
-  const getSubLines = (parentId) => q.line_items.filter((l) => l.parent_line_id === parentId);
+  const getSubLines = (items, parentId) => items.filter((l) => l.parent_line_id === parentId);
+  const calcPkgExtended = (items, parentId) => getSubLines(items, parentId).reduce((s, l) => s + calcLineExtended(l), 0);
 
-  const calcPackageExtended = (parentId) => {
-    return getSubLines(parentId).reduce((s, l) => s + calcLineExtended(l), 0);
-  };
-
+  // ── Editable cell renderer (edit mode) ──
   const renderEditableCell = (line, field, opts = {}) => {
-    const { type = 'number', step = '1', min, max, suffix = '', prefix = '', disabled = false } = opts;
+    const { type = 'number', step = '1', min, max, disabled = false } = opts;
     const cellKey = `${line.id}-${field}`;
     const isEditing = editingCell === cellKey;
 
     if (disabled) {
       const dval = typeof line[field] === 'number' ? line[field] : 0;
-      return <span className="cell-locked">{prefix + dval + suffix}</span>;
+      return <span className="cell-locked">{dval}</span>;
     }
 
     if (isEditing) {
@@ -287,11 +306,11 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           onBlur={(e) => {
             const v = parseFloat(e.target.value) || 0;
             if (field === 'discount_percent' || field === 'discount_amount') {
-              updateDiscount(line.id, field, v);
+              updateDraftDiscount(line.id, field, v);
             } else if (field === 'quantity') {
-              updateLineField(line.id, 'quantity', Math.max(1, Math.round(v)));
+              updateDraftLineField(line.id, 'quantity', Math.max(1, Math.round(v)));
             } else {
-              updateLineField(line.id, field, v);
+              updateDraftLineField(line.id, field, v);
             }
           }}
           onKeyDown={(e) => {
@@ -302,11 +321,11 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       );
     }
 
-    let display;
     const val = line[field] ?? 0;
+    let display;
     if (field === 'discount_percent') display = `${val}%`;
     else if (field === 'discount_amount' || field === 'list_price' || field === 'net_price') display = fmtCurrency(val);
-    else display = prefix + val + suffix;
+    else display = val;
 
     return (
       <span className="cell-editable" onClick={() => setEditingCell(cellKey)}>
@@ -315,419 +334,555 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     );
   };
 
-  // Render a standalone (non-package) line row
-  const renderStandaloneRow = (line) => {
-    const unitType = line.unit_type || 'flat';
-    const included = isIncluded(unitType);
-    const qtyEditable = isQuantityEditable(unitType);
-    const extended = calcLineExtended(line);
+  // ════════════════════════════════════════
+  //  VIEW MODE
+  // ════════════════════════════════════════
+  const renderViewMode = () => {
+    const viewItems = q.line_items.filter((l) => !l.parent_line_id);
 
-    return (
-      <tr key={line.id}>
-        <td className="line-td-product">
-          <div className="cell-name">{line.product_name}</div>
-          <div className="cell-sku">{line.product_sku}</div>
-        </td>
-        <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
-        <td>
-          {included ? (
-            <span className="cell-locked">1</span>
-          ) : qtyEditable ? (
-            renderEditableCell(line, 'quantity', { step: '1', min: '1' })
-          ) : (
-            <span className="cell-locked">1</span>
-          )}
-        </td>
-        <td>
-          {included ? (
-            <span className="price-annual">—</span>
-          ) : (
-            renderEditableCell(line, 'list_price', { step: '0.01', min: '0' })
-          )}
-        </td>
-        <td>
-          {included ? (
-            <span className="price-annual">—</span>
-          ) : (
-            renderEditableCell(line, 'discount_percent', { step: '0.1', min: '0', max: '100' })
-          )}
-        </td>
-        <td>
-          {included ? (
-            <span className="price-annual">—</span>
-          ) : (
-            renderEditableCell(line, 'discount_amount', { step: '0.01', min: '0' })
-          )}
-        </td>
-        <td>
-          {included ? (
-            <span className="price-annual">$0.00</span>
-          ) : (
-            <span className="price-monthly">{fmtCurrency(line.net_price ?? line.list_price ?? 0)}</span>
-          )}
-        </td>
-        <td>
-          {included ? (
-            <span className="price-annual">$0.00</span>
-          ) : (
-            <span className="price-monthly">{fmtCurrency(extended)}</span>
-          )}
-        </td>
-        <td className="col-actions">
-          <div className="actions-group">
-            {q.groups.length > 0 && (
-              <select
-                className="group-assign"
-                value={line.group_id || ''}
-                onChange={(e) => updateLineField(line.id, 'group_id', e.target.value || null)}
-                title="Assign to group"
-              >
-                <option value="">No group</option>
-                {q.groups.map((g) => (
-                  <option key={g.id} value={g.id}>{g.name}</option>
-                ))}
-              </select>
-            )}
-            <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeLine(line.id)}>
-              <i className="fa-solid fa-trash-can" />
-            </button>
-          </div>
-        </td>
-      </tr>
-    );
-  };
-
-  // Render a package parent row with chevron + rolled-up total
-  const renderPackageRow = (line) => {
-    const expanded = !collapsedPkgs.has(line.id);
-    const pkgTotal = calcPackageExtended(line.id);
-    const subCount = getSubLines(line.id).length;
-
-    return (
-      <tr key={line.id} className="line-row-package">
-        <td className="line-td-product">
-          <button className="pkg-chevron" onClick={() => togglePackage(line.id)} title={expanded ? 'Collapse' : 'Expand'}>
-            <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
-          </button>
-          <div style={{ display: 'inline-block', verticalAlign: 'middle' }}>
-            <div className="cell-name">{line.product_name}</div>
-            <div className="cell-sku">{line.product_sku} &middot; {subCount} component{subCount !== 1 ? 's' : ''}</div>
-          </div>
-        </td>
-        <td><span className="cell-sku">Package</span></td>
-        <td><span className="cell-locked">—</span></td>
-        <td><span className="cell-locked">—</span></td>
-        <td><span className="cell-locked">—</span></td>
-        <td><span className="cell-locked">—</span></td>
-        <td><span className="cell-locked">—</span></td>
-        <td><span className="price-monthly">{fmtCurrency(pkgTotal)}</span></td>
-        <td className="col-actions">
-          <div className="actions-group">
-            <button className="action-btn delete line-remove-btn" title="Remove package" onClick={() => removeLine(line.id)}>
-              <i className="fa-solid fa-trash-can" />
-            </button>
-          </div>
-        </td>
-      </tr>
-    );
-  };
-
-  // Render a sub-line item row (indented under package)
-  const renderSubLineRow = (line) => {
-    const unitType = line.unit_type || 'flat';
-    const extended = calcLineExtended(line);
-
-    return (
-      <tr key={line.id} className="line-row-sub">
-        <td className="line-td-product" style={{ paddingLeft: 36 }}>
-          <div className="cell-name">{line.product_name}</div>
-          <div className="cell-sku">{line.product_sku}</div>
-        </td>
-        <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
-        <td>{renderEditableCell(line, 'quantity', { step: '1', min: '1' })}</td>
-        <td>{renderEditableCell(line, 'list_price', { step: '0.01', min: '0' })}</td>
-        <td>{renderEditableCell(line, 'discount_percent', { step: '0.1', min: '0', max: '100' })}</td>
-        <td>{renderEditableCell(line, 'discount_amount', { step: '0.01', min: '0' })}</td>
-        <td><span className="price-monthly">{fmtCurrency(line.net_price ?? line.list_price ?? 0)}</span></td>
-        <td><span className="price-monthly">{fmtCurrency(extended)}</span></td>
-        <td className="col-actions">
-          <div className="actions-group">
-            <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeLine(line.id)}>
-              <i className="fa-solid fa-trash-can" />
-            </button>
-          </div>
-        </td>
-      </tr>
-    );
-  };
-
-  // Render a line: dispatches to package, sub-line, or standalone
-  const renderLineRow = (line) => {
-    // Sub-lines are rendered by their parent, skip them here
-    if (line.parent_line_id) return null;
-
-    if (line.is_package) {
-      const expanded = !collapsedPkgs.has(line.id);
-      const subs = getSubLines(line.id);
-      return (
-        <React.Fragment key={line.id}>
-          {renderPackageRow(line)}
-          {expanded && subs.map(renderSubLineRow)}
-        </React.Fragment>
-      );
-    }
-
-    return renderStandaloneRow(line);
-  };
-
-  const lineTableHead = (
-    <thead>
-      <tr>
-        <th>Product</th>
-        <th>Unit</th>
-        <th>Qty</th>
-        <th>List Price</th>
-        <th>Disc %</th>
-        <th>Disc $</th>
-        <th>Net Price</th>
-        <th>Extended</th>
-        <th className="col-actions" />
-      </tr>
-    </thead>
-  );
-
-  return (
-    <div className="quote-detail">
-      {/* Header */}
-      <div className="qd-header">
-        <button className="back-btn" onClick={onBack}>
-          <i className="fa-solid fa-arrow-left" />
-          Back to Quotes
-        </button>
-        <div className="qd-header-row">
-          <div className="qd-header-info">
-            <div className="qd-quote-number">{q.quote_number}</div>
-            <h1 className="qd-title">{q.name || 'Untitled Quote'}</h1>
-            <div className="qd-meta">
-              {q.customer_name && <span>{q.customer_name}</span>}
-              <span className={`status-badge status-${meta.color}`}>{meta.label}</span>
-              <span>{q.term_months}mo term</span>
-              {q.start_date && <span>{q.start_date} &rarr; {q.end_date || '...'}</span>}
-              {q.header_discount > 0 && <span>{q.header_discount}% quote discount</span>}
-            </div>
-          </div>
-          <div className="qd-actions">
-            {statusOptions().map((s) => (
-              <button key={s} className="qd-status-btn" onClick={() => changeStatus(s)}>
-                {STATUS_META[s]?.label || s}
-              </button>
-            ))}
-            <button className="qd-status-btn" onClick={() => generateQuotePdf(q)}>
-              PDF
-            </button>
-            <div className="qd-more-wrap" ref={moreRef}>
-              <button className="qd-more-btn" onClick={() => setShowMoreMenu(!showMoreMenu)}>
-                <i className="fa-solid fa-ellipsis" />
-              </button>
-              {showMoreMenu && (
-                <div className="qd-more-menu">
-                  <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(q.id); }}>
-                    <i className="fa-solid fa-trash-can" />
-                    Delete quote
-                  </button>
+    const renderViewRow = (line) => {
+      if (line.is_package) {
+        const subs = getSubLines(q.line_items, line.id);
+        const expanded = !collapsedPkgs.has(line.id);
+        const pkgTotal = calcPkgExtended(q.line_items, line.id);
+        return (
+          <React.Fragment key={line.id}>
+            <tr className="line-row-package">
+              <td className="line-td-product">
+                <button className="pkg-chevron" onClick={() => togglePackage(line.id)}>
+                  <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
+                </button>
+                <div style={{ display: 'inline-block', verticalAlign: 'middle' }}>
+                  <div className="cell-name">{line.product_name}</div>
+                  <div className="cell-sku">{subs.length} component{subs.length !== 1 ? 's' : ''}</div>
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Customer Info */}
-      {(q.customer_name || q.customer_address || q.billing_contact_name || q.billing_contact_email || q.billing_contact_phone) && (
-        <div className="qd-customer-info">
-          <div className="qd-customer-col">
-            {q.customer_name && <div className="qd-customer-company">{q.customer_name}</div>}
-            {q.customer_address && <div className="qd-customer-address">{q.customer_address}</div>}
-          </div>
-          {(q.billing_contact_name || q.billing_contact_email || q.billing_contact_phone) && (
-            <div className="qd-customer-col">
-              <div className="qd-customer-section-label">Billing Contact</div>
-              {q.billing_contact_name && <div className="qd-customer-field">{q.billing_contact_name}</div>}
-              {q.billing_contact_email && <div className="qd-customer-field">{q.billing_contact_email}</div>}
-              {q.billing_contact_phone && <div className="qd-customer-field">{q.billing_contact_phone}</div>}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Line Editor */}
-      <div className="qd-lines-section">
-        <div className="line-editor-header">
-          <div className="line-editor-title">Line Items</div>
-          <div className="line-editor-actions">
-            <button className="btn-primary" onClick={() => setShowPicker(true)}>
-              <i className="fa-solid fa-plus" /> Add Line
-            </button>
-          </div>
-        </div>
-
-        {q.line_items.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-icon"><i className="fa-solid fa-list" /></div>
-            <div className="empty-state-title">No line items</div>
-            <div className="empty-state-text">Add products from the catalog to build your quote</div>
-          </div>
-        ) : (
-          <div className="line-editor-table-wrap">
-            {ungrouped.length > 0 && (
-              <table className="data-table line-table">
-                {lineTableHead}
-                <tbody>{ungrouped.map(renderLineRow)}</tbody>
-              </table>
-            )}
-
-            {q.groups.map((group) => {
-              const lines = groupedLines(group.id);
+              </td>
+              <td><span className="cell-sku">Package</span></td>
+              <td><span className="cell-locked">—</span></td>
+              <td><span className="cell-locked">—</span></td>
+              <td><span className="cell-locked">—</span></td>
+              <td><span className="cell-locked">—</span></td>
+              <td><span className="price-monthly">{fmtCurrency(pkgTotal)}</span></td>
+            </tr>
+            {expanded && subs.map((sub) => {
+              const ext = calcLineExtended(sub);
               return (
-                <div key={group.id} className="line-group">
-                  <div className="line-group-header">
-                    <div className="line-group-name">
-                      <i className="fa-solid fa-layer-group" />
-                      {group.name}
-                    </div>
-                    <div className="line-group-meta">
-                      <span className="line-group-subtotal">{fmtCurrency(groupSubtotal(group.id))}/mo</span>
-                      <button className="action-btn delete" title="Remove group" onClick={() => removeGroup(group.id)}>
-                        <i className="fa-solid fa-xmark" />
-                      </button>
-                    </div>
-                  </div>
-                  {lines.length > 0 ? (
-                    <table className="data-table line-table">
-                      {lineTableHead}
-                      <tbody>{lines.map(renderLineRow)}</tbody>
-                    </table>
-                  ) : (
-                    <div className="line-group-empty">No lines in this group. Assign lines using the dropdown.</div>
-                  )}
-                </div>
+                <tr key={sub.id} className="line-row-sub">
+                  <td className="line-td-product" style={{ paddingLeft: 36 }}>
+                    <div className="cell-name">{sub.product_name}</div>
+                  </td>
+                  <td><span className="cell-sku">{getUnitLabel(sub.unit_type || 'flat')}</span></td>
+                  <td>{sub.quantity}</td>
+                  <td>{fmtCurrency(sub.list_price ?? 0)}</td>
+                  <td>{(sub.discount_percent ?? 0) > 0 ? `${sub.discount_percent}%` : '—'}</td>
+                  <td>{fmtCurrency(sub.net_price ?? sub.list_price ?? 0)}</td>
+                  <td><span className="price-monthly">{fmtCurrency(ext)}</span></td>
+                </tr>
               );
             })}
+          </React.Fragment>
+        );
+      }
+
+      const unitType = line.unit_type || 'flat';
+      const extended = calcLineExtended(line);
+      return (
+        <tr key={line.id}>
+          <td className="line-td-product">
+            <div className="cell-name">{line.product_name}</div>
+          </td>
+          <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
+          <td>{line.quantity}</td>
+          <td>{isIncluded(unitType) ? '—' : fmtCurrency(line.list_price ?? 0)}</td>
+          <td>{isIncluded(unitType) ? '—' : ((line.discount_percent ?? 0) > 0 ? `${line.discount_percent}%` : '—')}</td>
+          <td>{isIncluded(unitType) ? '$0' : fmtCurrency(line.net_price ?? line.list_price ?? 0)}</td>
+          <td><span className="price-monthly">{isIncluded(unitType) ? '$0' : fmtCurrency(extended)}</span></td>
+        </tr>
+      );
+    };
+
+    return (
+      <div className="quote-detail">
+        {/* Header */}
+        <div className="qd-header">
+          <button className="back-btn" onClick={onBack}>
+            <i className="fa-solid fa-arrow-left" /> Back to Quotes
+          </button>
+          <div className="qd-header-row">
+            <div className="qd-header-info">
+              <div className="qd-quote-number">{q.quote_number}</div>
+              <h1 className="qd-title">{q.name || 'Untitled Quote'}</h1>
+              <div className="qd-meta">
+                {q.customer_name && <span>{q.customer_name}</span>}
+                <span className={`status-badge status-${meta.color}`}>{meta.label}</span>
+                <span>{q.term_months}mo term</span>
+                {q.start_date && <span>{q.start_date} &rarr; {q.end_date || '...'}</span>}
+                {q.header_discount > 0 && <span>{q.header_discount}% quote discount</span>}
+              </div>
+            </div>
+            <div className="qd-actions">
+              <button className="qd-status-btn qd-edit-lines-btn" onClick={enterEditMode}>
+                <i className="fa-solid fa-pen-to-square" /> Edit Lines
+              </button>
+              {statusOptions().map((s) => (
+                <button key={s} className="qd-status-btn" onClick={() => changeStatus(s)}>
+                  {STATUS_META[s]?.label || s}
+                </button>
+              ))}
+              <button className="qd-status-btn" onClick={() => generateQuotePdf(q)}>
+                PDF
+              </button>
+              <div className="qd-more-wrap" ref={moreRef}>
+                <button className="qd-more-btn" onClick={() => setShowMoreMenu(!showMoreMenu)}>
+                  <i className="fa-solid fa-ellipsis" />
+                </button>
+                {showMoreMenu && (
+                  <div className="qd-more-menu">
+                    <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(q.id); }}>
+                      <i className="fa-solid fa-trash-can" /> Delete quote
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Customer Info */}
+        {(q.customer_name || q.customer_address || q.billing_contact_name || q.billing_contact_email || q.billing_contact_phone) && (
+          <div className="qd-customer-info">
+            <div className="qd-customer-col">
+              {q.customer_name && <div className="qd-customer-company">{q.customer_name}</div>}
+              {q.customer_address && <div className="qd-customer-address">{q.customer_address}</div>}
+            </div>
+            {(q.billing_contact_name || q.billing_contact_email || q.billing_contact_phone) && (
+              <div className="qd-customer-col">
+                <div className="qd-customer-section-label">Billing Contact</div>
+                {q.billing_contact_name && <div className="qd-customer-field">{q.billing_contact_name}</div>}
+                {q.billing_contact_email && <div className="qd-customer-field">{q.billing_contact_email}</div>}
+                {q.billing_contact_phone && <div className="qd-customer-field">{q.billing_contact_phone}</div>}
+              </div>
+            )}
           </div>
         )}
 
-        <div className="qd-line-footer-actions">
-          <button className="btn-primary" onClick={() => setShowPicker(true)}>
-            <i className="fa-solid fa-plus" /> Add Product
-          </button>
-          <button className="qd-new-group-link" onClick={() => setShowGroupModal(true)}>
-            + New Group
-          </button>
+        {/* Read-only line items table */}
+        <div className="qd-lines-section">
+          <div className="line-editor-header">
+            <div className="line-editor-title">Line Items</div>
+          </div>
+
+          {q.line_items.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state-icon"><i className="fa-solid fa-list" /></div>
+              <div className="empty-state-title">No line items</div>
+              <div className="empty-state-text">Click "Edit Lines" to add products to this quote</div>
+            </div>
+          ) : (
+            <table className="data-table line-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Unit</th>
+                  <th>Qty</th>
+                  <th>List Price</th>
+                  <th>Disc %</th>
+                  <th>Net Price</th>
+                  <th>Extended</th>
+                </tr>
+              </thead>
+              <tbody>{viewItems.map(renderViewRow)}</tbody>
+            </table>
+          )}
         </div>
+
+        {/* Summary */}
+        {renderSummary(totals, q)}
+
+        {/* Footer info */}
+        {renderFooterInfo(q)}
+
+        {/* Confirm modal */}
+        {confirm && renderConfirmModal()}
       </div>
+    );
+  };
 
-      {/* Quote Summary */}
-      <div className="qd-summary">
-        <div className="qd-summary-item">
-          <div className="qd-summary-label">MRR</div>
-          {totals.hasQuoteDiscount && (
-            <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountMonthly)}</div>
-          )}
-          <div className="qd-summary-value">{fmtCurrency(totals.monthly)}</div>
-        </div>
-        <div className="qd-summary-divider" />
-        <div className="qd-summary-item">
-          <div className="qd-summary-label">ARR</div>
-          {totals.hasQuoteDiscount && (
-            <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountAnnual)}</div>
-          )}
-          <div className="qd-summary-value">{fmtCurrency(totals.annual)}</div>
-        </div>
-        <div className="qd-summary-divider" />
-        <div className="qd-summary-item">
-          <div className="qd-summary-label">TCV ({q.term_months}mo)</div>
-          {totals.hasQuoteDiscount && (
-            <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountTcv)}</div>
-          )}
-          <div className="qd-summary-value">{fmtCurrency(totals.tcv)}</div>
-        </div>
-        {totals.hasQuoteDiscount && (
-          <>
-            <div className="qd-summary-divider" />
-            <div className="qd-summary-item">
-              <div className="qd-summary-label">Quote Discount</div>
-              <div className="qd-summary-value">{q.header_discount}%</div>
-            </div>
-          </>
-        )}
-      </div>
+  // ════════════════════════════════════════
+  //  EDIT MODE
+  // ════════════════════════════════════════
+  const renderEditMode = () => {
+    const items = draft.line_items;
+    const groups = draft.groups;
+    const hd = draft.header_discount;
+    const topLevel = items.filter((l) => !l.group_id && !l.parent_line_id);
+    const groupedItems = (gid) => items.filter((l) => l.group_id === gid && !l.parent_line_id);
+    const groupSubtotal = (gid) => groupedItems(gid)
+      .reduce((s, l) => {
+        if (l.is_package) return s + calcPkgExtended(items, l.id);
+        return s + calcLineExtended(l);
+      }, 0);
 
-      {/* Footer info */}
-      {(q.comments || q.terms_conditions || q.prepared_by) && (
-        <div className="qd-footer-info">
-          {q.prepared_by && (
-            <div className="qd-footer-row">
-              <span className="qd-footer-label">Prepared by</span>
-              <span className="qd-footer-value">{q.prepared_by}</span>
-            </div>
-          )}
-          {q.comments && (
-            <div className="qd-footer-row">
-              <span className="qd-footer-label">Comments</span>
-              <span className="qd-footer-value">{q.comments}</span>
-            </div>
-          )}
-          {q.terms_conditions && (
-            <div className="qd-footer-row">
-              <span className="qd-footer-label">Terms & Conditions</span>
-              <span className="qd-footer-value">{q.terms_conditions}</span>
-            </div>
-          )}
-        </div>
-      )}
+    const editTableHead = (
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>SKU</th>
+          <th>Unit</th>
+          <th>Qty</th>
+          <th>List Price</th>
+          <th>Disc %</th>
+          <th>Disc $</th>
+          <th>Net Price</th>
+          <th>Extended</th>
+          <th className="col-actions" />
+        </tr>
+      </thead>
+    );
 
-      {/* Modals */}
-      {showPicker && (
-        <ProductPicker
-          products={availableProducts}
-          onAdd={addLine}
-          onClose={() => setShowPicker(false)}
-        />
-      )}
-      {showGroupModal && (
-        <div className="modal-overlay" onClick={() => { setShowGroupModal(false); setGroupName(''); }}>
-          <div className="modal" style={{ maxWidth: 360 }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-title">New Group</div>
-            <div className="field">
-              <label className="field-label">Group Name</label>
+    const renderEditStandalone = (line) => {
+      const unitType = line.unit_type || 'flat';
+      const included = isIncluded(unitType);
+      const extended = calcLineExtended(line);
+
+      return (
+        <tr key={line.id}>
+          <td className="line-td-product"><div className="cell-name">{line.product_name}</div></td>
+          <td><span className="cell-sku">{line.product_sku}</span></td>
+          <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
+          <td>
+            {included
+              ? <span className="cell-locked">1</span>
+              : renderEditableCell(line, 'quantity', { step: '1', min: '1' })}
+          </td>
+          <td>
+            {included
+              ? <span className="price-annual">—</span>
+              : renderEditableCell(line, 'list_price', { step: '0.01', min: '0' })}
+          </td>
+          <td>
+            {included
+              ? <span className="price-annual">—</span>
+              : renderEditableCell(line, 'discount_percent', { step: '0.1', min: '0', max: '100' })}
+          </td>
+          <td>
+            {included
+              ? <span className="price-annual">—</span>
+              : renderEditableCell(line, 'discount_amount', { step: '0.01', min: '0' })}
+          </td>
+          <td>
+            {included
+              ? <span className="price-annual">$0</span>
+              : <span className="price-monthly">{fmtCurrency(line.net_price ?? line.list_price ?? 0)}</span>}
+          </td>
+          <td>
+            {included
+              ? <span className="price-annual">$0</span>
+              : <span className="price-monthly">{fmtCurrency(extended)}</span>}
+          </td>
+          <td className="col-actions">
+            <div className="actions-group">
+              {groups.length > 0 && (
+                <select
+                  className="group-assign"
+                  value={line.group_id || ''}
+                  onChange={(e) => updateDraftLineField(line.id, 'group_id', e.target.value || null)}
+                  title="Assign to group"
+                >
+                  <option value="">No group</option>
+                  {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                </select>
+              )}
+              <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(line.id)}>
+                <i className="fa-solid fa-trash-can" />
+              </button>
+            </div>
+          </td>
+        </tr>
+      );
+    };
+
+    const renderEditPackage = (line) => {
+      const expanded = !collapsedPkgs.has(line.id);
+      const subs = getSubLines(items, line.id);
+      const pkgTotal = calcPkgExtended(items, line.id);
+
+      return (
+        <React.Fragment key={line.id}>
+          <tr className="line-row-package">
+            <td className="line-td-product">
+              <button className="pkg-chevron" onClick={() => togglePackage(line.id)}>
+                <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
+              </button>
+              <div style={{ display: 'inline-block', verticalAlign: 'middle' }}>
+                <div className="cell-name">{line.product_name}</div>
+                <div className="cell-sku">{subs.length} component{subs.length !== 1 ? 's' : ''}</div>
+              </div>
+            </td>
+            <td><span className="cell-sku">{line.product_sku}</span></td>
+            <td><span className="cell-sku">Package</span></td>
+            <td><span className="cell-locked">—</span></td>
+            <td><span className="cell-locked">—</span></td>
+            <td><span className="cell-locked">—</span></td>
+            <td><span className="cell-locked">—</span></td>
+            <td><span className="cell-locked">—</span></td>
+            <td><span className="price-monthly">{fmtCurrency(pkgTotal)}</span></td>
+            <td className="col-actions">
+              <div className="actions-group">
+                <button className="action-btn delete line-remove-btn" title="Remove package" onClick={() => removeDraftLine(line.id)}>
+                  <i className="fa-solid fa-trash-can" />
+                </button>
+              </div>
+            </td>
+          </tr>
+          {expanded && subs.map((sub) => {
+            const unitType = sub.unit_type || 'flat';
+            const ext = calcLineExtended(sub);
+            return (
+              <tr key={sub.id} className="line-row-sub">
+                <td className="line-td-product" style={{ paddingLeft: 36 }}>
+                  <div className="cell-name">{sub.product_name}</div>
+                </td>
+                <td><span className="cell-sku">{sub.product_sku}</span></td>
+                <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
+                <td>{renderEditableCell(sub, 'quantity', { step: '1', min: '1' })}</td>
+                <td>{renderEditableCell(sub, 'list_price', { step: '0.01', min: '0' })}</td>
+                <td>{renderEditableCell(sub, 'discount_percent', { step: '0.1', min: '0', max: '100' })}</td>
+                <td>{renderEditableCell(sub, 'discount_amount', { step: '0.01', min: '0' })}</td>
+                <td><span className="price-monthly">{fmtCurrency(sub.net_price ?? sub.list_price ?? 0)}</span></td>
+                <td><span className="price-monthly">{fmtCurrency(ext)}</span></td>
+                <td className="col-actions">
+                  <div className="actions-group">
+                    <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(sub.id)}>
+                      <i className="fa-solid fa-trash-can" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </React.Fragment>
+      );
+    };
+
+    const renderEditRow = (line) => {
+      if (line.parent_line_id) return null;
+      if (line.is_package) return renderEditPackage(line);
+      return renderEditStandalone(line);
+    };
+
+    return (
+      <div className="quote-detail qd-edit-mode">
+        {/* Edit mode header */}
+        <div className="qd-edit-header">
+          <div className="qd-edit-header-info">
+            <div className="qd-edit-title">
+              Editing Lines — <span className="qd-edit-quote-name">{q.name || 'Untitled Quote'}</span>
+            </div>
+            <div className="qd-edit-subtitle">{q.quote_number}</div>
+          </div>
+          <div className="qd-edit-header-actions">
+            <button className="btn-secondary" onClick={cancelEdit}>Cancel</button>
+            <button className="btn-save" onClick={saveEdit}>Save</button>
+          </div>
+        </div>
+
+        {/* Edit line items table */}
+        <div className="qd-lines-section">
+          {items.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state-icon"><i className="fa-solid fa-list" /></div>
+              <div className="empty-state-title">No line items</div>
+              <div className="empty-state-text">Add products from the catalog below</div>
+            </div>
+          ) : (
+            <div className="line-editor-table-wrap">
+              {topLevel.length > 0 && (
+                <table className="data-table line-table">
+                  {editTableHead}
+                  <tbody>{topLevel.map(renderEditRow)}</tbody>
+                </table>
+              )}
+
+              {groups.map((group) => {
+                const gLines = groupedItems(group.id);
+                return (
+                  <div key={group.id} className="line-group">
+                    <div className="line-group-header">
+                      <div className="line-group-name">
+                        <i className="fa-solid fa-layer-group" /> {group.name}
+                      </div>
+                      <div className="line-group-meta">
+                        <span className="line-group-subtotal">{fmtCurrency(groupSubtotal(group.id))}/mo</span>
+                        <button className="action-btn delete" title="Remove group" onClick={() => removeDraftGroup(group.id)}>
+                          <i className="fa-solid fa-xmark" />
+                        </button>
+                      </div>
+                    </div>
+                    {gLines.length > 0 ? (
+                      <table className="data-table line-table">
+                        {editTableHead}
+                        <tbody>{gLines.map(renderEditRow)}</tbody>
+                      </table>
+                    ) : (
+                      <div className="line-group-empty">No lines in this group. Assign lines using the dropdown.</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="qd-line-footer-actions">
+            <button className="btn-primary" onClick={() => setShowPicker(true)}>
+              <i className="fa-solid fa-plus" /> Add Product
+            </button>
+            <button className="qd-new-group-link" onClick={() => setShowGroupModal(true)}>
+              + New Group
+            </button>
+          </div>
+        </div>
+
+        {/* Running totals with editable quote discount */}
+        <div className="qd-summary">
+          <div className="qd-summary-item">
+            <div className="qd-summary-label">Quote Discount %</div>
+            <div className="qd-summary-value">
               <input
-                className="field-input"
-                value={groupName}
-                onChange={(e) => setGroupName(e.target.value)}
-                placeholder="e.g. Platform Services"
-                autoFocus
-                onKeyDown={(e) => { if (e.key === 'Enter') addGroup(); }}
+                className="inline-edit qd-discount-input"
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={hd}
+                onChange={(e) => updateDraft((d) => ({ ...d, header_discount: parseFloat(e.target.value) || 0 }))}
               />
             </div>
-            <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => { setShowGroupModal(false); setGroupName(''); }}>Cancel</button>
-              <button className="btn-save" onClick={addGroup} disabled={!groupName.trim()}>Create Group</button>
-            </div>
+          </div>
+          <div className="qd-summary-divider" />
+          <div className="qd-summary-item">
+            <div className="qd-summary-label">MRR</div>
+            {totals.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountMonthly)}</div>}
+            <div className="qd-summary-value">{fmtCurrency(totals.monthly)}</div>
+          </div>
+          <div className="qd-summary-divider" />
+          <div className="qd-summary-item">
+            <div className="qd-summary-label">ARR</div>
+            {totals.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountAnnual)}</div>}
+            <div className="qd-summary-value">{fmtCurrency(totals.annual)}</div>
+          </div>
+          <div className="qd-summary-divider" />
+          <div className="qd-summary-item">
+            <div className="qd-summary-label">TCV ({q.term_months}mo)</div>
+            {totals.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountTcv)}</div>}
+            <div className="qd-summary-value">{fmtCurrency(totals.tcv)}</div>
           </div>
         </div>
-      )}
-      {confirm && (
-        <div className="modal-overlay" onClick={() => setConfirm(null)}>
-          <div className="modal confirm-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="confirm-title">Confirm</div>
-            <div className="confirm-message">{confirm.msg}</div>
-            <div className="confirm-actions">
-              <button className="btn-secondary" onClick={() => setConfirm(null)}>Cancel</button>
-              <button className="btn-save" onClick={confirm.fn}>{confirm.label || 'Confirm'}</button>
+
+        {/* Modals */}
+        {showPicker && (
+          <ProductPicker
+            products={availableProducts}
+            onAdd={addLineToDraft}
+            onClose={() => setShowPicker(false)}
+          />
+        )}
+        {showGroupModal && (
+          <div className="modal-overlay" onClick={() => { setShowGroupModal(false); setGroupName(''); }}>
+            <div className="modal" style={{ maxWidth: 360 }} onClick={(e) => e.stopPropagation()}>
+              <div className="modal-title">New Group</div>
+              <div className="field">
+                <label className="field-label">Group Name</label>
+                <input
+                  className="field-input"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  placeholder="e.g. Platform Services"
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === 'Enter') addDraftGroup(); }}
+                />
+              </div>
+              <div className="modal-actions">
+                <button className="btn-secondary" onClick={() => { setShowGroupModal(false); setGroupName(''); }}>Cancel</button>
+                <button className="btn-save" onClick={addDraftGroup} disabled={!groupName.trim()}>Create Group</button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+      </div>
+    );
+  };
+
+  // ── Shared sub-renders ──
+  const renderSummary = (t, source) => (
+    <div className="qd-summary">
+      <div className="qd-summary-item">
+        <div className="qd-summary-label">MRR</div>
+        {t.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(t.preDiscountMonthly)}</div>}
+        <div className="qd-summary-value">{fmtCurrency(t.monthly)}</div>
+      </div>
+      <div className="qd-summary-divider" />
+      <div className="qd-summary-item">
+        <div className="qd-summary-label">ARR</div>
+        {t.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(t.preDiscountAnnual)}</div>}
+        <div className="qd-summary-value">{fmtCurrency(t.annual)}</div>
+      </div>
+      <div className="qd-summary-divider" />
+      <div className="qd-summary-item">
+        <div className="qd-summary-label">TCV ({source.term_months}mo)</div>
+        {t.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(t.preDiscountTcv)}</div>}
+        <div className="qd-summary-value">{fmtCurrency(t.tcv)}</div>
+      </div>
+      {t.hasQuoteDiscount && (
+        <>
+          <div className="qd-summary-divider" />
+          <div className="qd-summary-item">
+            <div className="qd-summary-label">Quote Discount</div>
+            <div className="qd-summary-value">{source.header_discount}%</div>
+          </div>
+        </>
       )}
     </div>
   );
+
+  const renderFooterInfo = (source) => {
+    if (!source.comments && !source.terms_conditions && !source.prepared_by) return null;
+    return (
+      <div className="qd-footer-info">
+        {source.prepared_by && (
+          <div className="qd-footer-row">
+            <span className="qd-footer-label">Prepared by</span>
+            <span className="qd-footer-value">{source.prepared_by}</span>
+          </div>
+        )}
+        {source.comments && (
+          <div className="qd-footer-row">
+            <span className="qd-footer-label">Comments</span>
+            <span className="qd-footer-value">{source.comments}</span>
+          </div>
+        )}
+        {source.terms_conditions && (
+          <div className="qd-footer-row">
+            <span className="qd-footer-label">Terms & Conditions</span>
+            <span className="qd-footer-value">{source.terms_conditions}</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderConfirmModal = () => (
+    <div className="modal-overlay" onClick={() => setConfirm(null)}>
+      <div className="modal confirm-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="confirm-title">Confirm</div>
+        <div className="confirm-message">{confirm.msg}</div>
+        <div className="confirm-actions">
+          <button className="btn-secondary" onClick={() => setConfirm(null)}>Cancel</button>
+          <button className="btn-save" onClick={confirm.fn}>{confirm.label || 'Confirm'}</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return mode === 'edit' ? renderEditMode() : renderViewMode();
 }
