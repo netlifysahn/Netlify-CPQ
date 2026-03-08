@@ -1,9 +1,15 @@
 import React from 'react';
+import lightModeLogo from '../assets/logo-netlify-monogram-fullcolor-lightmode.svg';
 
 // Netlify Spark monogram — official full-color dark-mode mark
-export default function NetlifyLogo({ size = 32 }) {
+export default function NetlifyLogo({ size = 32, theme = 'dark' }) {
   const h = size;
   const w = Math.round((128 / 112.635) * h);
+
+  if (theme === 'light') {
+    return <img src={lightModeLogo} width={w} height={h} alt="Netlify" />;
+  }
+
   return (
     <svg
       width={w}

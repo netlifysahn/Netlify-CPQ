@@ -107,16 +107,6 @@ export default function QuoteModal({ quote, existingQuotes, onSave, onClose }) {
         </div>
 
         <div className="field">
-          <label className="field-label">Header Discount %</label>
-          <input className="field-input" type="number" step="0.1" min="0" max="100" value={f.header_discount} onChange={(e) => s('header_discount', e.target.value)} placeholder="0" />
-        </div>
-
-        <div className="field">
-          <label className="field-label">Comments</label>
-          <textarea className="field-textarea" value={f.comments} onChange={(e) => s('comments', e.target.value)} placeholder="Internal notes..." />
-        </div>
-
-        <div className="field">
           <label className="field-label">Terms & Conditions</label>
           <textarea className="field-textarea" value={f.terms_conditions} onChange={(e) => s('terms_conditions', e.target.value)} placeholder="Payment terms, legal notes..." />
         </div>

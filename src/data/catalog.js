@@ -1,8 +1,16 @@
 // Netlify Deal Studio — Product Catalog Data Model (Phase 1)
 // Empty catalog. No seed data. No SFDC dependencies.
 
-export const PRODUCT_TYPES = ['bundle', 'platform', 'support', 'addon', 'credits'];
+export const PRODUCT_TYPES = ['bundle', 'platform', 'seats', 'credits', 'addon', 'support'];
 export const TYPE_SORT_ORDER = PRODUCT_TYPES.reduce((acc, type, index) => ({ ...acc, [type]: index }), {});
+export const TYPE_LABELS = {
+  bundle: 'Package',
+  platform: 'Platform',
+  seats: 'Seats',
+  addon: 'Add-ons',
+  credits: 'Credits',
+  support: 'Support',
+};
 export const PRICE_UNITS = ['flat', 'per_member', 'per_credit', 'included'];
 export const PRICING_METHODS = ['list', 'cost'];
 export const TERM_BEHAVIORS = ['included', 'excluded'];
@@ -12,24 +20,32 @@ export const MEMBER_PRICE_BEHAVIORS = ['included', 'discounted', 'related'];
 
 export const TYPE_COLORS = {
   platform: '#5cbbf6',
-  support: '#34d399',
+  seats: '#34d399',
   credits: '#f5a623',
   addon: '#a78bfa',
   bundle: '#32e6e2',
+  support: '#f472b6',
 };
 
 export const TYPE_ICONS = {
   platform: 'fa-bolt',
-  support: 'fa-headset',
+  seats: 'fa-headset',
   credits: 'fa-coins',
   addon: 'fa-server',
   bundle: 'fa-boxes-stacked',
+  support: 'fa-life-ring',
+};
+
+export const getProductCategory = (product) => {
+  const raw = product?.category ?? product?.type;
+  if (typeof raw !== 'string' || !raw.trim()) return 'platform';
+  return raw.trim().toLowerCase();
 };
 
 export const UNIT_LABELS = {
   flat: 'Flat',
-  per_member: '/member',
-  per_credit: '/credit',
+  per_member: '/ seat',
+  per_credit: '/ credit',
   included: 'Included',
 };
 
@@ -43,6 +59,7 @@ export const emptyProduct = () => ({
   description: '',
   active: true,
   hide: false,
+  category: 'platform',
   type: 'platform',
   is_service: true,
   default_term: 12,
@@ -129,7 +146,9 @@ export const fmtPrice = (v) => {
 
 export const sortProductsByType = (products = []) =>
   [...products].sort((a, b) => {
-    const typeDiff = (TYPE_SORT_ORDER[a?.type] ?? Number.MAX_SAFE_INTEGER) - (TYPE_SORT_ORDER[b?.type] ?? Number.MAX_SAFE_INTEGER);
+    const aCategory = getProductCategory(a);
+    const bCategory = getProductCategory(b);
+    const typeDiff = (TYPE_SORT_ORDER[aCategory] ?? Number.MAX_SAFE_INTEGER) - (TYPE_SORT_ORDER[bCategory] ?? Number.MAX_SAFE_INTEGER);
     if (typeDiff !== 0) return typeDiff;
 
     const nameA = (a?.name || '').toLowerCase();

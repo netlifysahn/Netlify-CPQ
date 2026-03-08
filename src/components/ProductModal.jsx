@@ -6,12 +6,14 @@ import {
   PRICING_METHODS,
   PRODUCT_TYPES,
   TERM_BEHAVIORS,
+  TYPE_LABELS,
   UNIT_LABELS,
   calcBundleMembersTotal,
   calcBundleMonthlyTotal,
   emptyBundleMember,
   emptyProduct,
   fmtPrice,
+  getProductCategory,
   isBundleProduct,
 } from '../data/catalog';
 
@@ -23,6 +25,8 @@ function getPillColor(index) {
 
 function coerceProduct(product) {
   const next = { ...(product || emptyProduct()) };
+  next.category = getProductCategory(next);
+  next.type = next.category;
   if (!next.configuration_method) next.configuration_method = 'none';
   if (!next.bundle_pricing) next.bundle_pricing = 'header_only';
   if (typeof next.print_members !== 'boolean') next.print_members = true;
@@ -91,6 +95,19 @@ export default function ProductModal({ product, products, onSave, onClose }) {
     return p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
   });
 
+  const categoryOptions = useMemo(() => {
+    const values = [...PRODUCT_TYPES];
+    const seen = new Set(values);
+    const include = (value) => {
+      if (!value || seen.has(value)) return;
+      seen.add(value);
+      values.push(value);
+    };
+    include(getProductCategory(f));
+    (products || []).forEach((product) => include(getProductCategory(product)));
+    return values;
+  }, [f, products]);
+
   const addMember = (productId) => {
     const nextSort = (f.members || []).length + 1;
     setF((prev) => ({
@@ -148,6 +165,8 @@ export default function ProductModal({ product, products, onSave, onClose }) {
 
     onSave({
       ...f,
+      category: getProductCategory(f),
+      type: getProductCategory(f),
       default_price: { ...f.default_price, amount: parseFloat(f.default_price.amount) || 0 },
       default_entitlements: entitlements,
       config: {
@@ -183,10 +202,17 @@ export default function ProductModal({ product, products, onSave, onClose }) {
               <input className="field-input" value={f.sku} onChange={(e) => s('sku', e.target.value.toUpperCase())} placeholder="NTL-XXX" style={{ fontFamily: "'Menlo', monospace" }} />
             </div>
             <div className="field">
-              <label className="field-label">Type</label>
-              <select className="field-select" value={f.type} onChange={(e) => s('type', e.target.value)}>
-                {PRODUCT_TYPES.map((t) => (
-                  <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+              <label className="field-label">Category</label>
+              <select
+                className="field-select"
+                value={getProductCategory(f)}
+                onChange={(e) => {
+                  s('category', e.target.value);
+                  s('type', e.target.value);
+                }}
+              >
+                {categoryOptions.map((t) => (
+                  <option key={t} value={t}>{TYPE_LABELS[t] || (t.charAt(0).toUpperCase() + t.slice(1))}</option>
                 ))}
               </select>
             </div>
@@ -218,7 +244,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
           <div className="grid-3">
             <div className="field">
               <label className="field-label">Monthly Price ($)</label>
-              <input className="field-input" type="number" step="0.01" value={f.default_price.amount} onChange={(e) => sp('amount', e.target.value)} placeholder="0.00" />
+              <input className="field-input" type="number" min="0" step="0.01" value={f.default_price.amount} onChange={(e) => sp('amount', e.target.value)} placeholder="0.00" />
             </div>
             <div className="field">
               <label className="field-label">Unit</label>
@@ -264,7 +290,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
         <div className="modal-section">
           <div className="modal-section-label">
             <i className="fa-solid fa-boxes-stacked" />
-            Bundle Configuration
+            Package Configuration
           </div>
 
           <div className="checkbox-row">
@@ -274,14 +300,14 @@ export default function ProductModal({ product, products, onSave, onClose }) {
               onChange={(e) => s('configuration_method', e.target.checked ? 'bundle' : 'none')}
               id="isBundle"
             />
-            <label htmlFor="isBundle" className="checkbox-label">This is a bundle</label>
+            <label htmlFor="isBundle" className="checkbox-label">This is a package</label>
           </div>
 
           {isBundleProduct(f) && (
             <>
               <div className="grid-2">
                 <div className="field">
-                  <label className="field-label">Bundle Pricing</label>
+                  <label className="field-label">Package Pricing</label>
                   <select className="field-select" value={f.bundle_pricing} onChange={(e) => s('bundle_pricing', e.target.value)}>
                     {BUNDLE_PRICING_MODES.map((mode) => (
                       <option key={mode} value={mode}>{mode}</option>
@@ -308,7 +334,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                         className="field-input bundle-picker-search"
                         value={memberQuery}
                         onChange={(e) => setMemberQuery(e.target.value)}
-                        placeholder="Search non-bundle products..."
+                        placeholder="Search non-package products..."
                       />
                       <div className="bundle-picker-list">
                         {filteredPickerProducts.length === 0 && <div className="bundle-picker-empty">No matching products</div>}

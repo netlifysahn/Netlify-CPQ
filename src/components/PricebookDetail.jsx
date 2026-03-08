@@ -18,7 +18,6 @@ export default function PricebookDetail({ pricebook, products, onBack }) {
       <div className="page-header">
         <div className="page-label">Pricebook</div>
         <h1 className="page-title">{pricebook.name}</h1>
-        {pricebook.description && <p className="page-subtitle">{pricebook.description}</p>}
         <span className={`status-badge status-badge-inline${pricebook.active ? ' active' : ''}`}>{getPricebookStatus(pricebook)}</span>
       </div>
 

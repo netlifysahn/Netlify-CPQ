@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { fmtPrice } from '../data/catalog';
+import { TYPE_LABELS, fmtPrice, getProductCategory } from '../data/catalog';
 
 export default function ProductPicker({ products, onAdd, onClose }) {
   const [search, setSearch] = useState('');
@@ -30,20 +30,23 @@ export default function ProductPicker({ products, onAdd, onClose }) {
           {filtered.length === 0 && (
             <div className="picker-empty">No matching products</div>
           )}
-          {filtered.map((p) => (
-            <button key={p.id} className="picker-item" onClick={() => { onAdd(p); onClose(); }}>
-              <div className="picker-item-info">
-                <span className="picker-item-name">{p.name}</span>
-                <span className={`type-pill type-${p.type}`}>{p.type}</span>
-              </div>
-              <div className="picker-item-meta">
-                <span className="picker-item-sku">{p.sku}</span>
-                <span className="picker-item-price">
-                  {p.default_price?.amount > 0 ? fmtPrice(p.default_price.amount) + '/mo' : 'Custom'}
-                </span>
-              </div>
-            </button>
-          ))}
+          {filtered.map((p) => {
+            const category = getProductCategory(p);
+            return (
+              <button key={p.id} className="picker-item" onClick={() => { onAdd(p); onClose(); }}>
+                <div className="picker-item-info">
+                  <span className="picker-item-name">{p.name}</span>
+                  <span className={`type-pill type-${category}`}>{TYPE_LABELS[category] || category}</span>
+                </div>
+                <div className="picker-item-meta">
+                  <span className="picker-item-sku">{p.sku}</span>
+                  <span className="picker-item-price">
+                    {p.default_price?.amount > 0 ? fmtPrice(p.default_price.amount) + '/mo' : 'Custom'}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

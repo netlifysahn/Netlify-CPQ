@@ -1,6 +1,6 @@
 // Netlify Deal Studio — Quote Data Model (Phase 3)
 
-import { genId } from './catalog';
+import { genId, getProductCategory } from './catalog';
 
 export const QUOTE_STATUSES = ['draft', 'submitted', 'won', 'lost', 'cancelled'];
 export const TERM_OPTIONS = [12, 24, 36];
@@ -45,7 +45,7 @@ export const emptyLineItem = (product) => ({
   product_id: product.id,
   product_name: product.name,
   product_sku: product.sku,
-  product_type: product.type,
+  product_type: getProductCategory(product),
   group_id: null,
   quantity: product.config?.default_quantity || 1,
   list_price: product.default_price?.amount || 0,
