@@ -1,31 +1,31 @@
 /* ─── Netlify Deal Studio — Global Styles ─────────────────── */
-/* Athena-quality. Dieter Rams / Apple / Linear / Stripe.     */
+/* Netlify brand palette. Dieter Rams restraint.              */
 
 :root {
-  /* Base — exact Athena values */
-  --bg: #0a0c10;
-  --bg-secondary: #12151c;
-  --surface: #1a1e28;
+  /* Base — Netlify dark: teal-tinted, not generic dark */
+  --bg: #0C2A2A;
+  --bg-secondary: #0A2222;
+  --surface: #14302F;
   --border: rgba(255, 255, 255, 0.08);
   --border-default: rgba(255, 255, 255, 0.12);
 
-  /* Text — Athena's warm tones */
-  --text-strong: #ffffff;
-  --text-body: rgba(255, 255, 255, 0.72);
-  --text-muted: rgba(255, 255, 255, 0.55);
-  --text-faint: rgba(255, 255, 255, 0.40);
+  /* Text — Netlify neutrals */
+  --text-strong: #FFFFFF;
+  --text-body: rgba(255, 255, 255, 0.75);
+  --text-muted: rgba(255, 255, 255, 0.50);
+  --text-faint: #9DA7B2;
 
-  /* Accent */
-  --teal: #32e6e2;
-  --teal-dark: #00c7b7;
+  /* Accent — Netlify Teal 200 on dark */
+  --teal: #32E6E2;
+  --teal-dark: #14D8D4;
   --teal-muted: rgba(50, 230, 226, 0.10);
 
-  /* Semantic */
-  --blue: #5cbbf6;
-  --green: #34d399;
-  --amber: #f5a623;
-  --purple: #a78bfa;
-  --red: #f87171;
+  /* Semantic — Netlify brand */
+  --blue: #2E51ED;
+  --green: #3AC364;
+  --amber: #FBB13D;
+  --purple: #382AA4;
+  --red: #FE4E5C;
 
   /* Typography — from Athena */
   --font-heading: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -325,8 +325,8 @@
   font-size: 13px;
   border-radius: 6px;
   border: none;
-  background: #32e6e2;
-  color: #0a0c10;
+  background: #32E6E2;
+  color: #0C2A2A;
   cursor: pointer;
   font-weight: 600;
   font-family: var(--font-body);
@@ -334,7 +334,7 @@
 }
 
 .btn-save:hover {
-  background: #3ef0ec;
+  background: #8EFBF7;
 }
 
 .btn-save:disabled {
@@ -623,7 +623,7 @@
 }
 
 .modal {
-  background: #161a23;
+  background: #14302F;
   border: none;
   border-radius: 12px;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
@@ -737,7 +737,7 @@
 }
 
 .field-select option {
-  background: #161a23;
+  background: #14302F;
   color: #ffffff;
 }
 
@@ -827,7 +827,7 @@
   top: 1.5px;
   width: 5px;
   height: 9px;
-  border: solid #0a0c10;
+  border: solid #0C2A2A;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
@@ -1026,7 +1026,7 @@
   top: calc(100% + 8px);
   width: 100%;
   z-index: 10;
-  background: #161a23;
+  background: #14302F;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
   padding: 12px;
@@ -1153,7 +1153,7 @@
 /* ─── Entitlements JSON textarea ──────────────────────────── */
 
 .entitlements-json {
-  background: #0e1117 !important;
+  background: #0A2222 !important;
   border: 1px solid rgba(255, 255, 255, 0.06) !important;
   border-radius: 6px !important;
   font-family: var(--font-mono) !important;
@@ -1538,7 +1538,7 @@
   position: absolute;
   right: 0;
   top: calc(100% + 4px);
-  background: #161a23;
+  background: #14302F;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
   padding: 4px;
@@ -1933,50 +1933,50 @@
   border-radius: 2px;
 }
 
-/* ─── Light Mode ─────────────────────────────────────────── */
-/* Stripe-inspired: clean white panels, cool grey bg, depth. */
+/* ─── Light Mode — Netlify Brand ─────────────────────────── */
+/* Neutral scale + Teal 400 accent. No true black.           */
 
 [data-theme="light"] {
-  /* Base — cool grey background, white surfaces pop */
-  --bg: #f6f8fa;
-  --bg-secondary: #ffffff;
-  --surface: #ffffff;
-  --border: #e3e8ee;
-  --border-default: #e3e8ee;
+  /* Base — Netlify Neutral scale */
+  --bg: #F6F6F7;
+  --bg-secondary: #FFFFFF;
+  --surface: #FFFFFF;
+  --border: #D1D5DA;
+  --border-default: #D1D5DA;
 
-  /* Text — Stripe's contrast hierarchy */
-  --text-strong: #1a1a2e;
-  --text-body: #3c4257;
-  --text-muted: #697386;
-  --text-faint: #8792a2;
+  /* Text — Netlify Neutral scale */
+  --text-strong: #1B1A1C;
+  --text-body: #353A3E;
+  --text-muted: #778099;
+  --text-faint: #9DA7B2;
 
-  /* Accent — deep teal, pops on white */
-  --teal: #008c82;
-  --teal-dark: #007a71;
-  --teal-muted: #f0fffe;
+  /* Accent — Netlify Teal 400 on light */
+  --teal: #05BDBA;
+  --teal-dark: #04A29F;
+  --teal-muted: #DEFFFE;
 
-  /* Semantic — confident on light */
-  --blue: #1a7fd4;
-  --green: #16a34a;
-  --amber: #d97706;
-  --purple: #7c3aed;
-  --red: #dc2626;
+  /* Semantic — Netlify brand */
+  --blue: #2E51ED;
+  --green: #3AC364;
+  --amber: #FBB13D;
+  --purple: #382AA4;
+  --red: #FE4E5C;
 }
 
 /* ─── Light Mode — Component Overrides ───────────────────── */
 
-/* Sidebar — clean white panel */
+/* Sidebar — white panel, Neutral 200 border */
 [data-theme="light"] .sidebar {
-  background: #ffffff;
-  border-right-color: #e3e8ee;
+  background: #FFFFFF;
+  border-right-color: #E9EBED;
 }
 
 [data-theme="light"] .sidebar-brand-text {
-  color: #1a1a2e;
+  color: #1B1A1C;
 }
 
 [data-theme="light"] .sidebar-item {
-  color: #697386;
+  color: #545A61;
 }
 
 [data-theme="light"] .sidebar-item i {
@@ -1984,685 +1984,691 @@
 }
 
 [data-theme="light"] .sidebar-item:hover {
-  color: #3c4257;
-  background: #f6f8fa;
+  color: #353A3E;
+  background: #F6F6F7;
 }
 
 [data-theme="light"] .sidebar-item.active {
-  color: #008c82;
-  background: #f0fffe;
-  border-left-color: #008c82;
+  color: #05BDBA;
+  background: #DEFFFE;
+  border-left-color: #05BDBA;
 }
 
 [data-theme="light"] .sidebar-item.active i {
-  color: #008c82;
+  color: #05BDBA;
   opacity: 1;
 }
 
-/* Page header — bold titles */
+/* Page header */
 [data-theme="light"] .page-label {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 [data-theme="light"] .page-title {
-  color: #1a1a2e;
+  color: #1B1A1C;
   font-weight: 600;
 }
 
 [data-theme="light"] .page-subtitle {
-  color: #697386;
+  color: #778099;
 }
 
-/* Search — white bg, solid border */
+/* Search — white bg, Neutral 300 border */
 [data-theme="light"] .search-wrap {
-  background: #ffffff;
-  border-color: #e3e8ee;
+  background: #FFFFFF;
+  border-color: #D1D5DA;
 }
 
 [data-theme="light"] .search-wrap:focus-within {
-  border-color: #008c82;
+  border-color: #05BDBA;
 }
 
 [data-theme="light"] .search-wrap i {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 [data-theme="light"] .search-input {
-  color: #1a1a2e;
+  color: #1B1A1C;
 }
 
 [data-theme="light"] .search-input::placeholder {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 /* Filter buttons */
 [data-theme="light"] .filter-btn {
-  color: #697386;
+  color: #778099;
 }
 
 [data-theme="light"] .filter-btn:hover {
-  color: #3c4257;
-  background: #f0f2f5;
+  color: #353A3E;
+  background: #F6F6F7;
 }
 
 [data-theme="light"] .filter-btn.active {
-  color: #1a1a2e;
-  background: #e8eaed;
+  color: #1B1A1C;
+  background: #E9EBED;
   font-weight: 600;
 }
 
-/* Buttons — solid white, clear borders */
+/* Buttons — Neutral 000 bg, Neutral 300 border, Neutral 700 text */
 [data-theme="light"] .btn-primary {
-  background: #ffffff;
-  border-color: #e3e8ee;
-  color: #3c4257;
+  background: #FFFFFF;
+  border-color: #D1D5DA;
+  color: #353A3E;
 }
 
 [data-theme="light"] .btn-primary:hover {
-  border-color: #c1c9d2;
-  color: #1a1a2e;
+  border-color: #9DA7B2;
+  color: #1B1A1C;
 }
 
+/* Save — Teal 400 */
 [data-theme="light"] .btn-save {
-  background: #008c82;
-  color: #ffffff;
+  background: #05BDBA;
+  color: #FFFFFF;
 }
 
 [data-theme="light"] .btn-save:hover {
-  background: #007a71;
+  background: #04A29F;
 }
 
 [data-theme="light"] .btn-destructive {
-  color: #ffffff;
+  background: #FE4E5C;
+  color: #FFFFFF;
 }
 
 [data-theme="light"] .btn-secondary {
-  background: #ffffff;
-  border-color: #e3e8ee;
-  color: #697386;
+  background: #FFFFFF;
+  border-color: #D1D5DA;
+  color: #778099;
 }
 
 [data-theme="light"] .btn-secondary:hover {
-  border-color: #c1c9d2;
-  color: #3c4257;
+  border-color: #9DA7B2;
+  color: #353A3E;
 }
 
-/* Table — white card with border, warm header */
+/* Table — Neutral 100 header, Neutral 200 dividers */
 [data-theme="light"] .data-table th {
-  color: #697386;
+  color: #778099;
   font-weight: 500;
-  background: #f6f8fa;
-  border-bottom-color: #e3e8ee;
+  background: #F6F6F7;
+  border-bottom-color: #E9EBED;
 }
 
 [data-theme="light"] .data-table td {
-  border-bottom-color: #f0f2f5;
+  border-bottom-color: #E9EBED;
 }
 
 [data-theme="light"] .data-table tbody tr:hover {
-  background: #f6f8fa;
+  background: #F6F6F7;
 }
 
-/* Cells — confident product names */
+/* Cells */
 [data-theme="light"] .cell-name {
-  color: #1a1a2e;
+  color: #1B1A1C;
   font-weight: 500;
 }
 
 [data-theme="light"] .cell-sku {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 [data-theme="light"] .cell-description {
-  color: #697386;
+  color: #778099;
 }
 
 [data-theme="light"] .price-monthly {
-  color: #1a1a2e;
+  color: #1B1A1C;
 }
 
 [data-theme="light"] .price-annual {
-  color: #697386;
+  color: #778099;
 }
 
 [data-theme="light"] .price-included {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 [data-theme="light"] .price-dash {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
-/* Type badges — visible, confident */
+/* Type badges — Netlify semantic at proper opacity */
 [data-theme="light"] .type-platform {
-  background: #e8f4fd;
-  color: #1a6fb5;
+  background: #E8EFFE;
+  color: #2E51ED;
 }
 
 [data-theme="light"] .type-support {
-  background: #e6f9f0;
-  color: #137a3e;
+  background: #E6FAF0;
+  color: #1E8E44;
 }
 
 [data-theme="light"] .type-credits {
-  background: #fef3e2;
-  color: #b45309;
+  background: #FEF3E2;
+  color: #B8860B;
 }
 
 [data-theme="light"] .type-addon {
-  background: #f0ebfe;
-  color: #6429cc;
+  background: #EEEAFC;
+  color: #382AA4;
 }
 
 [data-theme="light"] .type-bundle {
-  background: #e6fffe;
-  color: #007a71;
+  background: #DEFFFE;
+  color: #016968;
 }
 
-/* Status badges — solid, visible */
+/* Status badges — Netlify semantic */
 [data-theme="light"] .status-dot.inactive {
-  background: #c1c9d2;
+  background: #D1D5DA;
+}
+
+[data-theme="light"] .status-dot.active {
+  background: #3AC364;
 }
 
 [data-theme="light"] .status-label {
-  color: #697386;
+  color: #778099;
 }
 
 [data-theme="light"] .status-badge {
-  border-color: #e3e8ee;
-  color: #697386;
+  border-color: #E9EBED;
+  color: #545A61;
 }
 
 [data-theme="light"] .status-grey {
-  background: #f0f2f5;
-  border-color: #e3e8ee;
-  color: #697386;
+  background: #F6F6F7;
+  border-color: #E9EBED;
+  color: #545A61;
 }
 
 [data-theme="light"] .status-blue {
-  background: #e8f4fd;
-  color: #1a6fb5;
+  background: #E8EFFE;
+  color: #2E51ED;
 }
 
 [data-theme="light"] .status-green {
-  background: #e6f9f0;
-  color: #137a3e;
+  background: #E6FAF0;
+  color: #1E8E44;
 }
 
 [data-theme="light"] .status-red {
-  background: #fde8e8;
-  color: #b91c1c;
+  background: #FEE8EA;
+  color: #C8323E;
 }
 
 [data-theme="light"] .status-muted {
-  background: #f0f2f5;
-  color: #8792a2;
+  background: #F6F6F7;
+  color: #9DA7B2;
 }
 
 /* Action buttons */
 [data-theme="light"] .action-btn {
-  color: #c1c9d2;
+  color: #D1D5DA;
 }
 
 [data-theme="light"] .data-table tbody tr:hover .action-btn {
-  color: #697386;
+  color: #778099;
 }
 
-/* Modal — white, solid shadow */
+/* Modal */
 [data-theme="light"] .modal-overlay {
-  background: #1a1a2e66;
+  background: #1B1A1C66;
 }
 
 [data-theme="light"] .modal {
-  background: #ffffff;
-  border: 1px solid #e3e8ee;
-  box-shadow: 0 24px 48px #1a1a2e1a;
+  background: #FFFFFF;
+  border: 1px solid #E9EBED;
+  box-shadow: 0 24px 48px #1B1A1C1a;
 }
 
 [data-theme="light"] .modal-title {
-  color: #1a1a2e;
+  color: #1B1A1C;
 }
 
 [data-theme="light"] .modal-actions {
-  border-top-color: #e3e8ee;
+  border-top-color: #E9EBED;
 }
 
-/* Form — white inputs, solid borders */
+/* Form — white inputs, Neutral 300 borders */
 [data-theme="light"] .field-label {
-  color: #697386;
+  color: #778099;
 }
 
 [data-theme="light"] .field-input {
-  background: #ffffff;
-  border-color: #e3e8ee;
-  color: #1a1a2e;
+  background: #FFFFFF;
+  border-color: #D1D5DA;
+  color: #1B1A1C;
 }
 
 [data-theme="light"] .field-input:focus {
-  border-color: #008c82;
-  box-shadow: 0 0 0 3px #008c8214;
+  border-color: #05BDBA;
+  box-shadow: 0 0 0 3px #05BDBA1a;
 }
 
 [data-theme="light"] .field-input::placeholder {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 [data-theme="light"] .field-textarea {
-  background: #ffffff;
-  border-color: #e3e8ee;
-  color: #1a1a2e;
+  background: #FFFFFF;
+  border-color: #D1D5DA;
+  color: #1B1A1C;
 }
 
 [data-theme="light"] .field-textarea:focus {
-  border-color: #008c82;
-  box-shadow: 0 0 0 3px #008c8214;
+  border-color: #05BDBA;
+  box-shadow: 0 0 0 3px #05BDBA1a;
 }
 
 [data-theme="light"] .field-textarea::placeholder {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 [data-theme="light"] .field-select {
-  background: #ffffff;
-  border-color: #e3e8ee;
-  color: #1a1a2e;
+  background: #FFFFFF;
+  border-color: #D1D5DA;
+  color: #1B1A1C;
 }
 
 [data-theme="light"] .field-select:focus {
-  border-color: #008c82;
+  border-color: #05BDBA;
 }
 
 [data-theme="light"] .field-select option {
-  background: #ffffff;
-  color: #1a1a2e;
+  background: #FFFFFF;
+  color: #1B1A1C;
 }
 
 /* Modal sections */
 [data-theme="light"] .modal-section {
-  border-top-color: #e3e8ee;
+  border-top-color: #E9EBED;
 }
 
 [data-theme="light"] .modal-section-label {
-  color: #697386;
+  color: #778099;
 }
 
-/* Checkbox — teal when checked */
+/* Checkbox — Teal 400 when checked */
 [data-theme="light"] .checkbox-row input[type="checkbox"] {
-  border-color: #c1c9d2;
+  border-color: #D1D5DA;
 }
 
 [data-theme="light"] .checkbox-row input[type="checkbox"]:checked {
-  background: #008c82;
-  border-color: #008c82;
+  background: #05BDBA;
+  border-color: #05BDBA;
 }
 
 [data-theme="light"] .checkbox-row input[type="checkbox"]:checked::after {
-  border-color: #ffffff;
+  border-color: #FFFFFF;
 }
 
 [data-theme="light"] .checkbox-label {
-  color: #3c4257;
+  color: #353A3E;
 }
 
 /* Config indicators */
 [data-theme="light"] .config-indicator {
-  background: #f0f2f5;
-  color: #697386;
+  background: #F6F6F7;
+  color: #778099;
 }
 
 /* Expandable rows */
 [data-theme="light"] .expand-btn {
-  color: #c1c9d2;
+  color: #D1D5DA;
 }
 
 [data-theme="light"] .expand-btn:hover {
-  color: #697386;
+  color: #778099;
 }
 
 [data-theme="light"] .expanded-row td {
-  background: #f6f8fa;
+  background: #F6F6F7;
 }
 
 [data-theme="light"] .expanded-label {
-  color: #697386;
+  color: #778099;
 }
 
 /* Bundle */
 [data-theme="light"] .bundle-member-row {
-  border-bottom-color: #f0f2f5;
+  border-bottom-color: #E9EBED;
 }
 
 [data-theme="light"] .bundle-member-name {
-  color: #3c4257;
+  color: #353A3E;
 }
 
 [data-theme="light"] .bundle-member-qty,
 [data-theme="light"] .bundle-member-behavior {
-  color: #697386;
+  color: #778099;
 }
 
 [data-theme="light"] .price-preview {
-  background: #f6f8fa;
-  border: 1px solid #e3e8ee;
+  background: #F6F6F7;
+  border: 1px solid #E9EBED;
 }
 
 [data-theme="light"] .price-preview-label {
-  color: #697386;
+  color: #778099;
 }
 
 [data-theme="light"] .price-preview-value {
-  color: #1a1a2e;
+  color: #1B1A1C;
 }
 
 [data-theme="light"] .bundle-add-btn {
-  background: #ffffff;
-  color: #3c4257;
-  border-color: #e3e8ee;
+  background: #FFFFFF;
+  color: #353A3E;
+  border-color: #D1D5DA;
 }
 
 [data-theme="light"] .bundle-picker {
-  background: #ffffff;
-  border-color: #e3e8ee;
-  box-shadow: 0 8px 24px #1a1a2e14;
+  background: #FFFFFF;
+  border-color: #E9EBED;
+  box-shadow: 0 8px 24px #1B1A1C14;
 }
 
 [data-theme="light"] .bundle-picker-item {
-  color: #3c4257;
+  color: #353A3E;
 }
 
 [data-theme="light"] .bundle-picker-item:hover {
-  background: #f6f8fa;
+  background: #F6F6F7;
 }
 
 [data-theme="light"] .bundle-picker-sku {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 [data-theme="light"] .bundle-picker-empty,
 [data-theme="light"] .bundle-members-empty {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 [data-theme="light"] .bundle-member-editor {
-  border-color: #e3e8ee;
+  border-color: #E9EBED;
 }
 
 [data-theme="light"] .bundle-member-title {
-  color: #1a1a2e;
+  color: #1B1A1C;
 }
 
 [data-theme="light"] .bundle-rollup {
-  border-color: #e3e8ee;
-  background: #f6f8fa;
+  border-color: #E9EBED;
+  background: #F6F6F7;
 }
 
 [data-theme="light"] .bundle-rollup-line {
-  color: #697386;
+  color: #778099;
 }
 
 [data-theme="light"] .bundle-rollup-total {
-  border-top-color: #e3e8ee;
-  color: #1a1a2e;
+  border-top-color: #E9EBED;
+  color: #1B1A1C;
 }
 
 /* Empty state */
 [data-theme="light"] .empty-state {
-  background: #ffffff;
-  border-color: #e3e8ee;
+  background: #FFFFFF;
+  border-color: #E9EBED;
 }
 
 /* Entitlements JSON */
 [data-theme="light"] .entitlements-json {
-  background: #f6f8fa !important;
-  border-color: #e3e8ee !important;
+  background: #F6F6F7 !important;
+  border-color: #D1D5DA !important;
 }
 
 [data-theme="light"] .entitlements-json:focus {
-  border-color: #008c82 !important;
+  border-color: #05BDBA !important;
 }
 
 /* Tabs */
 [data-theme="light"] .tabs-row {
-  border-bottom-color: #e3e8ee;
+  border-bottom-color: #E9EBED;
 }
 
 [data-theme="light"] .tab-btn {
-  color: #697386;
+  color: #778099;
 }
 
 [data-theme="light"] .tab-btn:hover {
-  color: #3c4257;
-  background: #f0f2f5;
+  color: #353A3E;
+  background: #F6F6F7;
 }
 
 [data-theme="light"] .tab-btn.active {
-  color: #1a1a2e;
-  background: #e8eaed;
+  color: #1B1A1C;
+  background: #E9EBED;
 }
 
 /* Cancel button */
 [data-theme="light"] .btn-cancel {
-  color: #697386;
+  color: #778099;
 }
 
 [data-theme="light"] .btn-cancel:hover {
-  color: #3c4257;
+  color: #353A3E;
 }
 
 /* Quote list */
 [data-theme="light"] .cell-quote-number {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 [data-theme="light"] .cell-customer {
-  color: #697386;
+  color: #778099;
 }
 
 [data-theme="light"] .cell-term {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 [data-theme="light"] .clickable-row:hover {
-  background: #f6f8fa !important;
+  background: #F6F6F7 !important;
 }
 
 /* Quote detail */
 [data-theme="light"] .qd-quote-number {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 [data-theme="light"] .qd-title {
-  color: #1a1a2e;
+  color: #1B1A1C;
   font-weight: 600;
 }
 
 [data-theme="light"] .qd-meta {
-  color: #697386;
+  color: #778099;
 }
 
-/* Status / action buttons — solid, clickable */
+/* Status / action buttons */
 [data-theme="light"] .qd-status-btn {
-  background: #ffffff;
-  color: #3c4257;
-  border: 1px solid #e3e8ee;
+  background: #FFFFFF;
+  color: #353A3E;
+  border: 1px solid #D1D5DA;
 }
 
 [data-theme="light"] .qd-status-btn:hover {
-  color: #1a1a2e;
-  border-color: #c1c9d2;
-  background: #f6f8fa;
+  color: #1B1A1C;
+  border-color: #9DA7B2;
+  background: #F6F6F7;
 }
 
 [data-theme="light"] .qd-more-btn {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 [data-theme="light"] .qd-more-btn:hover {
-  color: #3c4257;
-  background: #f0f2f5;
+  color: #353A3E;
+  background: #F6F6F7;
 }
 
 [data-theme="light"] .qd-more-menu {
-  background: #ffffff;
-  border-color: #e3e8ee;
-  box-shadow: 0 8px 24px #1a1a2e14;
+  background: #FFFFFF;
+  border-color: #E9EBED;
+  box-shadow: 0 8px 24px #1B1A1C14;
 }
 
 [data-theme="light"] .qd-more-item {
-  color: #697386;
+  color: #778099;
 }
 
 [data-theme="light"] .qd-more-item:hover {
-  background: #f6f8fa;
-  color: #1a1a2e;
+  background: #F6F6F7;
+  color: #1B1A1C;
 }
 
-/* Summary — no dividers, confident numbers */
+/* Summary — no dividers, confident */
 [data-theme="light"] .qd-summary-divider {
   background: transparent;
 }
 
 [data-theme="light"] .qd-summary-label {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 [data-theme="light"] .qd-summary-value {
-  color: #1a1a2e;
+  color: #1B1A1C;
 }
 
 /* New group link */
 [data-theme="light"] .qd-new-group-link {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 [data-theme="light"] .qd-new-group-link:hover {
-  color: #008c82;
+  color: #05BDBA;
 }
 
 /* Footer info */
 [data-theme="light"] .qd-footer-info {
-  border-top-color: #e3e8ee;
+  border-top-color: #E9EBED;
 }
 
 [data-theme="light"] .qd-footer-label {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 [data-theme="light"] .qd-footer-value {
-  color: #697386;
+  color: #778099;
 }
 
 /* Inline editing */
 [data-theme="light"] .cell-editable {
-  color: #1a1a2e;
+  color: #1B1A1C;
 }
 
 [data-theme="light"] .cell-editable:hover {
-  background: #f0f2f5;
+  background: #F6F6F7;
 }
 
 [data-theme="light"] .inline-edit {
-  background: #ffffff;
-  border-color: #008c82;
-  color: #1a1a2e;
+  background: #FFFFFF;
+  border-color: #05BDBA;
+  color: #1B1A1C;
 }
 
 /* Line groups */
 [data-theme="light"] .line-group {
-  border-color: #e3e8ee;
+  border-color: #E9EBED;
 }
 
 [data-theme="light"] .line-group-header {
-  background: #f6f8fa;
-  border-bottom-color: #e3e8ee;
+  background: #F6F6F7;
+  border-bottom-color: #E9EBED;
 }
 
 [data-theme="light"] .line-group-name {
-  color: #1a1a2e;
+  color: #1B1A1C;
 }
 
 /* Picker */
 [data-theme="light"] .picker-item:hover {
-  background: #f6f8fa;
+  background: #F6F6F7;
 }
 
-/* Customer info — white card */
+/* Customer info */
 [data-theme="light"] .qd-customer-info {
-  background: #ffffff;
-  border-color: #e3e8ee;
+  background: #FFFFFF;
+  border-color: #E9EBED;
 }
 
 [data-theme="light"] .qd-customer-section-label {
-  color: #8792a2;
+  color: #9DA7B2;
 }
 
 [data-theme="light"] .qd-customer-company {
-  color: #1a1a2e;
+  color: #1B1A1C;
 }
 
 [data-theme="light"] .qd-customer-address {
-  color: #697386;
+  color: #778099;
 }
 
 [data-theme="light"] .qd-customer-field {
-  color: #697386;
+  color: #778099;
 }
 
 /* Name link */
 [data-theme="light"] .name-link {
-  color: #1a1a2e;
+  color: #1B1A1C;
 }
 
 [data-theme="light"] .name-link:hover {
-  color: #008c82;
+  color: #05BDBA;
 }
 
 /* Coming soon */
 [data-theme="light"] .coming-soon {
-  background: #ffffff;
-  border-color: #e3e8ee;
+  background: #FFFFFF;
+  border-color: #E9EBED;
 }
 
-/* Entitlement pills — confident */
+/* Entitlement pills — Netlify brand colors */
 [data-theme="light"] .entitlement-pill.pill-blue {
-  background: #e8f4fd;
-  color: #1a6fb5;
+  background: #E8EFFE;
+  color: #2E51ED;
 }
 
 [data-theme="light"] .entitlement-pill.pill-green {
-  background: #e6f9f0;
-  color: #137a3e;
+  background: #E6FAF0;
+  color: #1E8E44;
 }
 
 [data-theme="light"] .entitlement-pill.pill-amber {
-  background: #fef3e2;
-  color: #b45309;
+  background: #FEF3E2;
+  color: #B8860B;
 }
 
 [data-theme="light"] .entitlement-pill.pill-purple {
-  background: #f0ebfe;
-  color: #6429cc;
+  background: #EEEAFC;
+  color: #382AA4;
 }
 
 [data-theme="light"] .entitlement-pill.pill-teal {
-  background: #e6fffe;
-  color: #007a71;
+  background: #DEFFFE;
+  color: #016968;
 }
 
 /* Scrollbar */
 [data-theme="light"] .modal::-webkit-scrollbar-thumb {
-  background: #c1c9d2;
+  background: #D1D5DA;
 }
 
 /* Group assign select */
 [data-theme="light"] .group-assign {
-  border-color: #e3e8ee;
-  color: #697386;
+  border-color: #D1D5DA;
+  color: #778099;
 }
 
 [data-theme="light"] .group-assign option {
-  background: #ffffff;
-  color: #1a1a2e;
+  background: #FFFFFF;
+  color: #1B1A1C;
 }
 
 /* ─── Theme Toggle ───────────────────────────────────────── */
