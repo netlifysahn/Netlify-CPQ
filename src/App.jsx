@@ -215,8 +215,8 @@ export default function App() {
       quote_number: genQuoteNumber(quotes),
       name: q.name + ' (copy)',
       status: 'draft',
-      line_items: q.line_items.map((l) => ({ ...l, id: genId() })),
-      groups: q.groups.map((g) => ({ ...g, id: genId() })),
+      line_items: (q.line_items || []).map((l) => ({ ...l, id: genId() })),
+      groups: (q.groups || []).map((g) => ({ ...g, id: genId() })),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -265,7 +265,7 @@ export default function App() {
 
   const fq = quotes.filter((q) => {
     if (statusFilter !== 'All' && q.status !== statusFilter) return false;
-    if (search && !q.name.toLowerCase().includes(search.toLowerCase()) && !(q.quote_number || '').toLowerCase().includes(search.toLowerCase()) && !(q.customer_name || '').toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !(q.name || '').toLowerCase().includes(search.toLowerCase()) && !(q.quote_number || '').toLowerCase().includes(search.toLowerCase()) && !(q.customer_name || '').toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 

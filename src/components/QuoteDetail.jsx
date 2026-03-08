@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, Component } from 'react';
 import {
   calcQuoteTotals, calcLineExtended, calcLineMonthly,
   fmtCurrency, STATUS_META, emptyLineItem, emptyGroup,
@@ -8,8 +8,45 @@ import {
 import { generateQuotePdf } from '../utils/quotePdf';
 import ProductPicker from './ProductPicker';
 
+// Error boundary to catch render crashes and show them instead of blank screen
+class QuoteDetailErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+  componentDidCatch(error, info) {
+    console.error('[QuoteDetail] Render crash:', error, info?.componentStack);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 40 }}>
+          <button className="back-btn" onClick={this.props.onBack}>
+            <i className="fa-solid fa-arrow-left" /> Back to Quotes
+          </button>
+          <h2 style={{ marginTop: 20, color: '#ef4444' }}>Something went wrong</h2>
+          <pre style={{ marginTop: 12, padding: 16, background: 'rgba(0,0,0,0.05)', borderRadius: 8, whiteSpace: 'pre-wrap', fontSize: 13 }}>
+            {this.state.error?.message || String(this.state.error)}
+          </pre>
+          <pre style={{ marginTop: 8, padding: 16, background: 'rgba(0,0,0,0.05)', borderRadius: 8, whiteSpace: 'pre-wrap', fontSize: 11, color: '#888' }}>
+            {this.state.error?.stack}
+          </pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Backfill missing fields on older quotes so the component never hits undefined
 const normalizeQuote = (q) => {
+  if (!q || typeof q !== 'object') {
+    console.error('[QuoteDetail] normalizeQuote received invalid quote:', q);
+    return { id: 'error', quote_number: 'ERR', name: 'Invalid Quote', status: 'draft', term_months: 12, header_discount: 0, line_items: [], groups: [], start_date: '', end_date: '', customer_name: '', customer_address: '', customer_contact: '', billing_contact_name: '', billing_contact_email: '', billing_contact_phone: '', prepared_by: '', comments: '', terms_conditions: '', pricebook_id: null, created_at: '', updated_at: '' };
+  }
   const safe = {
     ...q,
     status: q.status || 'draft',
@@ -31,7 +68,15 @@ const normalizeQuote = (q) => {
   return safe;
 };
 
-export default function QuoteDetail({ quote, products, pricebooks, onSave, onBack, onDelete }) {
+export default function QuoteDetail(props) {
+  return (
+    <QuoteDetailErrorBoundary onBack={props.onBack}>
+      <QuoteDetailInner {...props} />
+    </QuoteDetailErrorBoundary>
+  );
+}
+
+function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelete }) {
   const [q, setQ] = useState(() => normalizeQuote(quote));
   const [showPicker, setShowPicker] = useState(false);
   const [editingCell, setEditingCell] = useState(null);
