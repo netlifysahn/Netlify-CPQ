@@ -1,6 +1,5 @@
 import { getStore } from '@netlify/blobs';
 
-const store = getStore('deal-studio');
 const KEY = 'catalog';
 
 function normalizeCatalog(payload) {
@@ -15,6 +14,8 @@ function normalizeCatalog(payload) {
 }
 
 export default async (req) => {
+  const store = getStore('deal-studio');
+
   if (req.method === 'GET') {
     const catalog = await store.get(KEY, { type: 'json' });
     return Response.json(normalizeCatalog(catalog));

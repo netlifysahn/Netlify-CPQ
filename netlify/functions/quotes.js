@@ -1,9 +1,10 @@
 import { getStore } from '@netlify/blobs';
 
-const store = getStore('deal-studio');
 const KEY = 'quotes';
 
 export default async (req) => {
+  const store = getStore('deal-studio');
+
   if (req.method === 'GET') {
     const quotes = await store.get(KEY, { type: 'json' });
     return Response.json(Array.isArray(quotes) ? quotes : []);
