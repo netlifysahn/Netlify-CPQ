@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  calcQuoteTotals, calcLineMonthly, calcLineTotal,
-  fmtCurrency, STATUS_META, QUOTE_STATUSES, emptyLineItem, emptyGroup,
+  calcQuoteTotals, calcLineExtended, calcLineMonthly,
+  fmtCurrency, STATUS_META, emptyLineItem, emptyGroup,
+  syncDiscountFromPercent, syncDiscountFromAmount,
+  isQuantityEditable, isIncluded, getUnitLabel,
 } from '../data/quotes';
 import { generateQuotePdf } from '../utils/quotePdf';
 import ProductPicker from './ProductPicker';
@@ -41,11 +43,8 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
   const addLine = (product) => {
     const pb = getSelectedPricebook();
     const entry = pb?.entries?.find((e) => e.product_id === product.id);
-    const line = emptyLineItem(product);
-    if (entry && entry.price_override != null) {
-      line.list_price = entry.price_override;
-      line.sales_price = entry.price_override;
-    }
+    const priceOverride = entry?.price_override != null ? entry.price_override : undefined;
+    const line = emptyLineItem(product, priceOverride);
     update((prev) => ({
       ...prev,
       line_items: [...prev.line_items, { ...line, sort_order: prev.line_items.length }],
@@ -59,14 +58,28 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
     return products.filter((p) => pbProductIds.has(p.id));
   })();
 
-  const updateLine = (lineId, field, value) => {
+  const updateLine = (lineId, updates) => {
     update((prev) => ({
       ...prev,
       line_items: prev.line_items.map((l) =>
-        l.id === lineId ? { ...l, [field]: value } : l
+        l.id === lineId ? { ...l, ...updates } : l
       ),
     }));
     setEditingCell(null);
+  };
+
+  const updateLineField = (lineId, field, value) => {
+    updateLine(lineId, { [field]: value });
+  };
+
+  const updateDiscount = (lineId, field, value) => {
+    const line = q.line_items.find((l) => l.id === lineId);
+    if (!line) return;
+    const val = parseFloat(value) || 0;
+    const synced = field === 'discount_percent'
+      ? syncDiscountFromPercent(line.list_price, val)
+      : syncDiscountFromAmount(line.list_price, val);
+    updateLine(lineId, synced);
   };
 
   const removeLine = (lineId) => {
@@ -117,7 +130,6 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
     return groupedLines(groupId).reduce((s, l) => s + calcLineMonthly(l, q.header_discount), 0);
   };
 
-  // Available status transitions
   const statusOptions = () => {
     const opts = [];
     if (q.status === 'draft') opts.push('submitted');
@@ -126,16 +138,13 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
     return opts;
   };
 
-  const renderEditableCell = (line, field, type = 'number') => {
+  const renderEditableCell = (line, field, opts = {}) => {
+    const { type = 'number', step = '1', min, max, suffix = '', prefix = '', disabled = false } = opts;
     const cellKey = `${line.id}-${field}`;
     const isEditing = editingCell === cellKey;
-    const locked = field === 'quantity' ? line.config.lock_quantity :
-      field === 'sales_price' ? line.config.lock_price :
-      field === 'line_discount' ? line.config.lock_discount : false;
 
-    if (locked) {
-      const val = field === 'sales_price' ? fmtCurrency(line[field]) :
-        field === 'line_discount' ? `${line[field]}%` : line[field];
+    if (disabled) {
+      const val = prefix + (typeof line[field] === 'number' ? line[field] : '') + suffix;
       return <span className="cell-locked">{val}</span>;
     }
 
@@ -146,20 +155,31 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
           type={type}
           defaultValue={line[field]}
           autoFocus
-          step={field === 'sales_price' ? '0.01' : field === 'line_discount' ? '0.1' : '1'}
-          min={field === 'line_discount' ? '0' : undefined}
-          max={field === 'line_discount' ? '100' : undefined}
-          onBlur={(e) => updateLine(line.id, field, parseFloat(e.target.value) || 0)}
+          step={step}
+          min={min}
+          max={max}
+          onBlur={(e) => {
+            const v = parseFloat(e.target.value) || 0;
+            if (field === 'discount_percent' || field === 'discount_amount') {
+              updateDiscount(line.id, field, v);
+            } else if (field === 'quantity') {
+              updateLineField(line.id, 'quantity', Math.max(1, Math.round(v)));
+            } else {
+              updateLineField(line.id, field, v);
+            }
+          }}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') updateLine(line.id, field, parseFloat(e.target.value) || 0);
+            if (e.key === 'Enter') e.target.blur();
             if (e.key === 'Escape') setEditingCell(null);
           }}
         />
       );
     }
 
-    const display = field === 'sales_price' ? fmtCurrency(line[field]) :
-      field === 'line_discount' ? `${line[field]}%` : line[field];
+    let display;
+    if (field === 'discount_percent') display = `${line[field]}%`;
+    else if (field === 'discount_amount' || field === 'list_price' || field === 'net_price') display = fmtCurrency(line[field]);
+    else display = prefix + line[field] + suffix;
 
     return (
       <span className="cell-editable" onClick={() => setEditingCell(cellKey)}>
@@ -169,28 +189,70 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
   };
 
   const renderLineRow = (line) => {
+    const unitType = line.unit_type || 'flat';
+    const included = isIncluded(unitType);
+    const qtyEditable = isQuantityEditable(unitType);
+    const extended = calcLineExtended(line);
     const monthly = calcLineMonthly(line, q.header_discount);
-    const total = calcLineTotal(line, q.header_discount);
+
     return (
       <tr key={line.id}>
         <td className="line-td-product">
           <div className="cell-name">{line.product_name}</div>
           <div className="cell-sku">{line.product_sku}</div>
         </td>
-        <td>{renderEditableCell(line, 'quantity')}</td>
-        <td><span className="price-annual">{fmtCurrency(line.list_price)}</span></td>
-        <td>{renderEditableCell(line, 'sales_price')}</td>
-        <td>{renderEditableCell(line, 'line_discount')}</td>
-        <td><span className="cell-term">{line.term_months}mo</span></td>
-        <td><span className="price-monthly">{fmtCurrency(monthly)}</span></td>
-        <td><span className="price-monthly">{fmtCurrency(total)}</span></td>
+        <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
+        <td>
+          {included ? (
+            <span className="cell-locked">1</span>
+          ) : qtyEditable ? (
+            renderEditableCell(line, 'quantity', { step: '1', min: '1' })
+          ) : (
+            <span className="cell-locked">1</span>
+          )}
+        </td>
+        <td>
+          {included ? (
+            <span className="price-annual">—</span>
+          ) : (
+            <span className="price-annual">{fmtCurrency(line.list_price)}</span>
+          )}
+        </td>
+        <td>
+          {included ? (
+            <span className="price-annual">—</span>
+          ) : (
+            renderEditableCell(line, 'discount_percent', { step: '0.1', min: '0', max: '100' })
+          )}
+        </td>
+        <td>
+          {included ? (
+            <span className="price-annual">—</span>
+          ) : (
+            renderEditableCell(line, 'discount_amount', { step: '0.01', min: '0' })
+          )}
+        </td>
+        <td>
+          {included ? (
+            <span className="price-annual">$0.00</span>
+          ) : (
+            <span className="price-monthly">{fmtCurrency(line.net_price)}</span>
+          )}
+        </td>
+        <td>
+          {included ? (
+            <span className="price-annual">$0.00</span>
+          ) : (
+            <span className="price-monthly">{fmtCurrency(extended)}</span>
+          )}
+        </td>
         <td className="col-actions">
           <div className="actions-group">
             {q.groups.length > 0 && (
               <select
                 className="group-assign"
                 value={line.group_id || ''}
-                onChange={(e) => updateLine(line.id, 'group_id', e.target.value || null)}
+                onChange={(e) => updateLineField(line.id, 'group_id', e.target.value || null)}
                 title="Assign to group"
               >
                 <option value="">No group</option>
@@ -212,13 +274,13 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
     <thead>
       <tr>
         <th>Product</th>
+        <th>Unit</th>
         <th>Qty</th>
         <th>List Price</th>
-        <th>Sales Price</th>
-        <th>Discount</th>
-        <th>Term</th>
-        <th>Monthly</th>
-        <th>Total</th>
+        <th>Disc %</th>
+        <th>Disc $</th>
+        <th>Net Price</th>
+        <th>Extended</th>
         <th className="col-actions" />
       </tr>
     </thead>
@@ -241,11 +303,10 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
               <span className={`status-badge status-${meta.color}`}>{meta.label}</span>
               <span>{q.term_months}mo term</span>
               {q.start_date && <span>{q.start_date} &rarr; {q.end_date || '...'}</span>}
-              {q.header_discount > 0 && <span>{q.header_discount}% discount</span>}
+              {q.header_discount > 0 && <span>{q.header_discount}% quote discount</span>}
             </div>
           </div>
           <div className="qd-actions">
-            {/* Status ghost buttons */}
             {statusOptions().map((s) => (
               <button key={s} className="qd-status-btn" onClick={() => changeStatus(s)}>
                 {STATUS_META[s]?.label || s}
@@ -254,7 +315,6 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
             <button className="qd-status-btn" onClick={() => generateQuotePdf(q)}>
               PDF
             </button>
-            {/* More menu */}
             <div className="qd-more-wrap" ref={moreRef}>
               <button className="qd-more-btn" onClick={() => setShowMoreMenu(!showMoreMenu)}>
                 <i className="fa-solid fa-ellipsis" />
@@ -289,24 +349,6 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
           )}
         </div>
       )}
-
-      {/* Summary — flat, breathing numbers */}
-      <div className="qd-summary">
-        <div className="qd-summary-item">
-          <div className="qd-summary-label">Monthly Total</div>
-          <div className="qd-summary-value">{fmtCurrency(totals.monthly)}</div>
-        </div>
-        <div className="qd-summary-divider" />
-        <div className="qd-summary-item">
-          <div className="qd-summary-label">Annual Total</div>
-          <div className="qd-summary-value">{fmtCurrency(totals.annual)}</div>
-        </div>
-        <div className="qd-summary-divider" />
-        <div className="qd-summary-item">
-          <div className="qd-summary-label">TCV ({q.term_months}mo)</div>
-          <div className="qd-summary-value">{fmtCurrency(totals.tcv)}</div>
-        </div>
-      </div>
 
       {/* Line Editor */}
       <div className="qd-lines-section">
@@ -364,10 +406,45 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
           </div>
         )}
 
-        {/* New Group link */}
         <button className="qd-new-group-link" onClick={() => setShowGroupModal(true)}>
           + New Group
         </button>
+      </div>
+
+      {/* Quote Summary */}
+      <div className="qd-summary">
+        <div className="qd-summary-item">
+          <div className="qd-summary-label">MRR</div>
+          {totals.hasQuoteDiscount && (
+            <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountMonthly)}</div>
+          )}
+          <div className="qd-summary-value">{fmtCurrency(totals.monthly)}</div>
+        </div>
+        <div className="qd-summary-divider" />
+        <div className="qd-summary-item">
+          <div className="qd-summary-label">ARR</div>
+          {totals.hasQuoteDiscount && (
+            <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountAnnual)}</div>
+          )}
+          <div className="qd-summary-value">{fmtCurrency(totals.annual)}</div>
+        </div>
+        <div className="qd-summary-divider" />
+        <div className="qd-summary-item">
+          <div className="qd-summary-label">TCV ({q.term_months}mo)</div>
+          {totals.hasQuoteDiscount && (
+            <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountTcv)}</div>
+          )}
+          <div className="qd-summary-value">{fmtCurrency(totals.tcv)}</div>
+        </div>
+        {totals.hasQuoteDiscount && (
+          <>
+            <div className="qd-summary-divider" />
+            <div className="qd-summary-item">
+              <div className="qd-summary-label">Quote Discount</div>
+              <div className="qd-summary-value">{q.header_discount}%</div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Footer info */}

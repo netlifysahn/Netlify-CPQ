@@ -2006,6 +2006,15 @@
   margin-bottom: var(--space-sm);
 }
 
+.qd-summary-pre {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-faint);
+  text-decoration: line-through;
+  margin-bottom: 2px;
+}
+
 .qd-summary-value {
   font-family: var(--font-heading);
   font-size: 28px;
@@ -3062,6 +3071,10 @@
 }
 
 [data-theme="light"] .qd-summary-label {
+  color: #9DA7B2;
+}
+
+[data-theme="light"] .qd-summary-pre {
   color: #9DA7B2;
 }
 

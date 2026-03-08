@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { calcLineMonthly, calcLineTotal, calcQuoteTotals, fmtCurrency } from '../data/quotes';
+import { calcLineExtended, calcLineMonthly, calcQuoteTotals, fmtCurrency } from '../data/quotes';
 
 export function generateQuotePdf(quote) {
   console.log('[PDF] generateQuotePdf called', quote?.quote_number);
@@ -122,18 +122,18 @@ export function generateQuotePdf(quote) {
   // Line items table
   if (quote.line_items && quote.line_items.length > 0) {
     const hd = quote.header_discount || 0;
-    const tableHead = [['Product', 'Qty', 'List Price', 'Sales Price', 'Discount', 'Monthly', 'Total']];
+    const tableHead = [['Product', 'Qty', 'List Price', 'Disc %', 'Net Price', 'Extended', 'After Quote Disc']];
     const tableBody = quote.line_items.map((line) => {
+      const extended = calcLineExtended(line);
       const monthly = calcLineMonthly(line, hd);
-      const total = calcLineTotal(line, hd);
       return [
         line.product_name,
         String(line.quantity),
         fmtCurrency(line.list_price),
-        fmtCurrency(line.sales_price),
-        line.line_discount > 0 ? `${line.line_discount}%` : '\u2014',
+        line.discount_percent > 0 ? `${line.discount_percent}%` : '\u2014',
+        fmtCurrency(line.net_price || line.list_price),
+        fmtCurrency(extended),
         fmtCurrency(monthly),
-        fmtCurrency(total),
       ];
     });
 
