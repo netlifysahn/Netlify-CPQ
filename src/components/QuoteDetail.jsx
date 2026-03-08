@@ -2,9 +2,11 @@ import React, { useState, useRef, useEffect, Component } from 'react';
 import {
   calcQuoteTotals, calcLineExtended, calcLineMonthly,
   fmtCurrency, STATUS_META, emptyLineItem, emptyGroup,
+  emptyPackageLine, emptySubLineItem,
   syncDiscountFromPercent, syncDiscountFromAmount,
   isQuantityEditable, isIncluded, getUnitLabel,
 } from '../data/quotes';
+import { isBundleProduct } from '../data/catalog';
 import { generateQuotePdf } from '../utils/quotePdf';
 import ProductPicker from './ProductPicker';
 
@@ -62,6 +64,8 @@ const normalizeQuote = (q) => {
       net_price: l.net_price ?? l.list_price ?? l.sales_price ?? 0,
       product_name: l.product_name || l.name || 'Unknown Product',
       product_sku: l.product_sku || l.sku || '',
+      is_package: l.is_package || false,
+      parent_line_id: l.parent_line_id || null,
     })),
     groups: q.groups || [],
   };
@@ -84,6 +88,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [collapsedPkgs, setCollapsedPkgs] = useState(new Set());
   const moreRef = useRef(null);
 
   useEffect(() => {
@@ -110,13 +115,41 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
 
   const addLine = (product) => {
     const pb = getSelectedPricebook();
-    const entry = pb?.entries?.find((e) => e.product_id === product.id);
-    const priceOverride = entry?.price_override != null ? entry.price_override : undefined;
-    const line = emptyLineItem(product, priceOverride);
-    update((prev) => ({
-      ...prev,
-      line_items: [...prev.line_items, { ...line, sort_order: prev.line_items.length }],
-    }));
+    const getPriceOverride = (prodId) => {
+      const entry = pb?.entries?.find((e) => e.product_id === prodId);
+      return entry?.price_override != null ? entry.price_override : undefined;
+    };
+
+    if (isBundleProduct(product) && product.members?.length > 0) {
+      // Package: create parent + sub-line items
+      const parentLine = emptyPackageLine(product);
+      const productMap = new Map((products || []).map((p) => [p.id, p]));
+      const subLines = product.members
+        .filter((m) => productMap.has(m.product_id))
+        .map((m) => {
+          const memberProduct = productMap.get(m.product_id);
+          return emptySubLineItem(memberProduct, m, parentLine.id, getPriceOverride(m.product_id));
+        });
+
+      update((prev) => {
+        const base = prev.line_items.length;
+        return {
+          ...prev,
+          line_items: [
+            ...prev.line_items,
+            { ...parentLine, sort_order: base },
+            ...subLines.map((sl, i) => ({ ...sl, sort_order: base + 1 + i })),
+          ],
+        };
+      });
+    } else {
+      // Standalone line item
+      const line = emptyLineItem(product, getPriceOverride(product.id));
+      update((prev) => ({
+        ...prev,
+        line_items: [...prev.line_items, { ...line, sort_order: prev.line_items.length }],
+      }));
+    }
   };
 
   const availableProducts = (() => {
@@ -161,7 +194,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   const removeLine = (lineId) => {
     update((prev) => ({
       ...prev,
-      line_items: prev.line_items.filter((l) => l.id !== lineId),
+      // Remove the line and any sub-items that belong to it (if it's a package)
+      line_items: prev.line_items.filter((l) => l.id !== lineId && l.parent_line_id !== lineId),
     }));
   };
 
@@ -200,8 +234,9 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   const totals = calcQuoteTotals(q);
   const meta = STATUS_META[q.status] || STATUS_META.draft;
 
-  const ungrouped = q.line_items.filter((l) => !l.group_id);
-  const groupedLines = (groupId) => q.line_items.filter((l) => l.group_id === groupId);
+  // Top-level lines: exclude sub-components (they render under their parent)
+  const ungrouped = q.line_items.filter((l) => !l.group_id && !l.parent_line_id);
+  const groupedLines = (groupId) => q.line_items.filter((l) => l.group_id === groupId && !l.parent_line_id);
   const groupSubtotal = (groupId) => {
     return groupedLines(groupId).reduce((s, l) => s + calcLineMonthly(l, q.header_discount), 0);
   };
@@ -212,6 +247,21 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     if (q.status === 'draft' || q.status === 'submitted') opts.push('won', 'lost');
     if (q.status !== 'cancelled' && q.status !== 'won' && q.status !== 'lost') opts.push('cancelled');
     return opts;
+  };
+
+  const togglePackage = (lineId) => {
+    setCollapsedPkgs((prev) => {
+      const next = new Set(prev);
+      if (next.has(lineId)) next.delete(lineId);
+      else next.add(lineId);
+      return next;
+    });
+  };
+
+  const getSubLines = (parentId) => q.line_items.filter((l) => l.parent_line_id === parentId);
+
+  const calcPackageExtended = (parentId) => {
+    return getSubLines(parentId).reduce((s, l) => s + calcLineExtended(l), 0);
   };
 
   const renderEditableCell = (line, field, opts = {}) => {
@@ -265,12 +315,12 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     );
   };
 
-  const renderLineRow = (line) => {
+  // Render a standalone (non-package) line row
+  const renderStandaloneRow = (line) => {
     const unitType = line.unit_type || 'flat';
     const included = isIncluded(unitType);
     const qtyEditable = isQuantityEditable(unitType);
     const extended = calcLineExtended(line);
-    const monthly = calcLineMonthly(line, q.header_discount);
 
     return (
       <tr key={line.id}>
@@ -345,6 +395,89 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         </td>
       </tr>
     );
+  };
+
+  // Render a package parent row with chevron + rolled-up total
+  const renderPackageRow = (line) => {
+    const expanded = !collapsedPkgs.has(line.id);
+    const pkgTotal = calcPackageExtended(line.id);
+    const subCount = getSubLines(line.id).length;
+
+    return (
+      <tr key={line.id} className="line-row-package">
+        <td className="line-td-product">
+          <button className="pkg-chevron" onClick={() => togglePackage(line.id)} title={expanded ? 'Collapse' : 'Expand'}>
+            <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
+          </button>
+          <div style={{ display: 'inline-block', verticalAlign: 'middle' }}>
+            <div className="cell-name">{line.product_name}</div>
+            <div className="cell-sku">{line.product_sku} &middot; {subCount} component{subCount !== 1 ? 's' : ''}</div>
+          </div>
+        </td>
+        <td><span className="cell-sku">Package</span></td>
+        <td><span className="cell-locked">—</span></td>
+        <td><span className="cell-locked">—</span></td>
+        <td><span className="cell-locked">—</span></td>
+        <td><span className="cell-locked">—</span></td>
+        <td><span className="cell-locked">—</span></td>
+        <td><span className="price-monthly">{fmtCurrency(pkgTotal)}</span></td>
+        <td className="col-actions">
+          <div className="actions-group">
+            <button className="action-btn delete line-remove-btn" title="Remove package" onClick={() => removeLine(line.id)}>
+              <i className="fa-solid fa-trash-can" />
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+  };
+
+  // Render a sub-line item row (indented under package)
+  const renderSubLineRow = (line) => {
+    const unitType = line.unit_type || 'flat';
+    const extended = calcLineExtended(line);
+
+    return (
+      <tr key={line.id} className="line-row-sub">
+        <td className="line-td-product" style={{ paddingLeft: 36 }}>
+          <div className="cell-name">{line.product_name}</div>
+          <div className="cell-sku">{line.product_sku}</div>
+        </td>
+        <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
+        <td>{renderEditableCell(line, 'quantity', { step: '1', min: '1' })}</td>
+        <td>{renderEditableCell(line, 'list_price', { step: '0.01', min: '0' })}</td>
+        <td>{renderEditableCell(line, 'discount_percent', { step: '0.1', min: '0', max: '100' })}</td>
+        <td>{renderEditableCell(line, 'discount_amount', { step: '0.01', min: '0' })}</td>
+        <td><span className="price-monthly">{fmtCurrency(line.net_price ?? line.list_price ?? 0)}</span></td>
+        <td><span className="price-monthly">{fmtCurrency(extended)}</span></td>
+        <td className="col-actions">
+          <div className="actions-group">
+            <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeLine(line.id)}>
+              <i className="fa-solid fa-trash-can" />
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+  };
+
+  // Render a line: dispatches to package, sub-line, or standalone
+  const renderLineRow = (line) => {
+    // Sub-lines are rendered by their parent, skip them here
+    if (line.parent_line_id) return null;
+
+    if (line.is_package) {
+      const expanded = !collapsedPkgs.has(line.id);
+      const subs = getSubLines(line.id);
+      return (
+        <React.Fragment key={line.id}>
+          {renderPackageRow(line)}
+          {expanded && subs.map(renderSubLineRow)}
+        </React.Fragment>
+      );
+    }
+
+    return renderStandaloneRow(line);
   };
 
   const lineTableHead = (

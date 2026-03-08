@@ -209,13 +209,24 @@ export default function App() {
     });
 
   const dupeQuote = (q) => {
+    // Remap line IDs and parent_line_id references for packages
+    const idMap = new Map();
+    const newLines = (q.line_items || []).map((l) => {
+      const newId = genId();
+      idMap.set(l.id, newId);
+      return { ...l, id: newId };
+    }).map((l) => ({
+      ...l,
+      parent_line_id: l.parent_line_id ? (idMap.get(l.parent_line_id) || null) : null,
+    }));
+
     const newQ = {
       ...q,
       id: genId(),
       quote_number: genQuoteNumber(quotes),
       name: q.name + ' (copy)',
       status: 'draft',
-      line_items: (q.line_items || []).map((l) => ({ ...l, id: genId() })),
+      line_items: newLines,
       groups: (q.groups || []).map((g) => ({ ...g, id: genId() })),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

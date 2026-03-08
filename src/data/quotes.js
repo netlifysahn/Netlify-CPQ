@@ -1,6 +1,6 @@
 // Netlify Deal Studio — Quote Data Model (Phase 3)
 
-import { genId, getProductCategory, UNIT_LABELS } from './catalog';
+import { genId, getProductCategory, UNIT_LABELS, isBundleProduct } from './catalog';
 
 export const QUOTE_STATUSES = ['draft', 'submitted', 'won', 'lost', 'cancelled'];
 export const TERM_OPTIONS = [12, 24, 36];
@@ -69,6 +69,60 @@ export const emptyLineItem = (product, listPrice) => {
   };
 };
 
+// Package parent line — container with no price of its own
+export const emptyPackageLine = (product) => ({
+  id: genId(),
+  product_id: product.id,
+  product_name: product.name,
+  product_sku: product.sku,
+  product_type: getProductCategory(product),
+  unit_type: 'flat',
+  group_id: null,
+  is_package: true,
+  quantity: 0,
+  list_price: 0,
+  discount_percent: 0,
+  discount_amount: 0,
+  net_price: 0,
+  sort_order: 0,
+});
+
+// Sub-line item for a bundle member
+export const emptySubLineItem = (memberProduct, member, parentLineId, listPrice) => {
+  const unitType = getUnitType(memberProduct);
+  const price = listPrice ?? memberProduct.default_price?.amount ?? 0;
+  const qty = member.default_quantity || 1;
+  const included = member.price_behavior === 'included';
+  const discPct = member.price_behavior === 'discounted' ? (member.discount_percent || 0) : 0;
+  const effectivePrice = included ? 0 : price;
+  const synced = included ? { discount_percent: 0, discount_amount: 0, net_price: 0 }
+    : discPct > 0 ? syncDiscountFromPercentRaw(effectivePrice, discPct)
+    : { discount_percent: 0, discount_amount: 0, net_price: effectivePrice };
+
+  return {
+    id: genId(),
+    product_id: memberProduct.id,
+    product_name: memberProduct.name,
+    product_sku: memberProduct.sku,
+    product_type: getProductCategory(memberProduct),
+    unit_type: unitType,
+    group_id: null,
+    parent_line_id: parentLineId,
+    quantity: qty,
+    list_price: effectivePrice,
+    ...synced,
+    sort_order: member.sort_order || 0,
+  };
+};
+
+// Internal sync that doesn't depend on round2 being defined later
+const syncDiscountFromPercentRaw = (listPrice, percent) => {
+  const p = Math.max(0, Math.min(100, percent || 0));
+  const amount = listPrice * (p / 100);
+  const net = listPrice - amount;
+  return { discount_percent: p, discount_amount: Math.round(amount * 100) / 100, net_price: Math.round(Math.max(0, net) * 100) / 100 };
+};
+
 export const emptyGroup = () => ({
   id: genId(),
   name: '',
@@ -128,7 +182,9 @@ export const calcLineTotal = (line, headerDiscount = 0) => {
 };
 
 export const calcQuoteTotals = (quote) => {
-  const lines = quote.line_items || [];
+  const allLines = quote.line_items || [];
+  // Only sum priceable lines: standalone lines + sub-components (skip package parents)
+  const lines = allLines.filter((l) => !l.is_package);
   const hd = quote.header_discount || 0;
   const term = quote.term_months || 12;
 

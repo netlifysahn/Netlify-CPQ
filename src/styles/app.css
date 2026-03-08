@@ -2085,6 +2085,44 @@
   opacity: 1;
 }
 
+/* Package chevron button */
+.pkg-chevron {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  padding: 2px 6px;
+  margin-right: 6px;
+  font-size: 11px;
+  vertical-align: middle;
+  border-radius: 4px;
+  transition: color 150ms ease, background 150ms ease;
+}
+.pkg-chevron:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.06);
+}
+[data-theme="light"] .pkg-chevron {
+  color: rgba(0, 0, 0, 0.35);
+}
+[data-theme="light"] .pkg-chevron:hover {
+  color: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Package parent row */
+.line-row-package td {
+  font-weight: 600;
+}
+
+/* Sub-line row — subtle background to show nesting */
+.line-row-sub td {
+  background: rgba(255, 255, 255, 0.02);
+}
+[data-theme="light"] .line-row-sub td {
+  background: rgba(0, 0, 0, 0.015);
+}
+
 /* Line footer actions (Add Product + New Group) */
 .qd-line-footer-actions {
   display: flex;

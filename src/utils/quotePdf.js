@@ -123,11 +123,14 @@ export function generateQuotePdf(quote) {
   if (quote.line_items && quote.line_items.length > 0) {
     const hd = quote.header_discount || 0;
     const tableHead = [['Product', 'Qty', 'List Price', 'Disc %', 'Net Price', 'Extended', 'After Quote Disc']];
-    const tableBody = quote.line_items.map((line) => {
+    const tableBody = quote.line_items
+      .filter((line) => !line.is_package) // Skip package parent rows (sub-items carry the prices)
+      .map((line) => {
       const extended = calcLineExtended(line);
       const monthly = calcLineMonthly(line, hd);
+      const indent = line.parent_line_id ? '  ↳ ' : '';
       return [
-        line.product_name,
+        indent + line.product_name,
         String(line.quantity),
         fmtCurrency(line.list_price),
         line.discount_percent > 0 ? `${line.discount_percent}%` : '\u2014',
