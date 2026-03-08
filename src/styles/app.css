@@ -404,13 +404,13 @@
   -moz-appearance: none;
   width: auto;
   flex: 0 0 auto;
-  background-color: white;
-  border: 1px solid #e5e7eb;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
   padding: 0 28px 0 12px;
   height: 36px;
   font-size: 14px;
-  color: #374151;
+  color: rgba(255, 255, 255, 0.9);
   cursor: pointer;
   line-height: 1.2;
   font-family: var(--font-body);
@@ -421,6 +421,11 @@
 .toolbar-picklist.toolbar-picklist:focus {
   border-color: var(--teal);
   outline: none;
+}
+
+.toolbar-picklist.toolbar-picklist option {
+  background: #14302F;
+  color: #ffffff;
 }
 
 .toolbar-select-wrap {
@@ -438,7 +443,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: rgba(255, 255, 255, 0.45);
   line-height: 1;
   pointer-events: none;
 }
@@ -559,8 +564,8 @@
 /* ─── Table ───────────────────────────────────────────────── */
 
 .table-card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   overflow: hidden;
@@ -576,14 +581,14 @@
 .data-table.data-table-products td {
   padding: 16px 24px;
   height: auto;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .data-table.data-table-products th {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .data-table.data-table-products th.col-expand,
@@ -603,7 +608,7 @@
 
 .data-table.data-table-products th.col-annual,
 .data-table.data-table-products .price-annual {
-  color: #9ca3af;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 /* ─── Pricebooks Table — matches Products card style ─────── */
@@ -612,34 +617,34 @@
 .data-table.data-table-pricebooks td {
   padding: 16px 24px;
   height: auto;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .data-table.data-table-pricebooks th {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .data-table-pricebooks .name-link {
   font-weight: 600;
-  color: #111827;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .data-table-pricebooks .cell-description {
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.45);
   font-size: 13px;
 }
 
 .data-table-pricebooks .cell-count {
   font-family: var(--font-body);
   font-size: 13px;
-  color: #374151;
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .data-table-pricebooks .cell-sku {
-  color: #9ca3af;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .data-table-pricebooks .status-label {
@@ -648,13 +653,13 @@
 }
 
 .data-table-pricebooks .status-dot.active + .status-label {
-  color: #059669;
+  color: var(--green);
 }
 
 .status-default-tag {
   font-size: 11px;
   font-weight: 400;
-  color: #9ca3af;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .data-table th {
@@ -725,23 +730,23 @@
 .data-table-products .cell-sku {
   font-size: 11px;
   font-weight: 400;
-  color: #9ca3af;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .data-table-products .cell-name {
   font-weight: 600;
-  color: #111827;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .data-table-products .cell-description {
   font-size: 11px;
   font-weight: 400;
   font-style: italic;
-  color: #9ca3af;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .data-table-products .price-monthly {
-  color: #111827;
+  color: rgba(255, 255, 255, 0.9);
   font-variant-numeric: tabular-nums;
 }
 
@@ -755,7 +760,7 @@
 }
 
 .data-table-products .status-dot.active + .status-label {
-  color: #059669;
+  color: var(--green);
 }
 
 .cell-description {
@@ -1495,20 +1500,20 @@
 .empty-state-icon {
   font-size: 40px;
   margin-bottom: var(--space-lg);
-  color: #9ca3af;
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .empty-state-title {
   font-family: var(--font-heading);
   font-size: 16px;
   font-weight: 600;
-  color: #111827;
+  color: rgba(255, 255, 255, 0.9);
   margin-bottom: var(--space-xs);
 }
 
 .empty-state-text {
   font-size: 14px;
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.45);
   margin-bottom: var(--space-lg);
 }
 
@@ -1707,46 +1712,46 @@
 .data-table.data-table-quotes td {
   padding: 16px 24px;
   height: auto;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .data-table.data-table-quotes th {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .data-table-quotes .cell-name {
   font-weight: 600;
-  color: #111827;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .data-table-quotes .cell-quote-number {
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 400;
-  color: #9ca3af;
+  color: rgba(255, 255, 255, 0.45);
   margin-top: 2px;
 }
 
 .data-table-quotes .cell-customer {
   font-family: var(--font-body);
   font-size: 14px;
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .data-table-quotes .cell-amount {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  color: #111827;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 13px;
 }
 
 .data-table-quotes .cell-term {
   font-family: var(--font-mono);
   font-size: 12px;
-  color: #9ca3af;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .data-table-quotes .status-label {
@@ -2550,8 +2555,118 @@
   color: #9ca3af;
 }
 
+[data-theme="light"] .data-table-products th,
 [data-theme="light"] .data-table-products td {
   border-bottom-color: #f3f4f6;
+}
+
+[data-theme="light"] .data-table-products .cell-sku {
+  color: #9ca3af;
+}
+
+[data-theme="light"] .data-table-products .cell-description {
+  color: #9ca3af;
+}
+
+[data-theme="light"] .data-table-products .price-monthly {
+  color: #111827;
+}
+
+[data-theme="light"] .data-table-products .status-dot.active + .status-label {
+  color: #059669;
+}
+
+/* Pricebooks table — light overrides */
+[data-theme="light"] .data-table-pricebooks th {
+  color: #6b7280;
+}
+
+[data-theme="light"] .data-table-pricebooks th,
+[data-theme="light"] .data-table-pricebooks td {
+  border-bottom-color: #f3f4f6;
+}
+
+[data-theme="light"] .data-table-pricebooks .name-link {
+  color: #111827;
+}
+
+[data-theme="light"] .data-table-pricebooks .cell-description {
+  color: #6b7280;
+}
+
+[data-theme="light"] .data-table-pricebooks .cell-count {
+  color: #374151;
+}
+
+[data-theme="light"] .data-table-pricebooks .cell-sku {
+  color: #9ca3af;
+}
+
+[data-theme="light"] .data-table-pricebooks .status-dot.active + .status-label {
+  color: #059669;
+}
+
+[data-theme="light"] .status-default-tag {
+  color: #9ca3af;
+}
+
+/* Quotes table — light overrides */
+[data-theme="light"] .data-table-quotes th {
+  color: #6b7280;
+}
+
+[data-theme="light"] .data-table-quotes th,
+[data-theme="light"] .data-table-quotes td {
+  border-bottom-color: #f3f4f6;
+}
+
+[data-theme="light"] .data-table-quotes .cell-name {
+  color: #111827;
+}
+
+[data-theme="light"] .data-table-quotes .cell-quote-number {
+  color: #9ca3af;
+}
+
+[data-theme="light"] .data-table-quotes .cell-customer {
+  color: #6b7280;
+}
+
+[data-theme="light"] .data-table-quotes .cell-amount {
+  color: #111827;
+}
+
+[data-theme="light"] .data-table-quotes .cell-term {
+  color: #9ca3af;
+}
+
+/* Empty states — light overrides */
+[data-theme="light"] .empty-state-icon {
+  color: #9ca3af;
+}
+
+[data-theme="light"] .empty-state-title {
+  color: #111827;
+}
+
+[data-theme="light"] .empty-state-text {
+  color: #6b7280;
+}
+
+/* Toolbar picklist — light overrides */
+[data-theme="light"] .toolbar-picklist.toolbar-picklist {
+  background-color: #FFFFFF;
+  border-color: #e5e7eb;
+  color: #374151;
+}
+
+[data-theme="light"] .toolbar-picklist.toolbar-picklist option {
+  background: #FFFFFF;
+  color: #374151;
+}
+
+[data-theme="light"] .toolbar-select-icon {
+  color: #9ca3af;
 }
 
 /* Cells */
