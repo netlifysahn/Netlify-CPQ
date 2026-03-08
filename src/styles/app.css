@@ -1397,130 +1397,174 @@
   max-width: 100%;
 }
 
-.detail-header {
-  margin-bottom: var(--space-xl);
+.qd-header {
+  margin-bottom: 40px;
 }
 
-.detail-header-row {
+.qd-header-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: var(--space-lg);
+  gap: var(--space-xl);
 }
 
-.detail-quote-number {
+.qd-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.qd-quote-number {
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 500;
-  color: var(--text-faint);
+  color: rgba(255, 255, 255, 0.30);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: var(--space-xs);
+  margin-bottom: 4px;
 }
 
-.detail-title {
+.qd-title {
   font-family: var(--font-heading);
-  font-size: var(--text-page-title);
+  font-size: 28px;
   font-weight: 300;
   color: var(--text-strong);
-  letter-spacing: var(--letter-spacing-heading);
+  letter-spacing: -0.01em;
   margin-bottom: var(--space-sm);
 }
 
-.detail-meta {
+.qd-meta {
   display: flex;
   align-items: center;
   gap: var(--space-md);
   flex-wrap: wrap;
+  font-family: var(--font-body);
   font-size: 13px;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.45);
 }
 
-.detail-actions {
+/* Status ghost buttons — all identical, muted */
+.qd-actions {
   display: flex;
-  gap: var(--space-sm);
+  gap: 4px;
   align-items: center;
   flex-shrink: 0;
 }
 
-.btn-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+.qd-status-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.35);
+  font-family: var(--font-body);
   font-size: 12px;
   font-weight: 500;
+  padding: 6px 10px;
   border-radius: 4px;
-  border: none;
   cursor: pointer;
-  font-family: var(--font-body);
   transition: all var(--transition);
 }
 
-.btn-status-blue {
-  background: rgba(92, 187, 246, 0.10);
-  color: rgba(92, 187, 246, 0.80);
+.qd-status-btn:hover {
+  color: rgba(255, 255, 255, 0.80);
+  background: rgba(255, 255, 255, 0.06);
 }
 
-.btn-status-blue:hover {
-  background: rgba(92, 187, 246, 0.18);
+/* More menu (delete lives here) */
+.qd-more-wrap {
+  position: relative;
 }
 
-.btn-status-green {
-  background: rgba(52, 211, 153, 0.10);
-  color: rgba(52, 211, 153, 0.80);
+.qd-more-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 14px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition);
 }
 
-.btn-status-green:hover {
-  background: rgba(52, 211, 153, 0.18);
-}
-
-.btn-status-red {
-  background: rgba(248, 113, 113, 0.10);
-  color: rgba(248, 113, 113, 0.80);
-}
-
-.btn-status-red:hover {
-  background: rgba(248, 113, 113, 0.18);
-}
-
-.btn-status-muted {
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.40);
-}
-
-.btn-status-muted:hover {
-  background: rgba(255, 255, 255, 0.08);
+.qd-more-btn:hover {
   color: rgba(255, 255, 255, 0.60);
+  background: rgba(255, 255, 255, 0.04);
 }
 
-/* ─── Summary Cards ──────────────────────────────────────── */
-
-.summary-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-md);
-  margin-bottom: var(--space-xl);
+.qd-more-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #161a23;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 4px;
+  z-index: 20;
+  min-width: 150px;
 }
 
-.summary-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: var(--space-lg);
+.qd-more-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  transition: all var(--transition);
 }
 
-.summary-label {
+.qd-more-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.80);
+}
+
+.qd-more-danger:hover {
+  color: var(--red);
+}
+
+/* ─── Summary — flat breathing numbers ────────────────────── */
+
+.qd-summary {
+  display: flex;
+  align-items: stretch;
+  margin-bottom: 40px;
+  padding: 0;
+}
+
+.qd-summary-item {
+  flex: 1;
+  padding: 0 var(--space-xl);
+}
+
+.qd-summary-item:first-child {
+  padding-left: 0;
+}
+
+.qd-summary-item:last-child {
+  padding-right: 0;
+}
+
+.qd-summary-divider {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.qd-summary-label {
   font-family: var(--font-mono);
-  font-size: var(--text-micro);
+  font-size: 10px;
   font-weight: 500;
-  color: var(--text-faint);
+  color: rgba(255, 255, 255, 0.30);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.10em;
   margin-bottom: var(--space-sm);
 }
 
-.summary-value {
+.qd-summary-value {
   font-family: var(--font-heading);
   font-size: 28px;
   font-weight: 300;
@@ -1529,6 +1573,10 @@
 }
 
 /* ─── Line Editor ────────────────────────────────────────── */
+
+.qd-lines-section {
+  margin-bottom: 40px;
+}
 
 .line-editor-header {
   display: flex;
@@ -1552,24 +1600,6 @@
   align-items: center;
 }
 
-.inline-group-add {
-  display: flex;
-  gap: var(--space-sm);
-  align-items: center;
-}
-
-.inline-group-add .field-input {
-  width: 160px;
-  padding: 6px 10px;
-  font-size: 13px;
-}
-
-.inline-group-add .btn-save,
-.inline-group-add .btn-secondary {
-  padding: 6px 12px;
-  font-size: 12px;
-}
-
 .line-editor-table-wrap {
   display: flex;
   flex-direction: column;
@@ -1578,10 +1608,78 @@
 
 .line-table th {
   font-size: 9px;
+  padding: 10px 8px;
+}
+
+.line-table th:first-child {
+  padding-left: 0;
 }
 
 .line-table td {
   height: 48px;
+  padding: 0 8px;
+}
+
+.line-td-product {
+  padding-left: 0 !important;
+}
+
+/* Line remove: hidden until row hover, trash icon */
+.line-remove-btn {
+  opacity: 0;
+  transition: opacity var(--transition), color var(--transition);
+}
+
+.data-table tbody tr:hover .line-remove-btn {
+  opacity: 1;
+}
+
+/* New Group link below line items */
+.qd-new-group-link {
+  display: inline-block;
+  margin-top: var(--space-md);
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.25);
+  font-family: var(--font-body);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  transition: color var(--transition);
+}
+
+.qd-new-group-link:hover {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ─── Quote Footer Info ──────────────────────────────────── */
+
+.qd-footer-info {
+  margin-top: 40px;
+  padding-top: var(--space-lg);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.qd-footer-row {
+  margin-bottom: var(--space-md);
+}
+
+.qd-footer-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  margin-bottom: 4px;
+}
+
+.qd-footer-value {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.5;
 }
 
 /* ─── Inline Editing ─────────────────────────────────────── */
@@ -1774,32 +1872,6 @@
   color: var(--text-muted);
 }
 
-/* ─── Quote Info Section ─────────────────────────────────── */
-
-.quote-info-section {
-  margin-top: var(--space-xl);
-  padding-top: var(--space-lg);
-  border-top: 1px solid var(--border);
-}
-
-.quote-info-row {
-  display: flex;
-  gap: var(--space-md);
-  margin-bottom: var(--space-sm);
-  font-size: 13px;
-  color: var(--text-body);
-}
-
-.quote-info-label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  min-width: 120px;
-  flex-shrink: 0;
-}
 
 /* ─── Scrollbar ───────────────────────────────────────────── */
 
