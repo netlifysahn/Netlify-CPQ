@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { calcLineMonthly, calcLineTotal, calcQuoteTotals, fmtCurrency } from '../data/quotes';
 
 export function generateQuotePdf(quote) {
@@ -102,7 +102,7 @@ export function generateQuotePdf(quote) {
       ];
     });
 
-    doc.autoTable({
+    const lineResult = autoTable(doc, {
       startY: y,
       head: tableHead,
       body: tableBody,
@@ -132,7 +132,7 @@ export function generateQuotePdf(quote) {
       },
     });
 
-    y = doc.lastAutoTable.finalY + 8;
+    y = lineResult.finalY + 8;
 
     // Totals
     const totalsData = [
@@ -141,7 +141,7 @@ export function generateQuotePdf(quote) {
       [`TCV (${quote.term_months}mo)`, fmtCurrency(totals.tcv)],
     ];
 
-    doc.autoTable({
+    const totalsResult = autoTable(doc, {
       startY: y,
       body: totalsData,
       margin: { left: pageWidth - margin - 80, right: margin },
@@ -157,7 +157,7 @@ export function generateQuotePdf(quote) {
       },
     });
 
-    y = doc.lastAutoTable.finalY + 10;
+    y = totalsResult.finalY + 10;
   }
 
   // Comments
