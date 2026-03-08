@@ -1,16 +1,21 @@
 // Netlify Deal Studio — Product Catalog Data Model (Phase 1)
 // Empty catalog. No seed data. No SFDC dependencies.
 
-export const PRODUCT_TYPES = ['platform', 'support', 'credits', 'addon'];
-export const PRICE_UNITS = ['flat', 'per_member', 'per_credit', 'per_gb', 'included'];
+export const PRODUCT_TYPES = ['bundle', 'platform', 'support', 'addon', 'credits'];
+export const TYPE_SORT_ORDER = PRODUCT_TYPES.reduce((acc, type, index) => ({ ...acc, [type]: index }), {});
+export const PRICE_UNITS = ['flat', 'per_member', 'per_credit', 'included'];
 export const PRICING_METHODS = ['list', 'cost'];
 export const TERM_BEHAVIORS = ['included', 'excluded'];
+export const CONFIGURATION_METHODS = ['none', 'bundle'];
+export const BUNDLE_PRICING_MODES = ['header_only', 'header_plus_members', 'members_only'];
+export const MEMBER_PRICE_BEHAVIORS = ['included', 'discounted', 'related'];
 
 export const TYPE_COLORS = {
   platform: '#5cbbf6',
   support: '#34d399',
   credits: '#f5a623',
   addon: '#a78bfa',
+  bundle: '#32e6e2',
 };
 
 export const TYPE_ICONS = {
@@ -18,13 +23,13 @@ export const TYPE_ICONS = {
   support: 'fa-headset',
   credits: 'fa-coins',
   addon: 'fa-server',
+  bundle: 'fa-boxes-stacked',
 };
 
 export const UNIT_LABELS = {
   flat: 'Flat',
   per_member: '/member',
   per_credit: '/credit',
-  per_gb: '/GB',
   included: 'Included',
 };
 
@@ -48,6 +53,7 @@ export const emptyProduct = () => ({
     unit: 'flat',
     pricing_method: 'list',
   },
+  unit_of_measure: '',
   default_entitlements: '{}',
   config: {
     lock_quantity: false,
@@ -60,11 +66,73 @@ export const emptyProduct = () => ({
     edit_name: false,
     default_description: '',
   },
+  configuration_method: 'none',
+  bundle_pricing: 'header_only',
+  print_members: true,
+  members: [],
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 });
+
+export const emptyBundleMember = (productId = '') => ({
+  product_id: productId,
+  required: true,
+  default_quantity: 1,
+  quantity_editable: true,
+  sort_order: 1,
+  price_behavior: 'related',
+  discount_percent: 0,
+});
+
+export const isBundleProduct = (product) => product?.configuration_method === 'bundle';
+
+const parseNumber = (value, fallback = 0) => {
+  const next = parseFloat(value);
+  return Number.isFinite(next) ? next : fallback;
+};
+
+const normalizeMemberPrice = (memberPrice, behavior, discountPercent) => {
+  if (behavior === 'included') return 0;
+  if (behavior === 'discounted') {
+    const percent = Math.max(0, Math.min(100, parseNumber(discountPercent)));
+    return memberPrice * (1 - percent / 100);
+  }
+  return memberPrice;
+};
+
+export const calcBundleMembersTotal = (bundle, productMap) => {
+  if (!Array.isArray(bundle?.members) || !productMap) return 0;
+  return bundle.members.reduce((sum, member) => {
+    const product = productMap.get(member.product_id);
+    if (!product) return sum;
+    const quantity = Math.max(0, parseNumber(member.default_quantity, 1));
+    const basePrice = Math.max(0, parseNumber(product.default_price?.amount));
+    const unitPrice = normalizeMemberPrice(basePrice, member.price_behavior, member.discount_percent);
+    return sum + unitPrice * quantity;
+  }, 0);
+};
+
+export const calcBundleMonthlyTotal = (bundle, productMap) => {
+  if (!isBundleProduct(bundle)) return parseNumber(bundle?.default_price?.amount);
+  const header = Math.max(0, parseNumber(bundle?.default_price?.amount));
+  const members = calcBundleMembersTotal(bundle, productMap);
+
+  if (bundle.bundle_pricing === 'members_only') return members;
+  if (bundle.bundle_pricing === 'header_plus_members') return header + members;
+  return header;
+};
 
 export const fmtPrice = (v) => {
   if (!v || v === 0) return 'Custom';
   return v < 1 ? `$${v.toFixed(2)}` : `$${v.toLocaleString('en-US')}`;
 };
+
+export const sortProductsByType = (products = []) =>
+  [...products].sort((a, b) => {
+    const typeDiff = (TYPE_SORT_ORDER[a?.type] ?? Number.MAX_SAFE_INTEGER) - (TYPE_SORT_ORDER[b?.type] ?? Number.MAX_SAFE_INTEGER);
+    if (typeDiff !== 0) return typeDiff;
+
+    const nameA = (a?.name || '').toLowerCase();
+    const nameB = (b?.name || '').toLowerCase();
+    return nameA.localeCompare(nameB);
+  });

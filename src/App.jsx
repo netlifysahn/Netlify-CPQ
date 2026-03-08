@@ -1,20 +1,24 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './styles/app.css';
-import { genId } from './data/catalog';
+import { PRODUCT_TYPES, genId, sortProductsByType } from './data/catalog';
 import NetlifyLogo from './components/NetlifyLogo';
 import ProductTable from './components/ProductTable';
 import ProductModal from './components/ProductModal';
+import PricebookTable from './components/PricebookTable';
+import PricebookModal from './components/PricebookModal';
+import PricebookDetail from './components/PricebookDetail';
 import Confirm from './components/Confirm';
 
 const NAV_ITEMS = [
   { key: 'products', label: 'Products', icon: 'fa-box' },
   { key: 'pricebooks', label: 'Pricebooks', icon: 'fa-book' },
+  { key: 'scope', label: 'Scope (coming soon)', icon: 'fa-bullseye' },
   { key: 'quotes', label: 'Quotes', icon: 'fa-file-invoice-dollar' },
   { key: 'orders', label: 'Orders', icon: 'fa-cart-shopping' },
 ];
 
 const COMING_SOON_META = {
-  pricebooks: { icon: 'fa-book', title: 'Pricebooks' },
+  scope: { icon: 'fa-bullseye', title: 'Scope' },
   quotes: { icon: 'fa-file-invoice-dollar', title: 'Quotes' },
   orders: { icon: 'fa-cart-shopping', title: 'Orders' },
 };
@@ -22,20 +26,23 @@ const COMING_SOON_META = {
 export default function App() {
   const [page, setPage] = useState('products');
   const [products, setProducts] = useState([]);
+  const [pricebooks, setPricebooks] = useState([]);
   const [search, setSearch] = useState('');
+  const [pricebookSearch, setPricebookSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
+  const [activePricebookId, setActivePricebookId] = useState(null);
   const [modal, setModal] = useState(null);
   const [confirm, setConfirm] = useState(null);
   const hasLoadedCatalog = useRef(false);
   const skipNextPersist = useRef(false);
 
-  const persistCatalog = useCallback(async (nextProducts) => {
+  const persistCatalog = useCallback(async (nextProducts, nextPricebooks) => {
     await fetch('/api/catalog', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(nextProducts),
+      body: JSON.stringify({ products: nextProducts, pricebooks: nextPricebooks }),
     });
   }, []);
 
@@ -48,12 +55,20 @@ export default function App() {
           throw new Error('Failed to load catalog');
         }
 
-        const loadedProducts = await res.json();
+        const loadedCatalog = await res.json();
         skipNextPersist.current = true;
-        setProducts(Array.isArray(loadedProducts) ? loadedProducts : []);
+
+        if (Array.isArray(loadedCatalog)) {
+          setProducts(loadedCatalog);
+          setPricebooks([]);
+        } else {
+          setProducts(Array.isArray(loadedCatalog?.products) ? loadedCatalog.products : []);
+          setPricebooks(Array.isArray(loadedCatalog?.pricebooks) ? loadedCatalog.pricebooks : []);
+        }
       } catch {
         skipNextPersist.current = true;
         setProducts([]);
+        setPricebooks([]);
       } finally {
         hasLoadedCatalog.current = true;
       }
@@ -68,8 +83,8 @@ export default function App() {
       skipNextPersist.current = false;
       return;
     }
-    persistCatalog(products).catch(() => {});
-  }, [products, persistCatalog]);
+    persistCatalog(products, pricebooks).catch(() => {});
+  }, [products, pricebooks, persistCatalog]);
 
   const saveProd = (p) => {
     setProducts((prev) => {
@@ -83,7 +98,13 @@ export default function App() {
     setConfirm({
       msg: 'Delete this product? This action cannot be undone.',
       fn: () => {
-        setProducts((p) => p.filter((x) => x.id !== id));
+        setProducts((prev) => prev.filter((x) => x.id !== id));
+        setPricebooks((prev) =>
+          prev.map((pricebook) => ({
+            ...pricebook,
+            entries: Array.isArray(pricebook.entries) ? pricebook.entries.filter((entry) => entry.product_id !== id) : [],
+          })),
+        );
         setConfirm(null);
       },
     });
@@ -94,17 +115,83 @@ export default function App() {
       { ...p, id: genId(), name: p.name + ' (copy)', sku: p.sku + '-COPY', created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
     ]);
 
-  const fp = products.filter((p) => {
-    if (typeFilter !== 'All' && p.type !== typeFilter) return false;
-    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.sku.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  const savePricebook = (pricebook) => {
+    setPricebooks((prev) => {
+      const next = [...prev];
+      const index = next.findIndex((item) => item.id === pricebook.id);
+      const now = new Date().toISOString();
+      const normalized = {
+        ...pricebook,
+        active: Boolean(pricebook.active),
+        is_default: Boolean(pricebook.is_default),
+        entries: Array.isArray(pricebook.entries) ? pricebook.entries : [],
+        tiered_pricing: Array.isArray(pricebook.tiered_pricing) ? pricebook.tiered_pricing : [],
+        updated_at: now,
+      };
 
-  const types = ['All', ...['platform', 'support', 'credits', 'addon'].filter((t) => products.some((p) => p.type === t))];
+      if (normalized.is_default) {
+        for (let i = 0; i < next.length; i += 1) {
+          next[i] = { ...next[i], is_default: false };
+        }
+      }
+
+      if (index >= 0) {
+        next[index] = { ...next[index], ...normalized };
+      } else {
+        next.push({ ...normalized, created_at: now });
+      }
+
+      return next;
+    });
+    setModal(null);
+  };
+
+  const deletePricebook = (id) => {
+    setConfirm({
+      msg: 'Delete this pricebook? This action cannot be undone.',
+      fn: () => {
+        setPricebooks((prev) => prev.filter((pricebook) => pricebook.id !== id));
+        setActivePricebookId((prev) => (prev === id ? null : prev));
+        setConfirm(null);
+      },
+    });
+  };
+
+  const filteredProducts = useMemo(
+    () =>
+      sortProductsByType(
+        products.filter((p) => {
+          if (typeFilter !== 'All' && p.type !== typeFilter) return false;
+          if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.sku.toLowerCase().includes(search.toLowerCase())) return false;
+          return true;
+        }),
+      ),
+    [products, search, typeFilter],
+  );
+
+  const filteredPricebooks = useMemo(() => {
+    if (!pricebookSearch.trim()) return pricebooks;
+    const query = pricebookSearch.trim().toLowerCase();
+    return pricebooks.filter((pricebook) => pricebook.name.toLowerCase().includes(query));
+  }, [pricebooks, pricebookSearch]);
+
+  const selectedPricebook = useMemo(
+    () => pricebooks.find((pricebook) => pricebook.id === activePricebookId) || null,
+    [pricebooks, activePricebookId],
+  );
+
+  const types = ['All', ...PRODUCT_TYPES.filter((t) => products.some((p) => p.type === t))];
+
+  const handleNavClick = (nextPage) => {
+    setPage(nextPage);
+    setSearch('');
+    setPricebookSearch('');
+    setTypeFilter('All');
+    setActivePricebookId(null);
+  };
 
   return (
     <div className="app-layout">
-      {/* Sidebar */}
       <nav className="sidebar">
         <div className="sidebar-brand">
           <NetlifyLogo size={34} />
@@ -115,7 +202,7 @@ export default function App() {
             <button
               key={item.key}
               className={`sidebar-item${page === item.key ? ' active' : ''}`}
-              onClick={() => { setPage(item.key); setSearch(''); setTypeFilter('All'); }}
+              onClick={() => handleNavClick(item.key)}
             >
               <i className={`fa-solid ${item.icon}`} />
               {item.label}
@@ -124,7 +211,6 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Main Content */}
       <main className="main-content">
         {page === 'products' && (
           <>
@@ -155,16 +241,62 @@ export default function App() {
               ))}
               <button className="btn-primary" onClick={() => setModal({ type: 'product' })}>
                 <i className="fa-solid fa-plus" />
-                Add Product
+                + Add Product
               </button>
             </div>
 
             <ProductTable
-              products={fp}
-              onEdit={(p) => setModal({ type: 'product', data: p })}
+              products={filteredProducts}
+              allProducts={products}
+              onEdit={(product) => setModal({ type: 'product', data: product })}
               onDupe={dupeProd}
               onDelete={delProd}
             />
+          </>
+        )}
+
+        {page === 'pricebooks' && (
+          <>
+            {!selectedPricebook && (
+              <>
+                <div className="page-header">
+                  <div className="page-label">Catalog Pricing</div>
+                  <h1 className="page-title">Pricebooks</h1>
+                  <p className="page-subtitle">Manage pricing collections for products, territories, and deal motions</p>
+                </div>
+
+                <div className="toolbar">
+                  <div className="search-wrap">
+                    <i className="fa-solid fa-magnifying-glass" />
+                    <input
+                      className="search-input"
+                      value={pricebookSearch}
+                      onChange={(event) => setPricebookSearch(event.target.value)}
+                      placeholder="Search pricebooks..."
+                    />
+                  </div>
+                  <button className="btn-primary" onClick={() => setModal({ type: 'pricebook' })}>
+                    <i className="fa-solid fa-plus" />
+                    + Create Pricebook
+                  </button>
+                </div>
+
+                <PricebookTable
+                  pricebooks={filteredPricebooks}
+                  onOpen={setActivePricebookId}
+                  onEdit={(pricebook) => setModal({ type: 'pricebook', data: pricebook })}
+                  onDelete={deletePricebook}
+                />
+              </>
+            )}
+
+            {selectedPricebook && (
+              <PricebookDetail
+                pricebook={selectedPricebook}
+                products={products}
+                onBack={() => setActivePricebookId(null)}
+              />
+            )}
           </>
         )}
 
@@ -179,9 +311,11 @@ export default function App() {
         )}
       </main>
 
-      {/* Modals */}
       {modal?.type === 'product' && (
-        <ProductModal product={modal.data} onSave={saveProd} onClose={() => setModal(null)} />
+        <ProductModal product={modal.data} products={products} onSave={saveProd} onClose={() => setModal(null)} />
+      )}
+      {modal?.type === 'pricebook' && (
+        <PricebookModal pricebook={modal.data} onSave={savePricebook} onClose={() => setModal(null)} />
       )}
       {confirm && <Confirm msg={confirm.msg} onYes={confirm.fn} onNo={() => setConfirm(null)} />}
     </div>
