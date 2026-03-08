@@ -1839,9 +1839,20 @@
   line-height: 1.6;
 }
 
-/* Edit Lines button highlight */
-.qd-edit-lines-btn {
+/* Edit Lines button — solid teal primary action */
+.qd-edit-lines-btn.qd-edit-lines-btn {
+  background: #05BDBA;
+  color: #fff;
   font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  height: 36px;
+  font-size: 13px;
+}
+.qd-edit-lines-btn.qd-edit-lines-btn:hover {
+  background: #04a8a5;
+  color: #fff;
 }
 
 /* Edit mode header */
