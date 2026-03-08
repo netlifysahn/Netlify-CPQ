@@ -426,7 +426,7 @@ export default function App() {
                   {s === 'All' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
                 </button>
               ))}
-              <button className="btn-primary" onClick={() => setModal({ type: 'quote' })}>
+              <button className="btn-primary btn-quote-add" onClick={() => setModal({ type: 'quote' })}>
                 <i className="fa-solid fa-plus" />
                 New Quote
               </button>

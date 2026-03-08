@@ -484,6 +484,19 @@
   color: #ffffff;
 }
 
+.btn-quote-add {
+  background: #F59E0B;
+  border-color: #F59E0B;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.btn-quote-add:hover {
+  background: #D97706;
+  border-color: #D97706;
+  color: #ffffff;
+}
+
 .btn-secondary {
   padding: 9px 20px;
   font-size: 13px;
@@ -1688,7 +1701,60 @@
   color: rgba(255, 255, 255, 0.30);
 }
 
-/* ─── Quote List ─────────────────────────────────────────── */
+/* ─── Quotes Table — matches Products/Pricebooks card style ── */
+
+.data-table.data-table-quotes th,
+.data-table.data-table-quotes td {
+  padding: 16px 24px;
+  height: auto;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.data-table.data-table-quotes th {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+}
+
+.data-table-quotes .cell-name {
+  font-weight: 600;
+  color: #111827;
+}
+
+.data-table-quotes .cell-quote-number {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.data-table-quotes .cell-customer {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.data-table-quotes .cell-amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #111827;
+  font-size: 13px;
+}
+
+.data-table-quotes .cell-term {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.data-table-quotes .status-label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ─── Quote List (legacy/shared) ────────────────────────── */
 
 .cell-quote-number {
   font-family: var(--font-mono);
@@ -2412,6 +2478,18 @@
 [data-theme="light"] .btn-product-add:hover {
   background: #0f9392;
   border-color: #0f9392;
+  color: #ffffff;
+}
+
+[data-theme="light"] .btn-quote-add {
+  background: #F59E0B;
+  border-color: #F59E0B;
+  color: #ffffff;
+}
+
+[data-theme="light"] .btn-quote-add:hover {
+  background: #D97706;
+  border-color: #D97706;
   color: #ffffff;
 }
 
@@ -3173,6 +3251,7 @@
 .btn-save,
 .btn-destructive,
 .btn-product-add,
+.btn-quote-add,
 .qd-status-btn,
 .filter-btn,
 .back-btn,
@@ -3186,6 +3265,7 @@
 .btn-save:active:not(:disabled),
 .btn-destructive:active,
 .btn-product-add:active,
+.btn-quote-add:active,
 .qd-status-btn:active,
 .filter-btn:active,
 .back-btn:active {
