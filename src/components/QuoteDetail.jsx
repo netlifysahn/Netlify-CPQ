@@ -8,8 +8,31 @@ import {
 import { generateQuotePdf } from '../utils/quotePdf';
 import ProductPicker from './ProductPicker';
 
+// Backfill missing fields on older quotes so the component never hits undefined
+const normalizeQuote = (q) => {
+  const safe = {
+    ...q,
+    status: q.status || 'draft',
+    term_months: q.term_months || 12,
+    header_discount: q.header_discount || 0,
+    line_items: (q.line_items || []).map((l) => ({
+      ...l,
+      unit_type: l.unit_type || 'flat',
+      quantity: l.quantity ?? 1,
+      list_price: l.list_price ?? l.sales_price ?? 0,
+      discount_percent: l.discount_percent ?? 0,
+      discount_amount: l.discount_amount ?? 0,
+      net_price: l.net_price ?? l.list_price ?? l.sales_price ?? 0,
+      product_name: l.product_name || l.name || 'Unknown Product',
+      product_sku: l.product_sku || l.sku || '',
+    })),
+    groups: q.groups || [],
+  };
+  return safe;
+};
+
 export default function QuoteDetail({ quote, products, pricebooks, onSave, onBack, onDelete }) {
-  const [q, setQ] = useState(quote);
+  const [q, setQ] = useState(() => normalizeQuote(quote));
   const [showPicker, setShowPicker] = useState(false);
   const [editingCell, setEditingCell] = useState(null);
   const [confirm, setConfirm] = useState(null);
@@ -73,7 +96,7 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
       const line = q.line_items.find((l) => l.id === lineId);
       if (!line) return;
       const newList = Math.max(0, value);
-      const synced = syncDiscountFromPercent(newList, line.discount_percent);
+      const synced = syncDiscountFromPercent(newList, line.discount_percent || 0);
       updateLine(lineId, { list_price: newList, ...synced });
       return;
     }
@@ -85,8 +108,8 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
     if (!line) return;
     const val = parseFloat(value) || 0;
     const synced = field === 'discount_percent'
-      ? syncDiscountFromPercent(line.list_price, val)
-      : syncDiscountFromAmount(line.list_price, val);
+      ? syncDiscountFromPercent(line.list_price || 0, val)
+      : syncDiscountFromAmount(line.list_price || 0, val);
     updateLine(lineId, synced);
   };
 
@@ -152,8 +175,8 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
     const isEditing = editingCell === cellKey;
 
     if (disabled) {
-      const val = prefix + (typeof line[field] === 'number' ? line[field] : '') + suffix;
-      return <span className="cell-locked">{val}</span>;
+      const dval = typeof line[field] === 'number' ? line[field] : 0;
+      return <span className="cell-locked">{prefix + dval + suffix}</span>;
     }
 
     if (isEditing) {
@@ -161,7 +184,7 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
         <input
           className="inline-edit"
           type={type}
-          defaultValue={line[field]}
+          defaultValue={line[field] ?? 0}
           autoFocus
           step={step}
           min={min}
@@ -185,9 +208,10 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
     }
 
     let display;
-    if (field === 'discount_percent') display = `${line[field]}%`;
-    else if (field === 'discount_amount' || field === 'list_price' || field === 'net_price') display = fmtCurrency(line[field]);
-    else display = prefix + line[field] + suffix;
+    const val = line[field] ?? 0;
+    if (field === 'discount_percent') display = `${val}%`;
+    else if (field === 'discount_amount' || field === 'list_price' || field === 'net_price') display = fmtCurrency(val);
+    else display = prefix + val + suffix;
 
     return (
       <span className="cell-editable" onClick={() => setEditingCell(cellKey)}>
@@ -244,7 +268,7 @@ export default function QuoteDetail({ quote, products, pricebooks, onSave, onBac
           {included ? (
             <span className="price-annual">$0.00</span>
           ) : (
-            <span className="price-monthly">{fmtCurrency(line.net_price)}</span>
+            <span className="price-monthly">{fmtCurrency(line.net_price ?? line.list_price ?? 0)}</span>
           )}
         </td>
         <td>

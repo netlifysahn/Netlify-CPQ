@@ -150,9 +150,10 @@ export const calcQuoteTotals = (quote) => {
 };
 
 export const fmtCurrency = (v) => {
-  if (v === 0) return '$0';
-  if (Math.abs(v) < 1) return `$${v.toFixed(2)}`;
-  return `$${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const n = typeof v === 'number' && !isNaN(v) ? v : 0;
+  if (n === 0) return '$0';
+  if (Math.abs(n) < 1) return `$${n.toFixed(2)}`;
+  return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 export const STATUS_META = {
