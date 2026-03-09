@@ -62,7 +62,7 @@ export default function PricebookDetail({ pricebook, products, onBack, onUpdate 
           <div className="line-editor-title">Products ({entries.length})</div>
           <div className="line-editor-actions">
             <button className="btn-primary" onClick={() => setShowPicker(true)}>
-              <i className="fa-solid fa-plus" /> Add Product
+              Add Product
             </button>
           </div>
         </div>
@@ -74,7 +74,7 @@ export default function PricebookDetail({ pricebook, products, onBack, onUpdate 
             <div className="empty-state-title">No products in this pricebook</div>
             <div className="empty-state-text">Add products to define pricing for this pricebook</div>
             <button className="empty-state-cta" onClick={() => setShowPicker(true)}>
-              <i className="fa-solid fa-plus" /> Add Product
+              Add Product
             </button>
           </div>
         )}
