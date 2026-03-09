@@ -2068,7 +2068,7 @@ tr.drag-over {
   margin-top: 2px;
 }
 [data-theme="light"] .qd-edit-subtitle {
-  color: #9ca3af;
+  color: #6b7280;
 }
 .qd-edit-header-actions {
   display: flex;
@@ -2298,9 +2298,9 @@ tr.drag-over {
 
 [data-theme="light"] .qd-lines-card {
   background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.07);
+  border: 1px solid rgba(0, 0, 0, 0.10);
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 /* View-mode line items card */
@@ -2313,9 +2313,9 @@ tr.drag-over {
 
 [data-theme="light"] .qd-view-lines-card {
   background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.07);
+  border: 1px solid rgba(0, 0, 0, 0.10);
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .qd-view-lines-card .line-table td {
@@ -2417,7 +2417,7 @@ tr.drag-over {
   letter-spacing: 0.14em;
 }
 [data-theme="light"] .line-editor-title {
-  color: #9ca3af;
+  color: #374151;
   font-weight: 600;
   letter-spacing: 0.1em;
 }
@@ -3101,6 +3101,10 @@ tr.drag-over {
   --red: #dc2626;
 }
 
+[data-theme="light"] .app-layout {
+  border-top: 3px solid #0a0a0a;
+}
+
 /* ─── Light Mode — Component Overrides ───────────────────── */
 
 /* Sidebar */
@@ -3130,7 +3134,7 @@ tr.drag-over {
 
 [data-theme="light"] .sidebar-brand-text {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: -0.01em;
   color: #0a0a0a;
 }
@@ -3143,7 +3147,7 @@ tr.drag-over {
 
 /* Nav items */
 [data-theme="light"] .sidebar-item {
-  color: #374151;
+  color: #1a1a1a;
   font-size: 13px;
   font-weight: 600;
   padding: 10px 16px;
@@ -3162,7 +3166,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .sidebar-item:hover {
-  color: #374151;
+  color: #1a1a1a;
   background: rgba(0, 0, 0, 0.04);
 }
 
@@ -3174,6 +3178,7 @@ tr.drag-over {
   color: #05BDBA;
   background: rgba(5, 189, 186, 0.08);
   border: none;
+  border-left: 2px solid #05BDBA;
   box-shadow: none;
   outline: none;
 }
@@ -3226,12 +3231,13 @@ tr.drag-over {
 
 /* Page header */
 [data-theme="light"] .page-label {
-  color: #9ca3af;
+  color: #374151;
+  letter-spacing: 0.12em;
 }
 
 [data-theme="light"] .page-title {
   color: #0a0a0a;
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 800;
   letter-spacing: -0.03em;
 }
@@ -3351,11 +3357,11 @@ tr.drag-over {
 
 /* Tables */
 [data-theme="light"] .data-table th {
-  color: #9ca3af;
-  font-weight: 600;
+  color: #374151;
+  font-weight: 700;
   letter-spacing: 0.06em;
   background: transparent;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.10);
 }
 
 [data-theme="light"] .data-table td {
@@ -3371,18 +3377,24 @@ tr.drag-over {
 
 [data-theme="light"] .table-card {
   background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.07);
+  border: 1px solid rgba(0, 0, 0, 0.10);
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+[data-theme="light"] .table-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10), 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 [data-theme="light"] .data-table-products th {
-  color: #9ca3af;
+  color: #374151;
 }
 
 [data-theme="light"] .data-table-products th.col-annual,
 [data-theme="light"] .data-table-products .price-annual {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 [data-theme="light"] .data-table-products th,
@@ -3391,11 +3403,11 @@ tr.drag-over {
 }
 
 [data-theme="light"] .data-table-products .cell-sku {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 [data-theme="light"] .data-table-products .cell-description {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 [data-theme="light"] .data-table-products .price-monthly {
@@ -3409,7 +3421,7 @@ tr.drag-over {
 
 /* Pricebooks table */
 [data-theme="light"] .data-table-pricebooks th {
-  color: #9ca3af;
+  color: #374151;
 }
 
 [data-theme="light"] .data-table-pricebooks th,
@@ -3430,7 +3442,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .data-table-pricebooks .cell-sku {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 [data-theme="light"] .data-table-pricebooks .status-dot.active + .status-label {
@@ -3438,12 +3450,12 @@ tr.drag-over {
 }
 
 [data-theme="light"] .status-default-tag {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* Quotes table */
 [data-theme="light"] .data-table-quotes th {
-  color: #9ca3af;
+  color: #374151;
 }
 
 [data-theme="light"] .data-table-quotes th,
@@ -3456,7 +3468,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .data-table-quotes .cell-quote-number {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 [data-theme="light"] .data-table-quotes .cell-customer {
@@ -3468,7 +3480,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .data-table-quotes .cell-term {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* Empty states */
@@ -3496,7 +3508,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .empty-state-text {
-  color: #9ca3af;
+  color: #6b7280;
   font-size: 13px;
 }
 
@@ -3528,7 +3540,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .cell-sku {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 [data-theme="light"] .cell-description {
@@ -3541,11 +3553,11 @@ tr.drag-over {
 }
 
 [data-theme="light"] .price-annual {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 [data-theme="light"] .price-included {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 [data-theme="light"] .price-dash {
@@ -3562,43 +3574,43 @@ tr.drag-over {
 }
 
 [data-theme="light"] .status-label {
-  color: #6b7280;
+  color: #374151;
 }
 
 [data-theme="light"] .status-badge {
-  background: transparent;
-  border: 1px solid currentColor;
-  color: #6b7280;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  color: #374151;
 }
 
 [data-theme="light"] .status-grey {
-  background: transparent;
-  border: 1px solid #9ca3af;
-  color: #6b7280;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  color: #374151;
 }
 
 [data-theme="light"] .status-blue {
-  background: transparent;
-  border: 1px solid #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   color: #2563eb;
 }
 
 [data-theme="light"] .status-green {
-  background: transparent;
-  border: 1px solid #059669;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
   color: #059669;
 }
 
 [data-theme="light"] .status-red {
-  background: transparent;
-  border: 1px solid #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
   color: #dc2626;
 }
 
 [data-theme="light"] .status-muted {
-  background: transparent;
+  background: #f3f4f6;
   border: 1px solid #d1d5db;
-  color: #9ca3af;
+  color: #374151;
 }
 
 /* Action buttons */
@@ -3689,7 +3701,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .modal-section-label {
-  color: #9ca3af;
+  color: #374151;
   border-bottom-color: rgba(0, 0, 0, 0.06);
 }
 
@@ -3731,7 +3743,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .expanded-label {
-  color: #9ca3af;
+  color: #374151;
 }
 
 /* Bundle */
@@ -3754,7 +3766,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .price-preview-label {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 [data-theme="light"] .price-preview-value {
@@ -3832,7 +3844,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .pkg-components-table th {
-  color: #9ca3af;
+  color: #374151;
   border-bottom-color: rgba(0, 0, 0, 0.06);
 }
 
@@ -3901,7 +3913,7 @@ tr.drag-over {
 
 /* Quote detail */
 [data-theme="light"] .qd-quote-number {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 [data-theme="light"] .qd-title {
@@ -3969,11 +3981,11 @@ tr.drag-over {
 }
 
 [data-theme="light"] .qd-summary-label {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 [data-theme="light"] .qd-summary-pre {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 [data-theme="light"] .qd-summary-value {
@@ -3995,7 +4007,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .qd-footer-label {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 [data-theme="light"] .qd-footer-value {
@@ -4045,7 +4057,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .qd-customer-section-label {
-  color: #9ca3af;
+  color: #374151;
 }
 
 [data-theme="light"] .qd-customer-company {
