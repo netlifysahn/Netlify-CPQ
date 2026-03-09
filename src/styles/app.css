@@ -3041,10 +3041,11 @@ tr.drag-over {
 /* ─── App shell ────────────────────────────────────────────── */
 
 [data-theme="light"] .app-layout {
+  border-top: none;
 }
 
 [data-theme="light"] .main-content {
-  margin-left: 220px;
+  margin-left: 240px;
 }
 
 /* ─── Sidebar ──────────────────────────────────────────────── */
@@ -3052,7 +3053,7 @@ tr.drag-over {
 [data-theme="light"] .sidebar {
   background: var(--surface);
   border-right: 1px solid var(--border);
-  width: 220px;
+  width: 240px;
 }
 
 [data-theme="light"] .sidebar-brand {
@@ -3076,24 +3077,25 @@ tr.drag-over {
 
 [data-theme="light"] .sidebar-nav {
   padding: 12px 0 0 0;
-  gap: 0;
+  gap: 2px;
 }
 
 [data-theme="light"] .sidebar-item {
   color: var(--text-secondary, #374151);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
-  margin: 1px 8px;
-  gap: 10px;
+  min-height: 40px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin: 2px 8px;
+  gap: 12px;
   border: none;
   transition: background 120ms ease;
 }
 
 [data-theme="light"] .sidebar-item i {
-  font-size: 14px;
-  width: 18px;
+  font-size: 16px;
+  width: 20px;
   opacity: 1;
   color: var(--text-muted);
 }
