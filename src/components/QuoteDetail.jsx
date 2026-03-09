@@ -492,12 +492,40 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
 
   const toggleCard = (key) => setDetailCards((p) => ({ ...p, [key]: !p[key] }));
 
-  const DetailField = ({ label, value, span2 }) => (
-    <div style={span2 ? { gridColumn: '1 / -1' } : undefined}>
-      <div style={fieldLabelStyle}>{label}</div>
-      <div style={fieldValueStyle}>{value || '—'}</div>
-    </div>
-  );
+  const [editingField, setEditingField] = useState(null);
+  const monoFields = new Set(['account_id', 'po_number', 'vat_number']);
+  const editInputStyle = { fontSize: '14px', fontWeight: 500, color: '#0a0a0a', border: '1px solid #d1d5db', borderRadius: '6px', padding: '4px 8px', width: '100%', outline: 'none', boxSizing: 'border-box' };
+
+  const updateField = (field, value) => {
+    persistQuote((prev) => ({ ...prev, [field]: value }));
+    setEditingField(null);
+  };
+
+  const DetailField = ({ label, field, value, displayValue, span2, type, mono }) => {
+    const isEditing = editingField === field;
+    const valStyle = { ...fieldValueStyle, cursor: 'pointer', ...(mono ? { fontFamily: "'Roboto Mono', monospace" } : {}) };
+    const inputMono = mono ? { ...editInputStyle, fontFamily: "'Roboto Mono', monospace" } : editInputStyle;
+
+    return (
+      <div style={span2 ? { gridColumn: '1 / -1' } : undefined}>
+        <div style={fieldLabelStyle}>{label}</div>
+        {isEditing ? (
+          <input
+            type={type || 'text'}
+            style={inputMono}
+            defaultValue={value || ''}
+            autoFocus
+            onBlur={(e) => updateField(field, e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+          />
+        ) : (
+          <div style={valStyle} onClick={() => setEditingField(field)}>
+            {displayValue || value || '—'}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderDetailCards = (source) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
@@ -509,14 +537,14 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         </div>
         {detailCards.customer && (
           <div style={cardBodyStyle}>
-            <DetailField label="Customer Name" value={source.customer_name} span2 />
-            <DetailField label="Primary Contact Name" value={source.contact_name} />
-            <DetailField label="Primary Contact Email" value={source.contact_email} />
-            <DetailField label="Address" value={source.address} span2 />
-            <DetailField label="Billing Contact Name" value={source.billing_contact_name} />
-            <DetailField label="Billing Contact Email" value={source.billing_contact_email} />
-            <DetailField label="Invoice Email" value={source.invoice_email} />
-            <DetailField label="Netlify Account ID" value={source.account_id} />
+            <DetailField label="Customer Name" field="customer_name" value={source.customer_name} span2 />
+            <DetailField label="Primary Contact Name" field="contact_name" value={source.contact_name} />
+            <DetailField label="Primary Contact Email" field="contact_email" value={source.contact_email} />
+            <DetailField label="Address" field="address" value={source.address} span2 />
+            <DetailField label="Billing Contact Name" field="billing_contact_name" value={source.billing_contact_name} />
+            <DetailField label="Billing Contact Email" field="billing_contact_email" value={source.billing_contact_email} />
+            <DetailField label="Invoice Email" field="invoice_email" value={source.invoice_email} />
+            <DetailField label="Netlify Account ID" field="account_id" value={source.account_id} mono />
           </div>
         )}
       </div>
@@ -529,8 +557,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         </div>
         {detailCards.term && (
           <div style={cardBodyStyle}>
-            <DetailField label="Subscription Start Date" value={source.start_date ? fmtDate(source.start_date) : null} />
-            <DetailField label="Subscription Term" value={source.term_months ? `${source.term_months} months` : null} />
+            <DetailField label="Subscription Start Date" field="start_date" value={source.start_date} displayValue={source.start_date ? fmtDate(source.start_date) : null} type="date" />
+            <DetailField label="Subscription Term" field="term_months" value={source.term_months} displayValue={source.term_months ? `${source.term_months} months` : null} />
           </div>
         )}
       </div>
@@ -543,11 +571,11 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         </div>
         {detailCards.billing && (
           <div style={cardBodyStyle}>
-            <DetailField label="Billing Schedule" value={source.billing_schedule} />
-            <DetailField label="Payment Method" value={source.payment_method} />
-            <DetailField label="Payment Terms" value={source.payment_terms} />
-            {source.po_number && <DetailField label="PO #" value={source.po_number} />}
-            {source.vat_number && <DetailField label="VAT #" value={source.vat_number} />}
+            <DetailField label="Billing Schedule" field="billing_schedule" value={source.billing_schedule} />
+            <DetailField label="Payment Method" field="payment_method" value={source.payment_method} />
+            <DetailField label="Payment Terms" field="payment_terms" value={source.payment_terms} />
+            <DetailField label="PO #" field="po_number" value={source.po_number} mono />
+            <DetailField label="VAT #" field="vat_number" value={source.vat_number} mono />
           </div>
         )}
       </div>
