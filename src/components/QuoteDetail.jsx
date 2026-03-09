@@ -552,7 +552,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             </div>
             <div className="qd-actions">
               <button className="qd-status-btn qd-edit-lines-btn" onClick={enterEditMode} style={{ background: '#05BDBA', color: '#fff', fontWeight: 600, border: 'none', borderRadius: '6px', padding: '8px 16px', height: '36px', cursor: 'pointer' }}>
-                <i className="fa-solid fa-pen-to-square" /> Edit Lines
+                <i className={`fa-solid ${q.line_items.length === 0 ? 'fa-plus' : 'fa-pen-to-square'}`} /> {q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
               </button>
               {statusOptions().map((s) => (
                 <button key={s} className="qd-status-btn" onClick={() => changeStatus(s)}>
@@ -861,10 +861,13 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         {/* Edit line items table */}
         <div className="qd-lines-section">
           {items.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-icon"><i className="fa-solid fa-list" /></div>
-              <div className="empty-state-title">No line items</div>
-              <div className="empty-state-text">Add products from the catalog below</div>
+            <div className="edit-empty-state">
+              <div className="edit-empty-icon"><i className="fa-solid fa-plus" /></div>
+              <div className="edit-empty-title">Start building your quote</div>
+              <div className="edit-empty-text">Select products from the catalog to get started</div>
+              <button className="edit-empty-cta" onClick={() => setShowPicker(true)}>
+                <i className="fa-solid fa-box-open" /> Browse Products
+              </button>
             </div>
           ) : (
             <div className="line-editor-table-wrap">

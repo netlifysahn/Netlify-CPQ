@@ -160,7 +160,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
                         )}
                       </div>
                       <div className="picker-v2-card-name">
-                        {p.name}
+                        {p.name || p.sku || 'Unnamed Product'}
                         {bundle && <span className="pkg-badge">PKG</span>}
                       </div>
                       <div className="picker-v2-card-sku">{p.sku}</div>

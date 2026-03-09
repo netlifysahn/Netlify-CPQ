@@ -1612,6 +1612,63 @@ tr.drag-over {
   background: var(--teal-dark);
 }
 
+/* Edit mode empty state */
+.edit-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.edit-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--teal-muted);
+  color: var(--teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+
+.edit-empty-title {
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-strong);
+  margin-bottom: 6px;
+}
+
+.edit-empty-text {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.edit-empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #05BDBA;
+  color: #fff;
+  transition: background 150ms ease;
+}
+
+.edit-empty-cta:hover {
+  background: var(--teal-dark);
+}
+
 /* ─── Confirm Modal ───────────────────────────────────────── */
 
 .confirm-modal {
@@ -2622,17 +2679,20 @@ tr.drag-over {
 .picker-v2-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 12px;
 }
 
 .picker-v2-card {
   position: relative;
-  padding: 14px 16px;
+  padding: 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
 }
 
 .picker-v2-card:hover {
@@ -2640,19 +2700,20 @@ tr.drag-over {
 }
 
 .picker-v2-card.selected {
-  border-color: var(--teal);
+  border: 2px solid var(--teal);
+  padding: 15px;
   background: var(--teal-muted);
 }
 
 .picker-v2-card.existing {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: default;
 }
 
 .picker-v2-card-check {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 12px;
+  right: 12px;
 }
 
 .picker-v2-checkbox {
@@ -2675,23 +2736,25 @@ tr.drag-over {
 
 .picker-v2-card-name {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-strong);
-  margin-bottom: 2px;
-  padding-right: 24px;
+  margin-bottom: 3px;
+  padding-right: 28px;
+  line-height: 1.3;
 }
 
 .picker-v2-card-sku {
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-faint);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .picker-v2-card-bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-top: auto;
 }
 
 .picker-v2-card-price {
@@ -2699,13 +2762,20 @@ tr.drag-over {
   font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--text-body);
+  color: var(--teal);
 }
 
 .picker-v2-card-existing {
   font-size: 11px;
   color: var(--text-faint);
   margin-top: 6px;
+}
+
+.picker-v2-card .type-pill {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-faint);
+  font-size: 10px;
+  padding: 2px 8px;
 }
 
 .picker-v2-footer {
@@ -2736,14 +2806,22 @@ tr.drag-over {
 }
 [data-theme="light"] .picker-v2-card {
   background: #fff;
-  border-color: #E9EBED;
+  border-color: #e8eaed;
 }
 [data-theme="light"] .picker-v2-card:hover {
   border-color: #D1D5DA;
 }
 [data-theme="light"] .picker-v2-card.selected {
   border-color: #05BDBA;
-  background: rgba(5, 189, 186, 0.06);
+  border-width: 2px;
+  background: #f0fafa;
+}
+[data-theme="light"] .picker-v2-card .type-pill {
+  background: #F0F1F3;
+  color: #6B7685;
+}
+[data-theme="light"] .picker-v2-card-price {
+  color: #05BDBA;
 }
 [data-theme="light"] .picker-v2-checkbox {
   border-color: #D1D5DA;
