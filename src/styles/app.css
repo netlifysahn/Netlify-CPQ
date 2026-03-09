@@ -3041,7 +3041,6 @@ tr.drag-over {
 /* ─── App shell ────────────────────────────────────────────── */
 
 [data-theme="light"] .app-layout {
-  border-top: 3px solid #0a0a0a;
 }
 
 [data-theme="light"] .main-content {
