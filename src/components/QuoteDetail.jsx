@@ -500,11 +500,18 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               <td><span className="cell-locked">—</span></td>
               <td><span className="price-monthly">{displayCurrency(pkgTotal)}</span></td>
             </tr>
+            {expanded && (
+              <tr className="line-row-pkg-eyebrow">
+                <td colSpan={7}>
+                  <div className="pkg-members-label">Package Members</div>
+                </td>
+              </tr>
+            )}
             {expanded && subs.map((sub) => {
               const ext = calcLineExtended(sub);
               return (
                 <tr key={sub.id} className="line-row-sub">
-                  <td className="line-td-product qd-view-sub-product">
+                  <td className="line-td-product qd-view-sub-product pkg-sub-product">
                     <div className="cell-name">{sub.product_name}</div>
                   </td>
                   <td><span className="cell-sku">{getUnitLabel(sub.unit_type || 'flat')}</span></td>
@@ -792,6 +799,13 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               </div>
             </td>
           </tr>
+          {expanded && (
+            <tr className="line-row-pkg-eyebrow">
+              <td colSpan={11}>
+                <div className="pkg-members-label">Package Members</div>
+              </td>
+            </tr>
+          )}
           {expanded && subs.map((sub) => {
             const unitType = sub.unit_type || 'flat';
             const ext = calcLineExtended(sub);
@@ -806,7 +820,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 onDrop={(e) => handleDrop(e, sub.id, 'sub', line.id)}
               >
                 <td className="col-drag" style={{ paddingLeft: 20 }}><i className="fa-solid fa-grip-vertical drag-handle" /></td>
-                <td className="line-td-product" style={{ paddingLeft: 16 }}>
+                <td className="line-td-product pkg-sub-product">
                   <div className="cell-name">{sub.product_name}</div>
                   <div className="cell-sku">{sub.product_sku}</div>
                 </td>

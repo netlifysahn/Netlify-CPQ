@@ -2314,6 +2314,51 @@ tr.drag-over {
   border-left: none;
 }
 
+/* Package members eyebrow label row */
+.line-row-pkg-eyebrow td {
+  padding: 8px 0 4px 24px !important;
+  height: auto !important;
+  border-bottom: none !important;
+}
+
+.pkg-members-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Package sub-component product cell — shared edit + view */
+.pkg-sub-product {
+  padding-left: 40px !important;
+  border-left: 2px solid rgba(5, 189, 186, 0.15);
+}
+
+.pkg-sub-product .cell-name {
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.line-row-sub td {
+  background: rgba(0, 0, 0, 0.018);
+}
+
+[data-theme="light"] .line-row-sub td {
+  background: rgba(0, 0, 0, 0.018);
+}
+
+[data-theme="light"] .pkg-sub-product {
+  padding-left: 40px !important;
+  border-left: 2px solid rgba(5, 189, 186, 0.15);
+}
+
+[data-theme="light"] .pkg-sub-product .cell-name {
+  font-size: 13px;
+  color: #374151;
+}
+
 .qd-lines-section {
   margin-bottom: 32px;
 }
@@ -2443,21 +2488,7 @@ tr.drag-over {
   border-color: #05BDBA;
 }
 
-/* Sub-line row — subtle left border to connect to parent */
-.line-row-sub td {
-  background: rgba(255, 255, 255, 0.02);
-}
-[data-theme="light"] .line-row-sub td {
-  background: transparent;
-}
-[data-theme="light"] .line-row-sub .line-td-product {
-  border-left: 2px solid rgba(0, 0, 0, 0.06);
-  padding-left: 30px !important;
-}
-.line-row-sub .line-td-product {
-  border-left: 2px solid var(--border);
-  padding-left: 30px !important;
-}
+/* Sub-line row */
 .line-row-sub .cell-name {
   font-size: 13px;
 }
