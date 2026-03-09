@@ -2290,6 +2290,16 @@ tr.drag-over {
   color: rgba(255, 255, 255, 0.45);
 }
 
+.qd-dates {
+  margin-top: 6px;
+}
+
+.qd-dates-line {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.40);
+  line-height: 1.6;
+}
+
 /* Status ghost buttons — all identical, muted */
 .qd-actions {
   display: flex;
@@ -4179,6 +4189,10 @@ tr.drag-over {
 
 [data-theme="light"] .qd-meta {
   color: var(--text-muted);
+}
+
+[data-theme="light"] .qd-dates-line {
+  color: #6b7280;
 }
 
 [data-theme="light"] .qd-status-btn {

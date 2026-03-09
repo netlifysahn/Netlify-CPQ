@@ -23,6 +23,7 @@ export const emptyQuote = (existingQuotes = []) => ({
   id: genId(),
   quote_number: genQuoteNumber(existingQuotes),
   name: '',
+  quote_date: new Date().toISOString().split('T')[0],
   customer_name: '',
   contact_name: '',
   contact_email: '',

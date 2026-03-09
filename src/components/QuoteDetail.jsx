@@ -559,8 +559,17 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 {q.customer_name && <span>{q.customer_name}</span>}
                 <span className={`status-badge status-${meta.color}`}>{meta.label}</span>
                 <span>{q.term_months} month term</span>
-                {q.start_date && <span>{fmtDate(q.start_date)} &rarr; {q.end_date ? fmtDate(q.end_date) : '...'}</span>}
                 {q.header_discount > 0 && <span>{q.header_discount}% quote discount</span>}
+              </div>
+              <div className="qd-dates">
+                <div className="qd-dates-line">
+                  Quoted {q.quote_date ? fmtDate(q.quote_date) : '—'}
+                  {' · '}
+                  Expires {q.expiration_date ? fmtDate(q.expiration_date) : '—'}
+                </div>
+                <div className="qd-dates-line">
+                  Subscription Start: {q.start_date ? fmtDate(q.start_date) : '—'}
+                </div>
               </div>
             </div>
             <div className="qd-actions">

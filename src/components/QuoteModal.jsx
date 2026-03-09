@@ -140,7 +140,7 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
           <div className={`modal-section-content ${openSections[SECTIONS.TERM] ? 'is-open' : ''}`}>
             <div className="grid-2">
               <div className="field">
-                <label className="field-label">Order Form Expiration Date</label>
+                <label className="field-label">Quote Expiration Date</label>
                 <input className="field-input" type="date" value={f.expiration_date} onChange={(e) => s('expiration_date', e.target.value)} />
               </div>
               <div className="field">
