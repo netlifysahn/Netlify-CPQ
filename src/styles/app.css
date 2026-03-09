@@ -4310,7 +4310,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .line-row-sub td:first-child {
-  border-left: 2px solid rgba(5, 189, 186, 0.15);
+  border-left: none;
 }
 
 [data-theme="light"] .pkg-sub-product {

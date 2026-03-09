@@ -53,6 +53,14 @@ function AnimatedValue({ value, pulseKey }) {
   return <div className="qd-summary-value" ref={ref}>{value}</div>;
 }
 
+// Format date — "2026-03-08" → "Mar 8, 2026"
+const fmtDate = (dateStr) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return dateStr;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
 // Display currency — show dash for zero values in line tables
 const displayCurrency = (v) => {
   const n = typeof v === 'number' && !isNaN(v) ? v : 0;
@@ -485,18 +493,18 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           <React.Fragment key={line.id}>
             <tr className="line-row-package">
               <td className="line-td-product">
-                <button className="pkg-chevron" onClick={() => togglePackage(line.id)}>
-                  <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
-                </button>
                 <div style={{ display: 'inline-block', verticalAlign: 'middle' }}>
                   <div className="cell-name">{line.product_name}<span className="pkg-badge">PKG</span></div>
                 </div>
+                <button className="pkg-chevron" onClick={() => togglePackage(line.id)}>
+                  <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
+                </button>
               </td>
-              <td><span className="cell-sku">Package</span></td>
-              <td><span className="cell-locked">—</span></td>
-              <td><span className="cell-locked">—</span></td>
-              <td><span className="cell-locked">—</span></td>
-              <td><span className="cell-locked">—</span></td>
+              <td />
+              <td />
+              <td />
+              <td />
+              <td />
               <td><span className="price-monthly">{displayCurrency(pkgTotal)}</span></td>
             </tr>
             {expanded && subs.map((sub) => {
@@ -550,8 +558,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               <div className="qd-meta">
                 {q.customer_name && <span>{q.customer_name}</span>}
                 <span className={`status-badge status-${meta.color}`}>{meta.label}</span>
-                <span>{q.term_months}mo term</span>
-                {q.start_date && <span>{q.start_date} &rarr; {q.end_date || '...'}</span>}
+                <span>{q.term_months} month term</span>
+                {q.start_date && <span>{fmtDate(q.start_date)} &rarr; {q.end_date ? fmtDate(q.end_date) : '...'}</span>}
                 {q.header_discount > 0 && <span>{q.header_discount}% quote discount</span>}
               </div>
             </div>
@@ -975,7 +983,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           </div>
           <div className="qd-summary-divider" />
           <div className="qd-summary-item qd-summary-tcv">
-            <div className="qd-summary-label">TCV ({q.term_months}mo)</div>
+            <div className="qd-summary-label">TCV ({q.term_months} month)</div>
             {totals.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountTcv)}</div>}
             <AnimatedValue value={fmtCurrency(totals.tcv)} pulseKey={pulseKey} />
           </div>
@@ -1040,7 +1048,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       </div>
       <div className="qd-summary-divider" />
       <div className="qd-summary-item qd-summary-tcv">
-        <div className="qd-summary-label">TCV ({source.term_months}mo)</div>
+        <div className="qd-summary-label">TCV ({source.term_months} month)</div>
         {t.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(t.preDiscountTcv)}</div>}
         <AnimatedValue value={fmtCurrency(t.tcv)} pulseKey={pulseKey} />
       </div>

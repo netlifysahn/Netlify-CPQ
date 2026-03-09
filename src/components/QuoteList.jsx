@@ -61,7 +61,7 @@ export default function QuoteList({ quotes, onNew, onOpen, onDupe, onDelete }) {
                   <span className="cell-amount">{totals.tcv > 0 ? fmtCurrency(totals.tcv) : '\u2014'}</span>
                 </td>
                 <td>
-                  <span className="cell-term">{q.term_months}mo</span>
+                  <span className="cell-term">{q.term_months} month</span>
                 </td>
                 <td>
                   <div className="cell-status">
