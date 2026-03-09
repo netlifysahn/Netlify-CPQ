@@ -669,6 +669,22 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         return s + calcLineExtended(l);
       }, 0);
 
+    const editColGroup = (
+      <colgroup>
+        <col style={{ width: '32px' }} />
+        <col style={{ width: '25%' }} />
+        <col style={{ width: '10%' }} />
+        <col style={{ width: '8%' }} />
+        <col style={{ width: '6%' }} />
+        <col style={{ width: '10%' }} />
+        <col style={{ width: '8%' }} />
+        <col style={{ width: '8%' }} />
+        <col style={{ width: '10%' }} />
+        <col style={{ width: '10%' }} />
+        <col style={{ width: '5%' }} />
+      </colgroup>
+    );
+
     const editTableHead = (
       <thead>
         <tr>
@@ -799,13 +815,6 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               </div>
             </td>
           </tr>
-          {expanded && (
-            <tr className="line-row-pkg-eyebrow">
-              <td colSpan={11}>
-                <div className="pkg-members-label">Package Members</div>
-              </td>
-            </tr>
-          )}
           {expanded && subs.map((sub) => {
             const unitType = sub.unit_type || 'flat';
             const ext = calcLineExtended(sub);
@@ -897,6 +906,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               <div className="line-editor-table-wrap">
                 {topLevel.length > 0 && (
                   <table className="data-table line-table">
+                    {editColGroup}
                     {editTableHead}
                     <tbody>{topLevel.map(renderEditRow)}</tbody>
                   </table>
@@ -919,6 +929,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                       </div>
                       {gLines.length > 0 ? (
                         <table className="data-table line-table">
+                          {editColGroup}
                           {editTableHead}
                           <tbody>{gLines.map(renderEditRow)}</tbody>
                         </table>

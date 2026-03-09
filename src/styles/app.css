@@ -2410,8 +2410,7 @@ tr.drag-over {
 
 /* Package sub-component product cell — shared edit + view */
 .pkg-sub-product {
-  padding-left: 40px !important;
-  border-left: 2px solid rgba(5, 189, 186, 0.15);
+  padding-left: 32px !important;
 }
 
 .pkg-sub-product .cell-name {
@@ -2420,7 +2419,12 @@ tr.drag-over {
 }
 
 .line-row-sub td {
-  background: rgba(0, 0, 0, 0.018);
+  background: rgba(0, 0, 0, 0.015);
+  border-left: none;
+}
+
+.line-row-sub td:first-child {
+  border-left: 2px solid rgba(5, 189, 186, 0.15);
 }
 
 .qd-lines-section {
@@ -2456,15 +2460,21 @@ tr.drag-over {
   padding: 0 4px;
 }
 
+.line-table {
+  table-layout: fixed;
+}
+
 .line-table th {
   font-size: 9px;
   padding: 10px 12px;
 }
 
 .line-table td {
-  height: 52px;
-  padding: 0 12px;
+  min-height: 48px;
+  height: 48px;
+  padding: 6px 12px;
   border-bottom: 1px solid var(--border);
+  vertical-align: middle;
 }
 
 [data-theme="light"] .line-table td {
@@ -4207,11 +4217,15 @@ tr.drag-over {
 
 [data-theme="light"] .line-row-sub td {
   background: rgba(0, 0, 0, 0.015);
+  border-left: none;
+}
+
+[data-theme="light"] .line-row-sub td:first-child {
+  border-left: 2px solid rgba(5, 189, 186, 0.15);
 }
 
 [data-theme="light"] .pkg-sub-product {
-  padding-left: 40px !important;
-  border-left: 2px solid rgba(5, 189, 186, 0.15);
+  padding-left: 32px !important;
 }
 
 [data-theme="light"] .pkg-sub-product .cell-name {
