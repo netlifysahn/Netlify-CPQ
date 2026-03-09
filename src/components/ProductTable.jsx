@@ -8,7 +8,8 @@ export default function ProductTable({ products, allProducts, onEdit, onDupe, on
   if (products.length === 0) {
     return (
       <div className="empty-state">
-        <div className="empty-state-icon"><i className="fa-solid fa-box" /></div>
+        <div className="empty-state-numeral">0</div>
+        <div className="empty-state-eyebrow">Products</div>
         <div className="empty-state-title">No products yet</div>
         <div className="empty-state-text">Add your first product to get started</div>
         {onAdd && (

@@ -5,7 +5,8 @@ export default function QuoteList({ quotes, onNew, onOpen, onDupe, onDelete }) {
   if (quotes.length === 0) {
     return (
       <div className="empty-state">
-        <div className="empty-state-icon"><i className="fa-solid fa-file-invoice-dollar" /></div>
+        <div className="empty-state-numeral">0</div>
+        <div className="empty-state-eyebrow">Quotes</div>
         <div className="empty-state-title">No quotes yet</div>
         <div className="empty-state-text">Create your first quote to get started</div>
         {onNew && (

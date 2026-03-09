@@ -69,7 +69,8 @@ export default function PricebookDetail({ pricebook, products, onBack, onUpdate 
 
         {entries.length === 0 && (
           <div className="empty-state">
-            <div className="empty-state-icon"><i className="fa-solid fa-box" /></div>
+            <div className="empty-state-numeral">0</div>
+            <div className="empty-state-eyebrow">Products</div>
             <div className="empty-state-title">No products in this pricebook</div>
             <div className="empty-state-text">Add products to define pricing for this pricebook</div>
             <button className="empty-state-cta" onClick={() => setShowPicker(true)}>

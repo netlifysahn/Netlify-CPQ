@@ -610,7 +610,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
 
           {q.line_items.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-state-icon"><i className="fa-solid fa-list" /></div>
+              <div className="empty-state-numeral">0</div>
+              <div className="empty-state-eyebrow">Line Items</div>
               <div className="empty-state-title">No line items</div>
               <div className="empty-state-text">Click "Edit Lines" to add products to this quote</div>
             </div>

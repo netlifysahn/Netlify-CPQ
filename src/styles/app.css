@@ -117,6 +117,8 @@
   flex-direction: column;
   gap: 2px;
   padding: 0 8px;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .sidebar-item {
@@ -298,14 +300,14 @@
   font-weight: 700;
   font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   color: var(--teal);
   margin-bottom: var(--space-xs);
 }
 
 .page-title {
   font-family: var(--font-body);
-  font-size: var(--text-page-title);
+  font-size: 28px;
   font-weight: 800;
   color: var(--text-strong);
   letter-spacing: -0.02em;
@@ -566,8 +568,8 @@
 .table-card {
   background: var(--surface);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
   overflow: hidden;
 }
 
@@ -585,9 +587,9 @@
 }
 
 .data-table.data-table-products th {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.45);
 }
 
@@ -621,9 +623,9 @@
 }
 
 .data-table.data-table-pricebooks th {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.45);
 }
 
@@ -664,13 +666,13 @@
 
 .data-table th {
   text-align: left;
-  padding: 12px 0;
+  padding: 14px 0;
   font-family: var(--font-body);
   font-size: 10px;
-  font-weight: 500;
+  font-weight: 700;
   color: rgba(255, 255, 255, 0.45);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   background: transparent;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
@@ -685,8 +687,8 @@
 }
 
 .data-table td {
-  padding: 0;
-  height: 56px;
+  padding: 14px 0;
+  height: auto;
   vertical-align: middle;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   font-family: var(--font-body);
@@ -946,9 +948,9 @@
 .modal {
   background: #1a1d2b;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 24px 48px rgba(0, 0, 0, 0.35);
-  padding: 24px;
+  padding: 32px;
   width: 100%;
   max-width: 600px;
   max-height: 85vh;
@@ -1096,12 +1098,12 @@
 }
 
 .modal-section-label {
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.40);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--teal);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   margin-bottom: 16px;
   padding-bottom: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -1259,12 +1261,12 @@
 }
 
 .expanded-label {
-  font-family: var(--font-body);
+  font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.45);
+  font-weight: 700;
+  color: var(--teal);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   margin-bottom: 8px;
 }
 
@@ -1314,11 +1316,12 @@
 }
 
 .price-preview-label {
-  font-family: var(--font-body);
+  font-family: var(--font-mono);
   font-size: 10px;
+  font-weight: 700;
   color: rgba(255, 255, 255, 0.45);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   margin-bottom: 4px;
 }
 
@@ -1327,6 +1330,7 @@
   font-weight: 600;
   color: #ffffff;
   font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
 }
 
 .bundle-picker-wrap {
@@ -1572,22 +1576,43 @@ tr.drag-over {
   align-items: center;
 }
 
+.empty-state-numeral {
+  font-family: var(--font-body);
+  font-size: 120px;
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.04);
+  margin-bottom: -10px;
+  user-select: none;
+}
+
+.empty-state-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--teal);
+  margin-bottom: 8px;
+}
+
 .empty-state-icon {
   font-size: 40px;
   margin-bottom: var(--space-lg);
   color: rgba(255, 255, 255, 0.3);
+  display: none;
 }
 
 .empty-state-title {
-  font-family: var(--font-heading);
-  font-size: 16px;
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 800;
   color: rgba(255, 255, 255, 0.9);
   margin-bottom: var(--space-xs);
 }
 
 .empty-state-text {
-  font-size: 14px;
+  font-size: 13px;
   color: rgba(255, 255, 255, 0.45);
   margin-bottom: var(--space-lg);
 }
@@ -1596,9 +1621,10 @@ tr.drag-over {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 0 24px;
+  height: 36px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   font-family: var(--font-body);
   border: none;
   border-radius: 6px;
@@ -1848,9 +1874,9 @@ tr.drag-over {
 }
 
 .data-table.data-table-quotes th {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.45);
 }
 
@@ -1877,7 +1903,7 @@ tr.drag-over {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .data-table-quotes .cell-term {
@@ -1932,10 +1958,10 @@ tr.drag-over {
   grid-template-columns: 1fr 1fr;
   gap: var(--space-xl);
   margin-bottom: 40px;
-  padding: var(--space-lg);
+  padding: 24px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
 }
 
 .qd-customer-company {
@@ -1957,10 +1983,10 @@ tr.drag-over {
 .qd-customer-section-label {
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.30);
+  font-weight: 700;
+  color: var(--teal);
   text-transform: uppercase;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.14em;
   margin-bottom: 6px;
 }
 
@@ -2163,12 +2189,12 @@ tr.drag-over {
 .qd-summary {
   display: flex;
   align-items: stretch;
-  margin-bottom: 40px;
+  margin-bottom: 32px;
   padding: 24px 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-top: 2px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: 10px;
 }
 
 [data-theme="light"] .qd-summary {
@@ -2200,11 +2226,11 @@ tr.drag-over {
 
 .qd-summary-label {
   font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 500;
+  font-size: 10px;
+  font-weight: 700;
   color: rgba(255, 255, 255, 0.30);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   margin-bottom: var(--space-sm);
 }
 
@@ -2244,7 +2270,7 @@ tr.drag-over {
 .qd-lines-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: 10px;
   overflow: hidden;
 }
 
@@ -2255,7 +2281,7 @@ tr.drag-over {
 }
 
 .qd-lines-section {
-  margin-bottom: 40px;
+  margin-bottom: 32px;
 }
 
 .line-editor-header {
@@ -2267,11 +2293,11 @@ tr.drag-over {
 
 .line-editor-title {
   font-family: var(--font-mono);
-  font-size: var(--text-label);
-  font-weight: 600;
-  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--teal);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
 }
 
 .line-editor-actions {
@@ -2446,10 +2472,10 @@ tr.drag-over {
   display: block;
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 500;
+  font-weight: 700;
   color: rgba(255, 255, 255, 0.25);
   text-transform: uppercase;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.14em;
   margin-bottom: 4px;
 }
 
@@ -3124,8 +3150,8 @@ tr.drag-over {
 
 /* Table — Neutral 100 header, Neutral 200 dividers */
 [data-theme="light"] .data-table th {
-  color: #778099;
-  font-weight: 500;
+  color: #6b7280;
+  font-weight: 700;
   background: #F6F6F7;
   border-bottom-color: #E9EBED;
 }
@@ -3135,13 +3161,14 @@ tr.drag-over {
 }
 
 [data-theme="light"] .data-table tbody tr:hover {
-  background: #F6F6F7;
+  background: #f9fafb;
 }
 
 [data-theme="light"] .table-card {
   background: #ffffff;
   border-color: #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 [data-theme="light"] .data-table-products th {
@@ -3239,6 +3266,14 @@ tr.drag-over {
 }
 
 /* Empty states — light overrides */
+[data-theme="light"] .empty-state-numeral {
+  color: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .empty-state-eyebrow {
+  color: #05BDBA;
+}
+
 [data-theme="light"] .empty-state-icon {
   color: #9ca3af;
 }
@@ -3431,7 +3466,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .modal-section-label {
-  color: #6b7280;
+  color: #05BDBA;
   border-bottom-color: #e5e7eb;
 }
 
@@ -3473,7 +3508,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .expanded-label {
-  color: #778099;
+  color: #05BDBA;
 }
 
 /* Bundle */
@@ -3623,7 +3658,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .clickable-row:hover {
-  background: #F6F6F7 !important;
+  background: #f9fafb !important;
 }
 
 /* Quote detail */
@@ -3757,7 +3792,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .qd-customer-section-label {
-  color: #9DA7B2;
+  color: #05BDBA;
 }
 
 [data-theme="light"] .qd-customer-company {
@@ -3892,10 +3927,6 @@ tr.drag-over {
   background: var(--section-accent-tint);
 }
 
-.main-content.section-quotes .line-editor-title {
-  color: color-mix(in srgb, var(--section-accent) 75%, white);
-}
-
 .main-content.section-scope .coming-soon,
 .main-content.section-orders .coming-soon {
   border-color: color-mix(in srgb, var(--section-accent) 30%, var(--border));
@@ -3917,10 +3948,6 @@ tr.drag-over {
 
 [data-theme="light"] .main-content.section-products .data-table:not(.data-table-products) th {
   border-bottom-color: color-mix(in srgb, var(--section-accent) 32%, #E9EBED);
-}
-
-[data-theme="light"] .main-content.section-quotes .line-editor-title {
-  color: color-mix(in srgb, var(--section-accent) 72%, #353A3E);
 }
 
 [data-theme="light"] .main-content.section-pricebooks .name-link:hover {

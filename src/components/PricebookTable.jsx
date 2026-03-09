@@ -5,7 +5,8 @@ export default function PricebookTable({ pricebooks, onOpen, onEdit, onDelete, o
   if (pricebooks.length === 0) {
     return (
       <div className="empty-state">
-        <div className="empty-state-icon"><i className="fa-solid fa-book" /></div>
+        <div className="empty-state-numeral">0</div>
+        <div className="empty-state-eyebrow">Pricebooks</div>
         <div className="empty-state-title">No pricebooks yet</div>
         <div className="empty-state-text">Create your first pricebook to get started</div>
         {onAdd && (
