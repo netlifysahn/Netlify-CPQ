@@ -635,6 +635,15 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           ) : (
             <div className="qd-view-lines-card">
               <table className="data-table line-table">
+                <colgroup>
+                  <col style={{ width: '30%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '14%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '14%' }} />
+                  <col style={{ width: '14%' }} />
+                </colgroup>
                 <thead>
                   <tr>
                     <th>Product</th>
