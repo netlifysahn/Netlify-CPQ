@@ -540,9 +540,10 @@ export default function ProductModal({ product, products, onSave, onClose }) {
         {pickerOpen && isPackage && (
           <ProductPicker
             products={nonBundleProducts}
+            existingProductIds={new Set((f.members || []).map((m) => m.product_id))}
             onAdd={addMember}
             onClose={() => setPickerOpen(false)}
-            multiSelect={false}
+            multiSelect
           />
         )}
       </div>
