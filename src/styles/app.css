@@ -2190,7 +2190,7 @@ tr.drag-over {
   display: flex;
   align-items: stretch;
   margin-bottom: 32px;
-  padding: 24px 0;
+  padding: 28px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-top: 2px solid var(--border);
@@ -2200,14 +2200,6 @@ tr.drag-over {
 .qd-summary-item {
   flex: 1;
   padding: 0 var(--space-xl);
-}
-
-.qd-summary-item:first-child {
-  padding-left: 0;
-}
-
-.qd-summary-item:last-child {
-  padding-right: 0;
 }
 
 .qd-summary-divider {
@@ -2223,7 +2215,7 @@ tr.drag-over {
   color: rgba(255, 255, 255, 0.30);
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  margin-bottom: var(--space-sm);
+  margin-bottom: 8px;
 }
 
 .qd-summary-pre {
@@ -2288,13 +2280,24 @@ tr.drag-over {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
+.qd-view-lines-card .line-table td {
+  padding: 16px 12px;
+  height: auto;
+}
+
 /* View-mode sub-component rows */
 .qd-view-sub-product {
-  padding-left: 32px !important;
+  padding-left: 40px !important;
+  border-left: 2px solid rgba(5, 189, 186, 0.2);
 }
 
 [data-theme="light"] .qd-view-lines-card .line-row-sub td {
-  background: #f9fafb;
+  background: rgba(0, 0, 0, 0.018);
+}
+
+[data-theme="light"] .qd-view-lines-card .line-row-sub .qd-view-sub-product .cell-name {
+  font-size: 13px;
+  color: #374151;
 }
 
 [data-theme="light"] .qd-view-lines-card .line-row-package td {
