@@ -1446,6 +1446,41 @@
   font-weight: 600;
 }
 
+/* PKG badge */
+.pkg-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+  background: var(--teal-muted);
+  color: var(--teal);
+  vertical-align: middle;
+}
+
+/* Package Components table in modal */
+.pkg-components-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.pkg-components-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 4px 8px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.pkg-components-table td {
+  padding: 6px 8px;
+  color: var(--text-body);
+  border-bottom: 1px solid var(--border);
+}
+
 .pricebook-modal {
   max-width: 520px;
 }
@@ -3057,6 +3092,19 @@
 [data-theme="light"] .bundle-rollup-total {
   border-top-color: #E9EBED;
   color: #1B1A1C;
+}
+
+[data-theme="light"] .pkg-badge {
+  background: rgba(5, 189, 186, 0.12);
+  color: #05BDBA;
+}
+[data-theme="light"] .pkg-components-table th {
+  color: #6B7685;
+  border-bottom-color: #E9EBED;
+}
+[data-theme="light"] .pkg-components-table td {
+  color: #1B1A1C;
+  border-bottom-color: #E9EBED;
 }
 
 /* Empty state — no overrides needed, uses fixed colors */

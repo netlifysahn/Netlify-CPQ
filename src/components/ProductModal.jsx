@@ -1,16 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import {
-  BUNDLE_PRICING_MODES,
-  MEMBER_PRICE_BEHAVIORS,
   PRICE_UNITS,
   PRICING_METHODS,
   PRODUCT_TYPES,
   TERM_BEHAVIORS,
   TYPE_LABELS,
   UNIT_LABELS,
-  calcBundleMembersTotal,
-  calcBundleMonthlyTotal,
-  emptyBundleMember,
   emptyProduct,
   fmtPrice,
   getProductCategory,
@@ -76,14 +71,6 @@ export default function ProductModal({ product, products, onSave, onClose }) {
 
   const monthlyAmount = parseFloat(f.default_price.amount) || 0;
   const productMap = useMemo(() => new Map((products || []).map((p) => [p.id, p])), [products]);
-  const bundleMembers = useMemo(
-    () =>
-      (f.members || [])
-        .map((member, index) => ({ member, index }))
-        .sort((a, b) => (a.member.sort_order || 0) - (b.member.sort_order || 0)),
-    [f.members],
-  );
-
   const nonBundleProducts = useMemo(() => {
     const selectedIds = new Set((f.members || []).map((m) => m.product_id));
     return (products || []).filter((p) => !isBundleProduct(p) && p.id !== f.id && !selectedIds.has(p.id));
@@ -109,10 +96,18 @@ export default function ProductModal({ product, products, onSave, onClose }) {
   }, [f, products]);
 
   const addMember = (productId) => {
-    const nextSort = (f.members || []).length + 1;
+    const prod = productMap.get(productId);
+    if (!prod) return;
     setF((prev) => ({
       ...prev,
-      members: [...(prev.members || []), { ...emptyBundleMember(productId), sort_order: nextSort }],
+      members: [...(prev.members || []), {
+        product_id: productId,
+        name: prod.name,
+        sku: prod.sku,
+        qty: 1,
+        unit_type: prod.default_price?.unit || 'flat',
+        list_price: parseFloat(prod.default_price?.amount) || 0,
+      }],
     }));
     setMemberQuery('');
     setPickerOpen(false);
@@ -138,9 +133,6 @@ export default function ProductModal({ product, products, onSave, onClose }) {
     });
   };
 
-  const bundleMembersTotal = calcBundleMembersTotal(f, productMap);
-  const bundleMonthlyTotal = calcBundleMonthlyTotal(f, productMap);
-
   const handleSave = () => {
     if (!ok) return;
 
@@ -151,17 +143,14 @@ export default function ProductModal({ product, products, onSave, onClose }) {
       entitlements = '{}';
     }
 
-    const normalizedMembers = (f.members || [])
-      .map((member, index) => ({
-        ...member,
-        required: Boolean(member.required),
-        default_quantity: Math.max(0, parseNumber(member.default_quantity, 1)),
-        quantity_editable: Boolean(member.quantity_editable),
-        sort_order: parseInt(member.sort_order, 10) || index + 1,
-        discount_percent: Math.max(0, Math.min(100, parseNumber(member.discount_percent, 0))),
-      }))
-      .sort((a, b) => a.sort_order - b.sort_order)
-      .map((member, index) => ({ ...member, sort_order: index + 1 }));
+    const normalizedMembers = (f.members || []).map((member) => ({
+      product_id: member.product_id,
+      name: member.name || productMap.get(member.product_id)?.name || '',
+      sku: member.sku || productMap.get(member.product_id)?.sku || '',
+      qty: Math.max(1, parseNumber(member.qty, 1)),
+      unit_type: member.unit_type || 'flat',
+      list_price: parseNumber(member.list_price, 0),
+    }));
 
     onSave({
       ...f,
@@ -207,8 +196,11 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                 className="field-select"
                 value={getProductCategory(f)}
                 onChange={(e) => {
-                  s('category', e.target.value);
-                  s('type', e.target.value);
+                  const val = e.target.value;
+                  s('category', val);
+                  s('type', val);
+                  // Auto-set configuration_method when switching to/from bundle
+                  s('configuration_method', val === 'bundle' ? 'bundle' : 'none');
                 }}
               >
                 {categoryOptions.map((t) => (
@@ -287,180 +279,86 @@ export default function ProductModal({ product, products, onSave, onClose }) {
           )}
         </div>
 
-        <div className="modal-section">
-          <div className="modal-section-label">
-            <i className="fa-solid fa-boxes-stacked" />
-            Package Configuration
-          </div>
+        {isBundleProduct(f) && (
+          <div className="modal-section">
+            <div className="modal-section-label">
+              <i className="fa-solid fa-boxes-stacked" />
+              Package Components
+            </div>
 
-          <div className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={isBundleProduct(f)}
-              onChange={(e) => s('configuration_method', e.target.checked ? 'bundle' : 'none')}
-              id="isBundle"
-            />
-            <label htmlFor="isBundle" className="checkbox-label">This is a package</label>
-          </div>
-
-          {isBundleProduct(f) && (
-            <>
-              <div className="grid-2">
-                <div className="field">
-                  <label className="field-label">Package Pricing</label>
-                  <select className="field-select" value={f.bundle_pricing} onChange={(e) => s('bundle_pricing', e.target.value)}>
-                    {BUNDLE_PRICING_MODES.map((mode) => (
-                      <option key={mode} value={mode}>{mode}</option>
+            <div className="pkg-components">
+              {(f.members || []).length > 0 && (
+                <table className="pkg-components-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>SKU</th>
+                      <th style={{ width: 70 }}>Qty</th>
+                      <th>Unit</th>
+                      <th style={{ width: 36 }} />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(f.members || []).map((member, index) => (
+                      <tr key={`${member.product_id}_${index}`}>
+                        <td>{member.name || productMap.get(member.product_id)?.name || 'Unknown'}</td>
+                        <td className="cell-sku">{member.sku || productMap.get(member.product_id)?.sku || ''}</td>
+                        <td>
+                          <input
+                            className="field-input"
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={member.qty ?? member.default_quantity ?? 1}
+                            onChange={(e) => updateMember(index, 'qty', parseInt(e.target.value, 10) || 1)}
+                            style={{ width: '100%', padding: '4px 6px', textAlign: 'center' }}
+                          />
+                        </td>
+                        <td>{UNIT_LABELS[member.unit_type || member.price_behavior] || member.unit_type || 'Flat'}</td>
+                        <td>
+                          <button type="button" className="action-btn delete" onClick={() => removeMember(index)} title="Remove">
+                            <i className="fa-solid fa-xmark" />
+                          </button>
+                        </td>
+                      </tr>
                     ))}
-                  </select>
-                </div>
-                <div className="checkbox-row checkbox-row-offset">
-                  <input type="checkbox" checked={f.print_members} onChange={(e) => s('print_members', e.target.checked)} id="printMembers" />
-                  <label htmlFor="printMembers" className="checkbox-label">Print members on quote docs</label>
-                </div>
-              </div>
+                  </tbody>
+                </table>
+              )}
 
-              <div className="field">
-                <label className="field-label">Members</label>
-                <div className="bundle-picker-wrap">
-                  <button type="button" className="btn-secondary bundle-add-btn" onClick={() => setPickerOpen((prev) => !prev)}>
-                    <i className="fa-solid fa-plus" />
-                    Add Member
-                  </button>
+              {(f.members || []).length === 0 && (
+                <div className="bundle-members-empty">No components added.</div>
+              )}
 
-                  {pickerOpen && (
-                    <div className="bundle-picker">
-                      <input
-                        className="field-input bundle-picker-search"
-                        value={memberQuery}
-                        onChange={(e) => setMemberQuery(e.target.value)}
-                        placeholder="Search non-package products..."
-                      />
-                      <div className="bundle-picker-list">
-                        {filteredPickerProducts.length === 0 && <div className="bundle-picker-empty">No matching products</div>}
-                        {filteredPickerProducts.map((candidate) => (
-                          <button key={candidate.id} type="button" className="bundle-picker-item" onClick={() => addMember(candidate.id)}>
-                            <span>{candidate.name}</span>
-                            <span className="bundle-picker-sku">{candidate.sku}</span>
-                          </button>
-                        ))}
-                      </div>
+              <div className="bundle-picker-wrap">
+                <button type="button" className="btn-secondary bundle-add-btn" onClick={() => setPickerOpen((prev) => !prev)}>
+                  <i className="fa-solid fa-plus" />
+                  Add Component
+                </button>
+
+                {pickerOpen && (
+                  <div className="bundle-picker">
+                    <input
+                      className="field-input bundle-picker-search"
+                      value={memberQuery}
+                      onChange={(e) => setMemberQuery(e.target.value)}
+                      placeholder="Search products..."
+                    />
+                    <div className="bundle-picker-list">
+                      {filteredPickerProducts.length === 0 && <div className="bundle-picker-empty">No matching products</div>}
+                      {filteredPickerProducts.map((candidate) => (
+                        <button key={candidate.id} type="button" className="bundle-picker-item" onClick={() => addMember(candidate.id)}>
+                          <span>{candidate.name}</span>
+                          <span className="bundle-picker-sku">{candidate.sku}</span>
+                        </button>
+                      ))}
                     </div>
-                  )}
-                </div>
-
-                <div className="bundle-members-list">
-                  {bundleMembers.length === 0 && <div className="bundle-members-empty">No members added.</div>}
-                  {bundleMembers.map(({ member, index }) => {
-                    const memberProduct = productMap.get(member.product_id);
-                    return (
-                      <div key={`${member.product_id}_${index}`} className="bundle-member-editor">
-                        <div className="bundle-member-head">
-                          <div className="bundle-member-title">{memberProduct ? memberProduct.name : 'Unknown product'}</div>
-                          <button type="button" className="action-btn delete" onClick={() => removeMember(index)}>
-                            <i className="fa-solid fa-trash-can" />
-                          </button>
-                        </div>
-
-                        <div className="grid-4 bundle-member-grid">
-                          <div className="field">
-                            <label className="field-label">Quantity</label>
-                            <input
-                              className="field-input"
-                              type="number"
-                              min="0"
-                              step="1"
-                              value={member.default_quantity}
-                              onChange={(e) => updateMember(index, 'default_quantity', e.target.value)}
-                            />
-                          </div>
-                          <div className="field">
-                            <label className="field-label">Sort</label>
-                            <input
-                              className="field-input"
-                              type="number"
-                              min="1"
-                              step="1"
-                              value={member.sort_order}
-                              onChange={(e) => updateMember(index, 'sort_order', e.target.value)}
-                            />
-                          </div>
-                          <div className="field">
-                            <label className="field-label">Price Behavior</label>
-                            <select
-                              className="field-select"
-                              value={member.price_behavior}
-                              onChange={(e) => updateMember(index, 'price_behavior', e.target.value)}
-                            >
-                              {MEMBER_PRICE_BEHAVIORS.map((behavior) => (
-                                <option key={behavior} value={behavior}>{behavior}</option>
-                              ))}
-                            </select>
-                          </div>
-                          {member.price_behavior === 'discounted' ? (
-                            <div className="field">
-                              <label className="field-label">Discount %</label>
-                              <input
-                                className="field-input"
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="1"
-                                value={member.discount_percent}
-                                onChange={(e) => updateMember(index, 'discount_percent', e.target.value)}
-                              />
-                            </div>
-                          ) : (
-                            <div className="field">
-                              <label className="field-label">Discount %</label>
-                              <input className="field-input" type="number" value="0" disabled />
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="grid-2">
-                          <div className="checkbox-row">
-                            <input
-                              type="checkbox"
-                              checked={!!member.required}
-                              onChange={(e) => updateMember(index, 'required', e.target.checked)}
-                              id={`required_${member.product_id}_${member.sort_order}`}
-                            />
-                            <label htmlFor={`required_${member.product_id}_${member.sort_order}`} className="checkbox-label">Required</label>
-                          </div>
-                          <div className="checkbox-row">
-                            <input
-                              type="checkbox"
-                              checked={!!member.quantity_editable}
-                              onChange={(e) => updateMember(index, 'quantity_editable', e.target.checked)}
-                              id={`editable_${member.product_id}_${member.sort_order}`}
-                            />
-                            <label htmlFor={`editable_${member.product_id}_${member.sort_order}`} className="checkbox-label">Quantity editable</label>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                  </div>
+                )}
               </div>
-
-              <div className="bundle-rollup">
-                <div className="bundle-rollup-line">
-                  <span>Header price</span>
-                  <span>{fmtPrice(parseNumber(f.default_price.amount))}</span>
-                </div>
-                <div className="bundle-rollup-line">
-                  <span>Members subtotal</span>
-                  <span>{fmtPrice(bundleMembersTotal)}</span>
-                </div>
-                <div className="bundle-rollup-line bundle-rollup-total">
-                  <span>Monthly total ({f.bundle_pricing})</span>
-                  <span>{fmtPrice(bundleMonthlyTotal)}</span>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
 
         <div className="modal-section">
           <div className="modal-section-label">
