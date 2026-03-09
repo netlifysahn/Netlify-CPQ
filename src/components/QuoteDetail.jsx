@@ -113,6 +113,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   const [groupName, setGroupName] = useState('');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [collapsedPkgs, setCollapsedPkgs] = useState(new Set());
+  const [detailCards, setDetailCards] = useState({ customer: false, term: false, billing: false });
   const [addingToPackageId, setAddingToPackageId] = useState(null);
   const [dropTargetId, setDropTargetId] = useState(null);
   const dragRef = useRef(null); // { type: 'top'|'sub', id, parentId? }
@@ -479,6 +480,83 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   };
 
   // ════════════════════════════════════════
+  //  DETAIL CARDS (view mode)
+  // ════════════════════════════════════════
+  const cardStyle = { background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: '0', marginBottom: '12px' };
+  const cardHeaderStyle = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', cursor: 'pointer', userSelect: 'none' };
+  const eyebrowStyle = { fontFamily: "'Roboto Mono', monospace", fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9ca3af' };
+  const cardBodyStyle = { padding: '4px 24px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' };
+  const fieldLabelStyle = { fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '2px' };
+  const fieldValueStyle = { fontSize: '14px', color: '#0a0a0a', fontWeight: 500 };
+  const chevronStyle = { fontSize: '12px', color: '#9ca3af' };
+
+  const toggleCard = (key) => setDetailCards((p) => ({ ...p, [key]: !p[key] }));
+
+  const DetailField = ({ label, value, span2 }) => (
+    <div style={span2 ? { gridColumn: '1 / -1' } : undefined}>
+      <div style={fieldLabelStyle}>{label}</div>
+      <div style={fieldValueStyle}>{value || '—'}</div>
+    </div>
+  );
+
+  const renderDetailCards = (source) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+      {/* Card 1 — Customer Information */}
+      <div style={cardStyle}>
+        <div style={cardHeaderStyle} onClick={() => toggleCard('customer')}>
+          <span style={eyebrowStyle}>Customer Information</span>
+          <i className={`fa-solid ${detailCards.customer ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={chevronStyle} />
+        </div>
+        {detailCards.customer && (
+          <div style={cardBodyStyle}>
+            <DetailField label="Customer Name" value={source.customer_name} span2 />
+            <DetailField label="Primary Contact Name" value={source.contact_name} />
+            <DetailField label="Primary Contact Email" value={source.contact_email} />
+            <DetailField label="Address" value={source.address} span2 />
+            <DetailField label="Billing Contact Name" value={source.billing_contact_name} />
+            <DetailField label="Billing Contact Email" value={source.billing_contact_email} />
+            <DetailField label="Invoice Email" value={source.invoice_email} />
+            <DetailField label="Netlify Account ID" value={source.account_id} />
+          </div>
+        )}
+      </div>
+
+      {/* Card 2 — Subscription Term */}
+      <div style={cardStyle}>
+        <div style={cardHeaderStyle} onClick={() => toggleCard('term')}>
+          <span style={eyebrowStyle}>Subscription Term</span>
+          <i className={`fa-solid ${detailCards.term ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={chevronStyle} />
+        </div>
+        {detailCards.term && (
+          <div style={cardBodyStyle}>
+            <DetailField label="Order Form Effective Date" value={source.effective_date ? fmtDate(source.effective_date) : null} />
+            <DetailField label="Order Form Expiration Date" value={source.expiration_date ? fmtDate(source.expiration_date) : null} />
+            <DetailField label="Subscription Start Date" value={source.start_date ? fmtDate(source.start_date) : null} />
+            <DetailField label="Subscription Term" value={source.term_months ? `${source.term_months} months` : null} />
+          </div>
+        )}
+      </div>
+
+      {/* Card 3 — Billing & Payment */}
+      <div style={cardStyle}>
+        <div style={cardHeaderStyle} onClick={() => toggleCard('billing')}>
+          <span style={eyebrowStyle}>Billing & Payment</span>
+          <i className={`fa-solid ${detailCards.billing ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={chevronStyle} />
+        </div>
+        {detailCards.billing && (
+          <div style={cardBodyStyle}>
+            <DetailField label="Billing Schedule" value={source.billing_schedule} />
+            <DetailField label="Payment Method" value={source.payment_method} />
+            <DetailField label="Payment Terms" value={source.payment_terms} />
+            {source.po_number && <DetailField label="PO #" value={source.po_number} />}
+            {source.vat_number && <DetailField label="VAT #" value={source.vat_number} />}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // ════════════════════════════════════════
   //  VIEW MODE
   // ════════════════════════════════════════
   const renderViewMode = () => {
@@ -601,23 +679,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           </div>
         </div>
 
-        {/* Customer Info */}
-        {(q.customer_name || q.customer_address || q.billing_contact_name || q.billing_contact_email || q.billing_contact_phone) && (
-          <div className="qd-customer-info">
-            <div className="qd-customer-col">
-              {q.customer_name && <div className="qd-customer-company">{q.customer_name}</div>}
-              {q.customer_address && <div className="qd-customer-address">{q.customer_address}</div>}
-            </div>
-            {(q.billing_contact_name || q.billing_contact_email || q.billing_contact_phone) && (
-              <div className="qd-customer-col">
-                <div className="qd-customer-section-label">Billing Contact</div>
-                {q.billing_contact_name && <div className="qd-customer-field">{q.billing_contact_name}</div>}
-                {q.billing_contact_email && <div className="qd-customer-field">{q.billing_contact_email}</div>}
-                {q.billing_contact_phone && <div className="qd-customer-field">{q.billing_contact_phone}</div>}
-              </div>
-            )}
-          </div>
-        )}
+        {/* ── Detail Cards ── */}
+        {renderDetailCards(q)}
 
         {/* Read-only line items table */}
         <div className="qd-lines-section">
