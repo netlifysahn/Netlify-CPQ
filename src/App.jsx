@@ -439,7 +439,6 @@ export default function App() {
                 </span>
               </div>
               <button className="btn-primary btn-quote-add" onClick={() => setModal({ type: 'quote' })}>
-                <i className="fa-solid fa-plus" />
                 New Quote
               </button>
             </div>

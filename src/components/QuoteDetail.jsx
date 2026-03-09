@@ -565,7 +565,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             </div>
             <div className="qd-actions">
               <button className="qd-status-btn qd-edit-lines-btn" onClick={enterEditMode} style={{ background: '#05BDBA', color: '#fff', fontWeight: 600, border: 'none', borderRadius: '6px', padding: '8px 16px', height: '36px', cursor: 'pointer' }}>
-                <i className={`fa-solid ${q.line_items.length === 0 ? 'fa-plus' : 'fa-pen-to-square'}`} /> {q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
+                {q.line_items.length > 0 && <i className="fa-solid fa-pen-to-square" />} {q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
               </button>
               {statusOptions().map((s) => (
                 <button key={s} className="qd-status-btn" onClick={() => changeStatus(s)}>
@@ -582,7 +582,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 {showMoreMenu && (
                   <div className="qd-more-menu">
                     <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(q.id); }}>
-                      <i className="fa-solid fa-trash-can" /> Delete quote
+                      <i className="fa-solid fa-trash-can" /> Delete Quote
                     </button>
                   </div>
                 )}
@@ -850,7 +850,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                   className="pkg-add-component-link"
                   onClick={() => setAddingToPackageId(addingToPackageId === line.id ? null : line.id)}
                 >
-                  <i className="fa-solid fa-plus" /> Add Component
+                  Add Component
                 </button>
               </td>
             </tr>
@@ -933,10 +933,10 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
 
             <div className="qd-line-footer-actions">
               <button className="btn-primary" onClick={() => setShowPicker(true)}>
-                <i className="fa-solid fa-plus" /> Add Product
+                Add Product
               </button>
               <button className="qd-new-group-link" onClick={() => setShowGroupModal(true)}>
-                + New Group
+                New Group
               </button>
             </div>
           </div>

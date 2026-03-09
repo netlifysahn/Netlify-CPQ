@@ -332,7 +332,6 @@ export default function ProductModal({ product, products, onSave, onClose }) {
 
               <div className="bundle-picker-wrap">
                 <button type="button" className="btn-secondary bundle-add-btn" onClick={() => setPickerOpen((prev) => !prev)}>
-                  <i className="fa-solid fa-plus" />
                   Add Component
                 </button>
 

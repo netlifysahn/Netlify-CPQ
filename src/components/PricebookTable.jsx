@@ -11,7 +11,7 @@ export default function PricebookTable({ pricebooks, onOpen, onEdit, onDelete, o
         <div className="empty-state-text">Create your first pricebook to get started</div>
         {onAdd && (
           <button className="empty-state-cta" onClick={onAdd}>
-            <i className="fa-solid fa-plus" /> Create Pricebook
+            Create Pricebook
           </button>
         )}
       </div>

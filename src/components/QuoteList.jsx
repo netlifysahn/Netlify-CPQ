@@ -11,7 +11,7 @@ export default function QuoteList({ quotes, onNew, onOpen, onDupe, onDelete }) {
         <div className="empty-state-text">Create your first quote to get started</div>
         {onNew && (
           <button className="empty-state-cta" onClick={onNew}>
-            <i className="fa-solid fa-plus" /> New Quote
+            New Quote
           </button>
         )}
       </div>
