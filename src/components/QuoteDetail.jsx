@@ -979,19 +979,19 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               />
             </div>
           </div>
-          <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', boxShadow: 'none' }} />
+          <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
           <div className="qd-summary-item">
             <div className="qd-summary-label">MRR</div>
             {totals.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountMonthly)}</div>}
             <AnimatedValue value={fmtCurrency(totals.monthly)} pulseKey={pulseKey} />
           </div>
-          <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', boxShadow: 'none' }} />
+          <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
           <div className="qd-summary-item">
             <div className="qd-summary-label">ARR</div>
             {totals.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountAnnual)}</div>}
             <AnimatedValue value={fmtCurrency(totals.annual)} pulseKey={pulseKey} />
           </div>
-          <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', boxShadow: 'none' }} />
+          <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
           <div className="qd-summary-item qd-summary-tcv">
             <div className="qd-summary-label">TCV ({q.term_months} month)</div>
             {totals.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountTcv)}</div>}
@@ -1050,13 +1050,13 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         {t.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(t.preDiscountMonthly)}</div>}
         <AnimatedValue value={fmtCurrency(t.monthly)} pulseKey={pulseKey} />
       </div>
-      <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', boxShadow: 'none' }} />
+      <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
       <div className="qd-summary-item">
         <div className="qd-summary-label">ARR</div>
         {t.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(t.preDiscountAnnual)}</div>}
         <AnimatedValue value={fmtCurrency(t.annual)} pulseKey={pulseKey} />
       </div>
-      <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', boxShadow: 'none' }} />
+      <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
       <div className="qd-summary-item qd-summary-tcv">
         <div className="qd-summary-label">TCV ({source.term_months} month)</div>
         {t.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(t.preDiscountTcv)}</div>}
@@ -1064,7 +1064,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       </div>
       {t.hasQuoteDiscount && (
         <>
-          <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', boxShadow: 'none' }} />
+          <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
           <div className="qd-summary-item">
             <div className="qd-summary-label">Quote Discount</div>
             <div className="qd-summary-value">{source.header_discount}%</div>

@@ -2399,7 +2399,7 @@ tr.drag-over {
 
 .qd-summary-item {
   flex: 1;
-  padding: 0 var(--space-xl);
+  padding: 0 24px;
 }
 
 .qd-summary-divider {
