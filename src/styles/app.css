@@ -3097,14 +3097,16 @@ tr.drag-over {
   background: rgba(0, 0, 0, 0.04);
 }
 
+[data-theme="light"] .sidebar-item::before {
+  display: none;
+}
+
 [data-theme="light"] .sidebar-item.active {
   color: #05BDBA;
   background: rgba(5, 189, 186, 0.08);
-  border-left: none;
-}
-
-[data-theme="light"] .sidebar-item.active::before {
-  background: transparent;
+  border: none;
+  box-shadow: none;
+  outline: none;
 }
 
 [data-theme="light"] .sidebar-item.active i {
@@ -3130,13 +3132,13 @@ tr.drag-over {
   background: rgba(0, 0, 0, 0.04);
 }
 
-/* Sidebar active — unified teal */
+/* Sidebar active — unified teal, all sections */
 [data-theme="light"] .sidebar-item.section-products.active,
 [data-theme="light"] .sidebar-item.section-pricebooks.active,
 [data-theme="light"] .sidebar-item.section-scope.active,
 [data-theme="light"] .sidebar-item.section-quotes.active,
 [data-theme="light"] .sidebar-item.section-orders.active {
-  background: rgba(5, 189, 186, 0.07);
+  background: rgba(5, 189, 186, 0.08);
   color: #05BDBA;
 }
 
@@ -3146,14 +3148,6 @@ tr.drag-over {
 [data-theme="light"] .sidebar-item.section-quotes.active i,
 [data-theme="light"] .sidebar-item.section-orders.active i {
   color: #05BDBA;
-}
-
-[data-theme="light"] .sidebar-item.section-products.active::before,
-[data-theme="light"] .sidebar-item.section-pricebooks.active::before,
-[data-theme="light"] .sidebar-item.section-scope.active::before,
-[data-theme="light"] .sidebar-item.section-quotes.active::before,
-[data-theme="light"] .sidebar-item.section-orders.active::before {
-  background: transparent;
 }
 
 /* Remove pulse animation on active dots in light mode */
