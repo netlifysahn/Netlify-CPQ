@@ -255,7 +255,7 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
 
         <div className="modal-actions">
           <button className="btn-cancel" onClick={onClose}>Cancel</button>
-          <button className="btn-save" onClick={handleSave} disabled={!ok} style={{ background: '#FBB13D', color: '#fff' }}>
+          <button onClick={handleSave} disabled={!ok} style={{ backgroundColor: '#FBB13D', color: '#ffffff', borderColor: '#FBB13D', border: '1px solid #FBB13D', borderRadius: '6px', padding: '8px 20px', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}>
             {quote ? 'Save Changes' : 'Create Quote'}
           </button>
         </div>
