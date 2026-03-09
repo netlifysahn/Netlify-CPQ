@@ -1460,6 +1460,21 @@
   vertical-align: middle;
 }
 
+/* Add Component link inside package */
+.pkg-add-component-link {
+  background: none;
+  border: none;
+  color: var(--teal);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 0;
+  opacity: 0.8;
+}
+.pkg-add-component-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
 /* Package Components table in modal */
 .pkg-components-table {
   width: 100%;

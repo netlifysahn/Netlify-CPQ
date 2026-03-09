@@ -86,6 +86,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   const [groupName, setGroupName] = useState('');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [collapsedPkgs, setCollapsedPkgs] = useState(new Set());
+  const [addingToPackageId, setAddingToPackageId] = useState(null);
   const moreRef = useRef(null);
 
   useEffect(() => {
@@ -215,6 +216,27 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       ? syncDiscountFromPercent(line.list_price || 0, val)
       : syncDiscountFromAmount(line.list_price || 0, val);
     updateDraftLine(lineId, synced);
+  };
+
+  const addSubComponentToDraft = (product, parentLineId) => {
+    const pb = getSelectedPricebook();
+    const entry = pb?.entries?.find((e) => e.product_id === product.id);
+    const listPrice = entry?.price_override != null ? entry.price_override : undefined;
+    const member = { product_id: product.id, qty: 1, unit_type: product.default_price?.unit || 'flat', list_price: product.default_price?.amount ?? 0 };
+    const subLine = emptySubLineItem(product, member, parentLineId, listPrice);
+    updateDraft((d) => {
+      // Insert after last sub-component of this package
+      const parentIdx = d.line_items.findIndex((l) => l.id === parentLineId);
+      let insertIdx = parentIdx + 1;
+      while (insertIdx < d.line_items.length && d.line_items[insertIdx].parent_line_id === parentLineId) {
+        insertIdx++;
+      }
+      const items = [...d.line_items];
+      items.splice(insertIdx, 0, { ...subLine, sort_order: insertIdx });
+      d.line_items = items;
+      return d;
+    });
+    setAddingToPackageId(null);
   };
 
   const removeDraftLine = (lineId) => {
@@ -353,7 +375,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                   <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
                 </button>
                 <div style={{ display: 'inline-block', verticalAlign: 'middle' }}>
-                  <div className="cell-name">{line.product_name}</div>
+                  <div className="cell-name">{line.product_name}<span className="pkg-badge">PKG</span></div>
                   <div className="cell-sku">{subs.length} component{subs.length !== 1 ? 's' : ''}</div>
                 </div>
               </td>
@@ -615,7 +637,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
               </button>
               <div style={{ display: 'inline-block', verticalAlign: 'middle' }}>
-                <div className="cell-name">{line.product_name}</div>
+                <div className="cell-name">{line.product_name}<span className="pkg-badge">PKG</span></div>
                 <div className="cell-sku">{subs.length} component{subs.length !== 1 ? 's' : ''}</div>
               </div>
             </td>
@@ -642,6 +664,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               <tr key={sub.id} className="line-row-sub">
                 <td className="line-td-product" style={{ paddingLeft: 36 }}>
                   <div className="cell-name">{sub.product_name}</div>
+                  <div className="cell-sku">{sub.product_sku}</div>
                 </td>
                 <td><span className="cell-sku">{sub.product_sku}</span></td>
                 <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
@@ -654,13 +677,26 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 <td className="col-actions">
                   <div className="actions-group">
                     <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(sub.id)}>
-                      <i className="fa-solid fa-trash-can" />
+                      <i className="fa-solid fa-xmark" />
                     </button>
                   </div>
                 </td>
               </tr>
             );
           })}
+          {expanded && (
+            <tr className="line-row-sub">
+              <td colSpan={10} style={{ paddingLeft: 36 }}>
+                <button
+                  type="button"
+                  className="pkg-add-component-link"
+                  onClick={() => setAddingToPackageId(addingToPackageId === line.id ? null : line.id)}
+                >
+                  <i className="fa-solid fa-plus" /> Add Component
+                </button>
+              </td>
+            </tr>
+          )}
         </React.Fragment>
       );
     };
@@ -785,6 +821,13 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             products={availableProducts}
             onAdd={addLineToDraft}
             onClose={() => setShowPicker(false)}
+          />
+        )}
+        {addingToPackageId && (
+          <ProductPicker
+            products={availableProducts.filter((p) => !isBundleProduct(p))}
+            onAdd={(product) => addSubComponentToDraft(product, addingToPackageId)}
+            onClose={() => setAddingToPackageId(null)}
           />
         )}
         {showGroupModal && (

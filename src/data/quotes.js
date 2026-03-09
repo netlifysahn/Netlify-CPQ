@@ -87,11 +87,11 @@ export const emptyPackageLine = (product) => ({
   sort_order: 0,
 });
 
-// Sub-line item for a bundle member
+// Sub-line item for a bundle member (supports both old and new member schemas)
 export const emptySubLineItem = (memberProduct, member, parentLineId, listPrice) => {
-  const unitType = getUnitType(memberProduct);
-  const price = listPrice ?? memberProduct.default_price?.amount ?? 0;
-  const qty = member.default_quantity || 1;
+  const unitType = member.unit_type || getUnitType(memberProduct);
+  const price = listPrice ?? member.list_price ?? memberProduct.default_price?.amount ?? 0;
+  const qty = member.qty || member.default_quantity || 1;
   const included = member.price_behavior === 'included';
   const discPct = member.price_behavior === 'discounted' ? (member.discount_percent || 0) : 0;
   const effectivePrice = included ? 0 : price;
