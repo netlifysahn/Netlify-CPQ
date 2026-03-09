@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { TERM_OPTIONS, calcEndDate, emptyQuote } from '../data/quotes';
+import {
+  TERM_OPTIONS, BILLING_SCHEDULES, PAYMENT_METHODS, PAYMENT_TERMS,
+  calcEndDate, emptyQuote,
+} from '../data/quotes';
+
+const SECTIONS = {
+  CUSTOMER: 'customer',
+  TERM: 'term',
+  BILLING: 'billing',
+  INTERNAL: 'internal',
+};
 
 export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, onClose }) {
   const activePricebooks = (pricebooks || []).filter((pb) => pb.active);
@@ -8,11 +18,21 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
   if (!quote && !initialQuote.pricebook_id && defaultPb) {
     initialQuote.pricebook_id = defaultPb.id;
   }
+
   const [f, setF] = useState(initialQuote);
+  const [openSections, setOpenSections] = useState({
+    [SECTIONS.CUSTOMER]: true,
+    [SECTIONS.TERM]: true,
+    [SECTIONS.BILLING]: true,
+    [SECTIONS.INTERNAL]: false,
+  });
 
   const s = (k, v) => setF((p) => ({ ...p, [k]: v }));
-
   const ok = f.name.trim();
+
+  const toggleSection = (key) => {
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const handleTermChange = (term) => {
     const t = parseInt(term);
@@ -51,86 +71,190 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
           <input className="field-input" value={f.name} onChange={(e) => s('name', e.target.value)} placeholder="e.g. Riot Games — Enterprise Renewal" />
         </div>
 
+        {/* ── Customer Information ── */}
         <div className="modal-section">
-          <div className="modal-section-label"><i className="fa-solid fa-building" /> Customer Information</div>
-          <div className="field">
-            <label className="field-label">Company Name</label>
-            <input className="field-input" value={f.customer_name} onChange={(e) => s('customer_name', e.target.value)} placeholder="Company name" />
-          </div>
-          <div className="field">
-            <label className="field-label">Company Address</label>
-            <textarea className="field-textarea" value={f.customer_address} onChange={(e) => s('customer_address', e.target.value)} placeholder="Street, City, State, ZIP, Country" />
-          </div>
-        </div>
+          <button
+            type="button"
+            className="modal-section-label modal-section-toggle"
+            onClick={() => toggleSection(SECTIONS.CUSTOMER)}
+            aria-expanded={openSections[SECTIONS.CUSTOMER]}
+          >
+            <span>Customer Information</span>
+            <i className={`fa-solid ${openSections[SECTIONS.CUSTOMER] ? 'fa-chevron-down' : 'fa-chevron-up'}`} />
+          </button>
 
-        <div className="modal-section">
-          <div className="modal-section-label"><i className="fa-solid fa-file-invoice" /> Billing Contact</div>
-          <div className="grid-2">
+          <div className={`modal-section-content ${openSections[SECTIONS.CUSTOMER] ? 'is-open' : ''}`}>
             <div className="field">
-              <label className="field-label">Billing Contact Name</label>
-              <input className="field-input" value={f.billing_contact_name} onChange={(e) => s('billing_contact_name', e.target.value)} placeholder="Full name" />
+              <label className="field-label">Customer Name</label>
+              <input className="field-input" value={f.customer_name} onChange={(e) => s('customer_name', e.target.value)} placeholder="Company name" />
+            </div>
+            <div className="grid-2">
+              <div className="field">
+                <label className="field-label">Primary Contact Name</label>
+                <input className="field-input" value={f.contact_name} onChange={(e) => s('contact_name', e.target.value)} placeholder="Full name" />
+              </div>
+              <div className="field">
+                <label className="field-label">Primary Contact Email</label>
+                <input className="field-input" type="email" value={f.contact_email} onChange={(e) => s('contact_email', e.target.value)} placeholder="contact@company.com" />
+              </div>
             </div>
             <div className="field">
-              <label className="field-label">Billing Contact Email</label>
-              <input className="field-input" type="email" value={f.billing_contact_email} onChange={(e) => s('billing_contact_email', e.target.value)} placeholder="billing@company.com" />
+              <label className="field-label">Address</label>
+              <textarea className="field-textarea" rows={2} value={f.address} onChange={(e) => s('address', e.target.value)} placeholder="Street, City, State, ZIP, Country" />
+            </div>
+            <div className="grid-2">
+              <div className="field">
+                <label className="field-label">Billing Contact Name</label>
+                <input className="field-input" value={f.billing_contact_name} onChange={(e) => s('billing_contact_name', e.target.value)} placeholder="Full name" />
+              </div>
+              <div className="field">
+                <label className="field-label">Billing Contact Email</label>
+                <input className="field-input" type="email" value={f.billing_contact_email} onChange={(e) => s('billing_contact_email', e.target.value)} placeholder="billing@company.com" />
+              </div>
+            </div>
+            <div className="grid-2">
+              <div className="field">
+                <label className="field-label">Invoice Email</label>
+                <input className="field-input" type="email" value={f.invoice_email} onChange={(e) => s('invoice_email', e.target.value)} placeholder="invoices@company.com" />
+              </div>
+              <div className="field">
+                <label className="field-label">Netlify Account ID</label>
+                <input className="field-input" value={f.account_id} onChange={(e) => s('account_id', e.target.value)} placeholder="e.g. acct_abc123" style={{ fontFamily: "'Menlo', monospace" }} />
+              </div>
             </div>
           </div>
-          <div className="field">
-            <label className="field-label">Billing Contact Phone</label>
-            <input className="field-input" value={f.billing_contact_phone} onChange={(e) => s('billing_contact_phone', e.target.value)} placeholder="+1 (555) 000-0000" />
-          </div>
         </div>
 
+        {/* ── Subscription Term ── */}
         <div className="modal-section">
-          <div className="modal-section-label"><i className="fa-solid fa-user" /> Internal</div>
-          <div className="field">
-            <label className="field-label">Prepared By</label>
-            <input className="field-input" value={f.prepared_by} onChange={(e) => s('prepared_by', e.target.value)} placeholder="Your name" />
-          </div>
-          <div className="field">
-            <label className="field-label">Customer Contact (legacy)</label>
-            <input className="field-input" value={f.customer_contact} onChange={(e) => s('customer_contact', e.target.value)} placeholder="Contact name or email" />
+          <button
+            type="button"
+            className="modal-section-label modal-section-toggle"
+            onClick={() => toggleSection(SECTIONS.TERM)}
+            aria-expanded={openSections[SECTIONS.TERM]}
+          >
+            <span>Subscription Term</span>
+            <i className={`fa-solid ${openSections[SECTIONS.TERM] ? 'fa-chevron-down' : 'fa-chevron-up'}`} />
+          </button>
+
+          <div className={`modal-section-content ${openSections[SECTIONS.TERM] ? 'is-open' : ''}`}>
+            <div className="grid-2">
+              <div className="field">
+                <label className="field-label">Order Form Expiration Date</label>
+                <input className="field-input" type="date" value={f.expiration_date} onChange={(e) => s('expiration_date', e.target.value)} />
+              </div>
+              <div className="field">
+                <label className="field-label">Order Form Effective Date</label>
+                <input className="field-input" type="date" value={f.effective_date} onChange={(e) => s('effective_date', e.target.value)} />
+              </div>
+            </div>
+            <div className="grid-3">
+              <div className="field">
+                <label className="field-label">Subscription Start Date</label>
+                <input className="field-input" type="date" value={f.start_date} onChange={(e) => handleStartChange(e.target.value)} />
+              </div>
+              <div className="field">
+                <label className="field-label">Subscription Term</label>
+                <select className="field-select" value={f.term_months} onChange={(e) => handleTermChange(e.target.value)}>
+                  {TERM_OPTIONS.map((t) => (
+                    <option key={t} value={t}>{t} months</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label className="field-label">End Date</label>
+                <input className="field-input" type="date" value={f.end_date || calcEndDate(f.start_date, f.term_months)} disabled />
+              </div>
+            </div>
           </div>
         </div>
 
-        {activePricebooks.length > 0 && (
-          <div className="field">
-            <label className="field-label">Pricebook</label>
-            <select className="field-select" value={f.pricebook_id || ''} onChange={(e) => s('pricebook_id', e.target.value || null)}>
-              <option value="">No pricebook</option>
-              {activePricebooks.map((pb) => (
-                <option key={pb.id} value={pb.id}>{pb.name}{pb.is_default ? ' (Default)' : ''}</option>
-              ))}
-            </select>
-          </div>
-        )}
+        {/* ── Billing & Payment ── */}
+        <div className="modal-section">
+          <button
+            type="button"
+            className="modal-section-label modal-section-toggle"
+            onClick={() => toggleSection(SECTIONS.BILLING)}
+            aria-expanded={openSections[SECTIONS.BILLING]}
+          >
+            <span>Billing &amp; Payment</span>
+            <i className={`fa-solid ${openSections[SECTIONS.BILLING] ? 'fa-chevron-down' : 'fa-chevron-up'}`} />
+          </button>
 
-        <div className="grid-3">
-          <div className="field">
-            <label className="field-label">Term</label>
-            <select className="field-select" value={f.term_months} onChange={(e) => handleTermChange(e.target.value)}>
-              {TERM_OPTIONS.map((t) => (
-                <option key={t} value={t}>{t} months</option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label className="field-label">Start Date</label>
-            <input className="field-input" type="date" value={f.start_date} onChange={(e) => handleStartChange(e.target.value)} />
-          </div>
-          <div className="field">
-            <label className="field-label">End Date</label>
-            <input className="field-input" type="date" value={f.end_date || calcEndDate(f.start_date, f.term_months)} disabled />
+          <div className={`modal-section-content ${openSections[SECTIONS.BILLING] ? 'is-open' : ''}`}>
+            <div className="grid-3">
+              <div className="field">
+                <label className="field-label">Billing Schedule</label>
+                <select className="field-select" value={f.billing_schedule} onChange={(e) => s('billing_schedule', e.target.value)}>
+                  {BILLING_SCHEDULES.map((b) => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label className="field-label">Payment Method</label>
+                <select className="field-select" value={f.payment_method} onChange={(e) => s('payment_method', e.target.value)}>
+                  <option value="">Select...</option>
+                  {PAYMENT_METHODS.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label className="field-label">Payment Terms</label>
+                <select className="field-select" value={f.payment_terms} onChange={(e) => s('payment_terms', e.target.value)}>
+                  {PAYMENT_TERMS.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="grid-2">
+              <div className="field">
+                <label className="field-label">PO #</label>
+                <input className="field-input" value={f.po_number} onChange={(e) => s('po_number', e.target.value)} placeholder="Optional" />
+              </div>
+              <div className="field">
+                <label className="field-label">VAT #</label>
+                <input className="field-input" value={f.vat_number} onChange={(e) => s('vat_number', e.target.value)} placeholder="Optional" />
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="field">
-          <label className="field-label">Terms & Conditions</label>
-          <textarea className="field-textarea" value={f.terms_conditions} onChange={(e) => s('terms_conditions', e.target.value)} placeholder="Payment terms, legal notes..." />
+        {/* ── Internal (collapsed by default) ── */}
+        <div className="modal-section">
+          <button
+            type="button"
+            className="modal-section-label modal-section-toggle"
+            onClick={() => toggleSection(SECTIONS.INTERNAL)}
+            aria-expanded={openSections[SECTIONS.INTERNAL]}
+          >
+            <span>Internal</span>
+            <i className={`fa-solid ${openSections[SECTIONS.INTERNAL] ? 'fa-chevron-down' : 'fa-chevron-up'}`} />
+          </button>
+
+          <div className={`modal-section-content ${openSections[SECTIONS.INTERNAL] ? 'is-open' : ''}`}>
+            <div className="field">
+              <label className="field-label">Prepared By</label>
+              <input className="field-input" value={f.prepared_by} onChange={(e) => s('prepared_by', e.target.value)} placeholder="Your name" />
+            </div>
+            {activePricebooks.length > 0 && (
+              <div className="field">
+                <label className="field-label">Pricebook</label>
+                <select className="field-select" value={f.pricebook_id || ''} onChange={(e) => s('pricebook_id', e.target.value || null)}>
+                  <option value="">No pricebook</option>
+                  {activePricebooks.map((pb) => (
+                    <option key={pb.id} value={pb.id}>{pb.name}{pb.is_default ? ' (Default)' : ''}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="modal-actions">
-          <button className="btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn-cancel" onClick={onClose}>Cancel</button>
           <button className="btn-save" onClick={handleSave} disabled={!ok}>
             {quote ? 'Save Changes' : 'Create Quote'}
           </button>

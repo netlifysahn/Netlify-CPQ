@@ -15,21 +15,37 @@ export const genQuoteNumber = (existing = []) => {
   return `QUO-${String(++_quoteCounter).padStart(4, '0')}`;
 };
 
+export const BILLING_SCHEDULES = ['Annual', 'Quarterly', 'Monthly'];
+export const PAYMENT_METHODS = ['ACH', 'Wire', 'Credit Card', 'Check'];
+export const PAYMENT_TERMS = ['Net 30', 'Net 45', 'Net 60'];
+
 export const emptyQuote = (existingQuotes = []) => ({
   id: genId(),
   quote_number: genQuoteNumber(existingQuotes),
   name: '',
   customer_name: '',
+  contact_name: '',
+  contact_email: '',
+  address: '',
   customer_contact: '',
   customer_address: '',
   billing_contact_name: '',
   billing_contact_email: '',
   billing_contact_phone: '',
+  invoice_email: '',
+  account_id: '',
   prepared_by: '',
   pricebook_id: null,
   term_months: 12,
   start_date: new Date().toISOString().split('T')[0],
   end_date: '',
+  expiration_date: '',
+  effective_date: '',
+  billing_schedule: 'Annual',
+  payment_method: '',
+  payment_terms: 'Net 30',
+  po_number: '',
+  vat_number: '',
   header_discount: 0,
   status: 'draft',
   comments: '',
