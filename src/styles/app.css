@@ -293,6 +293,16 @@
 
 .page-header {
   margin-bottom: var(--space-xl);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+  padding-bottom: 12px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="light"] .page-header {
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
 }
 
 .page-label {
@@ -2021,6 +2031,10 @@ tr.drag-over {
   margin-bottom: 32px;
   padding-bottom: 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
 }
 [data-theme="light"] .qd-edit-header {
   border-bottom-color: rgba(0, 0, 0, 0.06);
@@ -2057,6 +2071,16 @@ tr.drag-over {
 
 .qd-header {
   margin-bottom: 40px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+  padding-bottom: 12px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="light"] .qd-header {
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
 }
 
 .qd-header-row {
