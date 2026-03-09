@@ -493,12 +493,13 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           <React.Fragment key={line.id}>
             <tr className="line-row-package">
               <td className="line-td-product">
-                <div style={{ display: 'inline-block', verticalAlign: 'middle' }}>
-                  <div className="cell-name">{line.product_name}<span className="pkg-badge">PKG</span></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
+                  <span className="pkg-badge">PKG</span>
+                  <button className="pkg-chevron" onClick={() => togglePackage(line.id)} style={{ marginLeft: 0 }}>
+                    <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
+                  </button>
                 </div>
-                <button className="pkg-chevron" onClick={() => togglePackage(line.id)}>
-                  <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
-                </button>
               </td>
               <td />
               <td />
