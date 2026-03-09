@@ -529,8 +529,6 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         </div>
         {detailCards.term && (
           <div style={cardBodyStyle}>
-            <DetailField label="Order Form Effective Date" value={source.effective_date ? fmtDate(source.effective_date) : null} />
-            <DetailField label="Order Form Expiration Date" value={source.expiration_date ? fmtDate(source.expiration_date) : null} />
             <DetailField label="Subscription Start Date" value={source.start_date ? fmtDate(source.start_date) : null} />
             <DetailField label="Subscription Term" value={source.term_months ? `${source.term_months} months` : null} />
           </div>
