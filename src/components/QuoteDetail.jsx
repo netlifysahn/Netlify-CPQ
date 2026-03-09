@@ -492,7 +492,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         return (
           <React.Fragment key={line.id}>
             <tr className="line-row-package">
-              <td className="line-td-product">
+              <td className="line-td-product" style={{ width: '35%', minWidth: '200px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
                   <span className="pkg-badge">PKG</span>
@@ -501,26 +501,26 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                   </button>
                 </div>
               </td>
-              <td />
-              <td />
-              <td />
-              <td />
-              <td />
-              <td><span className="price-monthly">{displayCurrency(pkgTotal)}</span></td>
+              <td style={{ width: '10%' }} />
+              <td style={{ width: '10%' }} />
+              <td style={{ width: '10%' }} />
+              <td style={{ width: '10%' }} />
+              <td style={{ width: '10%' }} />
+              <td style={{ width: '10%' }}><span className="price-monthly">{displayCurrency(pkgTotal)}</span></td>
             </tr>
             {expanded && subs.map((sub) => {
               const ext = calcLineExtended(sub);
               return (
                 <tr key={sub.id} className="line-row-sub">
-                  <td className="line-td-product qd-view-sub-product pkg-sub-product">
+                  <td className="line-td-product qd-view-sub-product pkg-sub-product" style={{ width: '35%', minWidth: '200px' }}>
                     <div className="cell-name">{sub.product_name}</div>
                   </td>
-                  <td><span className="cell-sku">{getUnitLabel(sub.unit_type || 'flat')}</span></td>
-                  <td>{sub.quantity}</td>
-                  <td>{displayCurrency(sub.list_price ?? 0)}</td>
-                  <td>{(sub.discount_percent ?? 0) > 0 ? `${sub.discount_percent}%` : '—'}</td>
-                  <td>{displayCurrency(sub.net_price ?? sub.list_price ?? 0)}</td>
-                  <td><span className="price-monthly">{displayCurrency(ext)}</span></td>
+                  <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(sub.unit_type || 'flat')}</span></td>
+                  <td style={{ width: '10%' }}>{sub.quantity}</td>
+                  <td style={{ width: '10%' }}>{displayCurrency(sub.list_price ?? 0)}</td>
+                  <td style={{ width: '10%' }}>{(sub.discount_percent ?? 0) > 0 ? `${sub.discount_percent}%` : '—'}</td>
+                  <td style={{ width: '10%' }}>{displayCurrency(sub.net_price ?? sub.list_price ?? 0)}</td>
+                  <td style={{ width: '10%' }}><span className="price-monthly">{displayCurrency(ext)}</span></td>
                 </tr>
               );
             })}
@@ -532,15 +532,15 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       const extended = calcLineExtended(line);
       return (
         <tr key={line.id}>
-          <td className="line-td-product">
+          <td className="line-td-product" style={{ width: '35%', minWidth: '200px' }}>
             <div className="cell-name">{line.product_name}</div>
           </td>
-          <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
-          <td>{line.quantity}</td>
-          <td>{isIncluded(unitType) ? '—' : displayCurrency(line.list_price ?? 0)}</td>
-          <td>{isIncluded(unitType) ? '—' : ((line.discount_percent ?? 0) > 0 ? `${line.discount_percent}%` : '—')}</td>
-          <td>{isIncluded(unitType) ? '—' : displayCurrency(line.net_price ?? line.list_price ?? 0)}</td>
-          <td><span className="price-monthly">{isIncluded(unitType) ? '—' : displayCurrency(extended)}</span></td>
+          <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
+          <td style={{ width: '10%' }}>{line.quantity}</td>
+          <td style={{ width: '10%' }}>{isIncluded(unitType) ? '—' : displayCurrency(line.list_price ?? 0)}</td>
+          <td style={{ width: '10%' }}>{isIncluded(unitType) ? '—' : ((line.discount_percent ?? 0) > 0 ? `${line.discount_percent}%` : '—')}</td>
+          <td style={{ width: '10%' }}>{isIncluded(unitType) ? '—' : displayCurrency(line.net_price ?? line.list_price ?? 0)}</td>
+          <td style={{ width: '10%' }}><span className="price-monthly">{isIncluded(unitType) ? '—' : displayCurrency(extended)}</span></td>
         </tr>
       );
     };
@@ -635,24 +635,15 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           ) : (
             <div className="qd-view-lines-card">
               <table className="data-table line-table">
-                <colgroup>
-                  <col style={{ width: '30%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '8%' }} />
-                  <col style={{ width: '14%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '14%' }} />
-                  <col style={{ width: '14%' }} />
-                </colgroup>
                 <thead>
                   <tr>
-                    <th>Product</th>
-                    <th>Unit</th>
-                    <th>Qty</th>
-                    <th>List Price</th>
-                    <th>Disc %</th>
-                    <th>Net Price</th>
-                    <th>Extended</th>
+                    <th style={{ width: '35%', minWidth: '200px' }}>Product</th>
+                    <th style={{ width: '10%' }}>Unit</th>
+                    <th style={{ width: '10%' }}>Qty</th>
+                    <th style={{ width: '10%' }}>List Price</th>
+                    <th style={{ width: '10%' }}>Disc %</th>
+                    <th style={{ width: '10%' }}>Net Price</th>
+                    <th style={{ width: '10%' }}>Extended</th>
                   </tr>
                 </thead>
                 <tbody>{viewItems.map(renderViewRow)}</tbody>
