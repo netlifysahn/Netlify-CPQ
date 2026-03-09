@@ -55,11 +55,11 @@ export default function ProductTable({ products, allProducts, onEdit, onDupe, on
         <thead>
           <tr>
             <th className="col-expand" />
-            <th>Product</th>
-            <th>Type</th>
+            <th className="col-product">Product</th>
+            <th className="col-type">Type</th>
             <th className="col-monthly">Monthly</th>
             <th className="col-annual">Annual</th>
-            <th>Status</th>
+            <th className="col-status">Status</th>
             <th className="col-actions">Actions</th>
           </tr>
         </thead>
@@ -83,19 +83,19 @@ export default function ProductTable({ products, allProducts, onEdit, onDupe, on
                       </button>
                     )}
                   </td>
-                  <td>
+                  <td className="col-product">
                     <div className="cell-name-wrap">
                       <div className="cell-name">{p.name}{bundle && <span className="pkg-badge">PKG</span>}</div>
                     </div>
                     <div className="cell-sku">{p.sku}</div>
                     {p.description && <div className="cell-description">{p.description}</div>}
                   </td>
-                  <td>
+                  <td className="col-type">
                     <span className={`type-pill type-${category}`}>{TYPE_LABELS[category] || category}</span>
                   </td>
                   <td className="col-monthly">{renderMonthly(amount)}</td>
                   <td className="col-annual">{renderAnnual(amount)}</td>
-                  <td>
+                  <td className="col-status">
                     <div className="cell-status">
                       <span className={`status-dot ${p.active ? 'active' : 'inactive'}`} />
                       <span className="status-label">{p.active ? 'Active' : 'Inactive'}</span>

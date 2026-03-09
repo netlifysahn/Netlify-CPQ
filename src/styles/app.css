@@ -32,7 +32,7 @@
   --section-pricebooks-tint: rgba(5, 189, 186, 0.12);
   --section-scope: #FE4E5C;
   --section-scope-tint: rgba(254, 78, 92, 0.12);
-  --section-quotes: #FBB132;
+  --section-quotes: #FBB13D;
   --section-quotes-tint: rgba(251, 177, 50, 0.12);
   --section-orders: #2E51ED;
   --section-orders-tint: rgba(46, 81, 237, 0.12);
@@ -105,11 +105,11 @@
 }
 
 .sidebar-brand-text {
-  font-family: var(--font-heading);
-  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 400;
   font-size: 15px;
   color: var(--text-strong);
-  letter-spacing: -0.3px;
+  letter-spacing: 0.08em;
 }
 
 .sidebar-nav {
@@ -299,28 +299,31 @@
 }
 
 .page-label {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 10px;
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 500;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   color: var(--teal);
   margin-bottom: var(--space-xs);
 }
 
 .page-title {
-  font-family: var(--font-body);
-  font-size: 28px;
-  font-weight: 800;
+  font-family: 'Poppins', sans-serif;
+  font-size: 34px;
+  font-weight: 300;
   color: var(--text-strong);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
   margin-bottom: var(--space-xs);
 }
 
 .page-subtitle {
-  font-family: var(--font-body);
-  font-size: var(--text-body-sm);
+  font-size: 15px;
+  font-weight: 400;
   color: rgba(255, 255, 255, 0.60);
+  margin-top: 8px;
+  line-height: 1.5;
   margin-bottom: var(--space-2xl);
 }
 
@@ -510,7 +513,7 @@
 .btn-secondary {
   padding: 9px 20px;
   font-size: 13px;
-  border-radius: 2px;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);
@@ -528,7 +531,7 @@
 .btn-destructive {
   padding: 9px 22px;
   font-size: 13px;
-  border-radius: 2px;
+  border-radius: 6px;
   border: none;
   background: var(--red);
   color: var(--text-strong);
@@ -584,7 +587,7 @@
 
 .data-table.data-table-products th,
 .data-table.data-table-products td {
-  padding: 16px 24px;
+  padding: 14px 12px;
   height: auto;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -603,12 +606,50 @@
   padding-left: 16px;
 }
 
+.data-table.data-table-products th.col-product,
+.data-table.data-table-products td.col-product {
+  width: 40%;
+  text-align: left;
+  padding-left: 16px;
+}
+
+.data-table.data-table-products th.col-type,
+.data-table.data-table-products td.col-type {
+  width: 12%;
+  text-align: left;
+}
+
 .data-table.data-table-products th.col-monthly,
+.data-table.data-table-products td.col-monthly {
+  width: 12%;
+  text-align: right;
+  padding-right: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
 .data-table.data-table-products th.col-annual,
+.data-table.data-table-products td.col-annual {
+  width: 12%;
+  text-align: right;
+  padding-right: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
 .data-table.data-table-products td.col-monthly,
 .data-table.data-table-products td.col-annual {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.data-table.data-table-products th.col-status,
+.data-table.data-table-products td.col-status {
+  width: 12%;
+  text-align: left;
+}
+
+.data-table.data-table-products th.col-actions,
+.data-table.data-table-products td.col-actions {
+  width: 12%;
+  text-align: left;
 }
 
 .data-table.data-table-products th.col-annual,
@@ -753,10 +794,12 @@
 .data-table-products .price-monthly {
   color: rgba(255, 255, 255, 0.9);
   font-variant-numeric: tabular-nums;
+  font-weight: 600;
 }
 
 .data-table-products .price-annual {
   font-variant-numeric: tabular-nums;
+  font-weight: 600;
 }
 
 .data-table-products .status-label {
@@ -2070,21 +2113,22 @@ tr.drag-over {
 }
 
 .qd-quote-number {
-  font-family: var(--font-mono);
+  font-family: 'Roboto Mono', monospace;
   font-size: 11px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.30);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   margin-bottom: 4px;
 }
 
 .qd-title {
-  font-family: var(--font-heading);
-  font-size: 28px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 34px;
   font-weight: 300;
   color: var(--text-strong);
   letter-spacing: -0.01em;
+  line-height: 1.1;
   margin-bottom: var(--space-sm);
 }
 
@@ -3056,14 +3100,14 @@ tr.drag-over {
 
 [data-theme="light"] .sidebar-brand-text {
   font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-weight: 400;
+  letter-spacing: 0.08em;
   color: var(--text-strong);
 }
 
 [data-theme="light"] .sidebar-nav {
   padding: 12px 0 0 0;
-  gap: 2px;
+  gap: 0;
 }
 
 [data-theme="light"] .sidebar-item {
@@ -3071,10 +3115,10 @@ tr.drag-over {
   font-size: 14px;
   font-weight: 500;
   min-height: 40px;
-  padding: 10px 16px;
-  border-radius: 8px;
-  margin: 2px 8px;
-  width: auto;
+  padding: 10px 16px 10px 20px;
+  border-radius: 0;
+  margin: 0;
+  width: 100%;
   gap: 12px;
   border: none;
   transition: background 120ms ease;
@@ -3111,36 +3155,105 @@ tr.drag-over {
 }
 
 [data-theme="light"] .sidebar-item.section-products i,
-[data-theme="light"] .sidebar-item.section-pricebooks i,
-[data-theme="light"] .sidebar-item.section-scope i,
-[data-theme="light"] .sidebar-item.section-quotes i,
+[data-theme="light"] .sidebar-item.section-pricebooks i {
+  color: var(--section-products);
+}
+
+[data-theme="light"] .sidebar-item.section-scope i {
+  color: var(--section-scope);
+}
+
+[data-theme="light"] .sidebar-item.section-quotes i {
+  color: var(--section-quotes);
+}
+
 [data-theme="light"] .sidebar-item.section-orders i {
-  color: var(--text-muted);
+  color: var(--section-orders);
 }
 
 [data-theme="light"] .sidebar-item.section-products:hover,
-[data-theme="light"] .sidebar-item.section-pricebooks:hover,
-[data-theme="light"] .sidebar-item.section-scope:hover,
-[data-theme="light"] .sidebar-item.section-quotes:hover,
+[data-theme="light"] .sidebar-item.section-pricebooks:hover {
+  background: color-mix(in srgb, var(--section-products) 8%, transparent);
+}
+
+[data-theme="light"] .sidebar-item.section-scope:hover {
+  background: color-mix(in srgb, var(--section-scope) 8%, transparent);
+}
+
+[data-theme="light"] .sidebar-item.section-quotes:hover {
+  background: color-mix(in srgb, var(--section-quotes) 8%, transparent);
+}
+
 [data-theme="light"] .sidebar-item.section-orders:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: color-mix(in srgb, var(--section-orders) 8%, transparent);
 }
 
 [data-theme="light"] .sidebar-item.section-products.active,
-[data-theme="light"] .sidebar-item.section-pricebooks.active,
-[data-theme="light"] .sidebar-item.section-scope.active,
-[data-theme="light"] .sidebar-item.section-quotes.active,
+[data-theme="light"] .sidebar-item.section-pricebooks.active {
+  background: color-mix(in srgb, var(--section-products) 12%, transparent);
+  color: var(--section-products);
+}
+
+[data-theme="light"] .sidebar-item.section-scope.active {
+  background: color-mix(in srgb, var(--section-scope) 12%, transparent);
+  color: var(--section-scope);
+}
+
+[data-theme="light"] .sidebar-item.section-quotes.active {
+  background: color-mix(in srgb, var(--section-quotes) 12%, transparent);
+  color: var(--section-quotes);
+}
+
 [data-theme="light"] .sidebar-item.section-orders.active {
-  background: var(--teal-muted);
-  color: var(--teal);
+  background: color-mix(in srgb, var(--section-orders) 12%, transparent);
+  color: var(--section-orders);
 }
 
 [data-theme="light"] .sidebar-item.section-products.active i,
-[data-theme="light"] .sidebar-item.section-pricebooks.active i,
-[data-theme="light"] .sidebar-item.section-scope.active i,
-[data-theme="light"] .sidebar-item.section-quotes.active i,
+[data-theme="light"] .sidebar-item.section-pricebooks.active i {
+  color: var(--section-products);
+}
+
+[data-theme="light"] .sidebar-item.section-scope.active i {
+  color: var(--section-scope);
+}
+
+[data-theme="light"] .sidebar-item.section-quotes.active i {
+  color: var(--section-quotes);
+}
+
 [data-theme="light"] .sidebar-item.section-orders.active i {
-  color: var(--teal);
+  color: var(--section-orders);
+}
+
+/* ─── Theme toggle (light mode) ───────────────────────────── */
+
+[data-theme="light"] .theme-toggle {
+  margin-top: auto;
+  padding: 0 0 16px 20px;
+}
+
+[data-theme="light"] .theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding: 0;
+  line-height: 1;
+}
+
+[data-theme="light"] .theme-toggle-btn:hover {
+  color: var(--text-secondary, #374151);
+}
+
+[data-theme="light"] .theme-toggle-btn i {
+  font-size: 14px;
 }
 
 [data-theme="light"] .status-dot.active {
@@ -3155,14 +3268,10 @@ tr.drag-over {
 
 [data-theme="light"] .page-label {
   color: var(--text-muted);
-  letter-spacing: 0.1em;
 }
 
 [data-theme="light"] .page-title {
   color: var(--text-strong);
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
 }
 
 [data-theme="light"] .page-subtitle {
@@ -3234,7 +3343,7 @@ tr.drag-over {
   background: transparent;
   border: 1px solid var(--border-default);
   color: var(--text-secondary, #374151);
-  border-radius: var(--radius-md);
+  border-radius: 6px;
   height: 32px;
   font-size: 13px;
   font-weight: 500;
@@ -3251,7 +3360,7 @@ tr.drag-over {
   background: var(--teal);
   border-color: var(--teal);
   color: #fff;
-  border-radius: var(--radius-md);
+  border-radius: 6px;
   box-shadow: 0 1px 2px rgba(5, 189, 186, 0.2);
   font-weight: 600;
 }
@@ -3274,7 +3383,7 @@ tr.drag-over {
   background: transparent;
   border: 1px solid var(--border-default);
   color: var(--text-secondary, #374151);
-  border-radius: var(--radius-md);
+  border-radius: 6px;
   height: 32px;
   font-size: 13px;
   font-weight: 500;
@@ -3288,7 +3397,7 @@ tr.drag-over {
 [data-theme="light"] .btn-cancel {
   border-color: var(--border-default);
   color: var(--text-secondary, #374151);
-  border-radius: var(--radius-md);
+  border-radius: 6px;
 }
 
 [data-theme="light"] .btn-cancel:hover {
@@ -3352,6 +3461,11 @@ tr.drag-over {
   border-bottom-color: var(--border);
 }
 
+[data-theme="light"] .data-table.data-table-products th,
+[data-theme="light"] .data-table.data-table-products td {
+  padding: 14px 12px;
+}
+
 [data-theme="light"] .data-table-products th.col-annual,
 [data-theme="light"] .data-table-products .price-annual {
   color: var(--text-muted);
@@ -3371,6 +3485,11 @@ tr.drag-over {
 
 [data-theme="light"] .data-table-products .price-monthly {
   color: var(--text-strong);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme="light"] .data-table-products .price-annual {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -3845,7 +3964,6 @@ tr.drag-over {
 
 [data-theme="light"] .qd-title {
   color: var(--text-strong);
-  font-weight: 700;
 }
 
 [data-theme="light"] .qd-meta {
@@ -3856,7 +3974,7 @@ tr.drag-over {
   background: transparent;
   color: var(--text-secondary, #374151);
   border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
+  border-radius: 6px;
 }
 
 [data-theme="light"] .qd-status-btn:hover {
