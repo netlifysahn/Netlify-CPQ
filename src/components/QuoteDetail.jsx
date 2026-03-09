@@ -1008,7 +1008,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         )}
         {showGroupModal && (
           <div className="modal-overlay" onClick={() => { setShowGroupModal(false); setGroupName(''); }}>
-            <div className="modal" style={{ maxWidth: 360 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal modal-theme-quotes" style={{ maxWidth: 360 }} onClick={(e) => e.stopPropagation()}>
               <div className="modal-title">New Group</div>
               <div className="field">
                 <label className="field-label">Group Name</label>

@@ -31,7 +31,7 @@ export default function PricebookModal({ pricebook, onSave, onClose }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal pricebook-modal" onClick={(event) => event.stopPropagation()}>
+      <div className="modal pricebook-modal modal-theme-products" onClick={(event) => event.stopPropagation()}>
         <div className="modal-title">{pricebook ? 'Edit Pricebook' : 'Create Pricebook'}</div>
 
         <div className="field">
