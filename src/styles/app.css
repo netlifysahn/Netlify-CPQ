@@ -1066,7 +1066,7 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 24px 48px rgba(0, 0, 0, 0.35);
   padding: 32px;
   width: 100%;
-  max-width: 600px;
+  max-width: 760px;
   max-height: 85vh;
   overflow-y: auto;
 }
@@ -1719,7 +1719,7 @@ tr.drag-over {
 }
 
 .pricebook-modal {
-  max-width: 520px;
+  max-width: 760px;
 }
 
 .pricebook-modal-note {
@@ -1892,7 +1892,7 @@ tr.drag-over {
 /* ─── Confirm Modal ───────────────────────────────────────── */
 
 .confirm-modal {
-  max-width: 380px;
+  max-width: 760px;
   text-align: center;
 }
 
@@ -2833,7 +2833,7 @@ tr.drag-over {
 /* ─── Product Picker ─────────────────────────────────────── */
 
 .picker-modal {
-  max-width: 480px;
+  max-width: 760px;
   max-height: 70vh;
   display: flex;
   flex-direction: column;
@@ -2908,7 +2908,7 @@ tr.drag-over {
 
 .picker-modal-v2 {
   width: 720px;
-  max-width: 90vw;
+  max-width: 760px;
   height: 560px;
   max-height: 85vh;
   display: flex;
