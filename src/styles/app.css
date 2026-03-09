@@ -2446,7 +2446,7 @@ tr.drag-over {
 }
 
 .qd-summary-item.qd-summary-tcv {
-  border-left: 2px solid var(--teal);
+  border-left: 2px solid #FBB13D;
 }
 
 /* ─── Line Editor ────────────────────────────────────────── */
