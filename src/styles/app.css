@@ -2285,10 +2285,19 @@ tr.drag-over {
   height: auto;
 }
 
+/* View-mode standalone row left padding */
+.qd-view-lines-card .line-td-product {
+  padding-left: 16px !important;
+}
+
 /* View-mode sub-component rows */
 .qd-view-sub-product {
-  padding-left: 40px !important;
-  border-left: 2px solid rgba(5, 189, 186, 0.2);
+  padding-left: 48px !important;
+  border-left: 2px solid rgba(5, 189, 186, 0.25);
+}
+
+.qd-view-lines-card .line-row-sub .qd-view-sub-product .cell-name {
+  color: #4b5563;
 }
 
 [data-theme="light"] .qd-view-lines-card .line-row-sub td {
@@ -2297,7 +2306,7 @@ tr.drag-over {
 
 [data-theme="light"] .qd-view-lines-card .line-row-sub .qd-view-sub-product .cell-name {
   font-size: 13px;
-  color: #374151;
+  color: #4b5563;
 }
 
 [data-theme="light"] .qd-view-lines-card .line-row-package td {
