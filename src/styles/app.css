@@ -3079,8 +3079,9 @@ tr.drag-over {
   font-weight: 600;
   padding: 10px 16px;
   border-radius: 8px;
-  margin: 0 12px;
+  margin: 4px 8px;
   gap: 10px;
+  border-left: none;
   transition: background 120ms ease;
 }
 
@@ -3098,9 +3099,8 @@ tr.drag-over {
 
 [data-theme="light"] .sidebar-item.active {
   color: #05BDBA;
-  background: rgba(5, 189, 186, 0.07);
-  border-left: 2px solid #05BDBA;
-  padding-left: 14px;
+  background: rgba(5, 189, 186, 0.08);
+  border-left: none;
 }
 
 [data-theme="light"] .sidebar-item.active::before {
