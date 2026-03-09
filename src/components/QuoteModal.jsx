@@ -43,7 +43,7 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal modal-theme-quotes" onClick={(e) => e.stopPropagation()}>
         <div className="modal-title">{quote ? 'Edit Quote' : 'New Quote'}</div>
 
         <div className="field">

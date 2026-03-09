@@ -401,16 +401,21 @@
   align-items: center;
   position: relative;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 6px;
   height: 36px;
   padding: 0 12px 0 36px;
   box-sizing: border-box;
-  transition: border-color var(--transition);
+  transform: translateY(0);
+  box-shadow: none;
+  transition: all 150ms ease;
 }
 
 .search-wrap:focus-within {
-  border-color: var(--section-accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.12);
+  transition: all 150ms ease;
 }
 
 .search-wrap i {
@@ -1067,9 +1072,10 @@
 }
 
 .modal-title {
-  font-family: var(--font-heading);
-  font-size: 20px;
-  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  font-size: 32px;
+  font-weight: 300;
+  letter-spacing: -0.01em;
   color: #ffffff;
   margin-bottom: 24px;
 }
@@ -1174,6 +1180,63 @@
   color: #ffffff;
 }
 
+.modal-theme-products {
+  --modal-focus-accent: #05BDBA;
+  --modal-focus-accent-tint: rgba(5, 189, 186, 0.12);
+}
+
+.product-modal .modal-title {
+  font-size: 25.6px;
+}
+
+.modal-theme-quotes {
+  --modal-focus-accent: #FBB13D;
+  --modal-focus-accent-tint: rgba(251, 177, 50, 0.12);
+}
+
+.modal-theme-scope {
+  --modal-focus-accent: #FE4E5C;
+  --modal-focus-accent-tint: rgba(254, 78, 92, 0.12);
+}
+
+.modal-theme-orders {
+  --modal-focus-accent: #2E51ED;
+  --modal-focus-accent-tint: rgba(46, 81, 237, 0.12);
+}
+
+.modal :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select):focus {
+  border-color: var(--modal-focus-accent, var(--section-accent));
+  box-shadow: none !important;
+}
+
+.modal .search-wrap:focus-within {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.12);
+  transition: all 150ms ease;
+}
+
+.main-content.section-products :is(.field-input, .field-textarea, .field-select):focus,
+.main-content.section-pricebooks :is(.field-input, .field-textarea, .field-select):focus {
+  border-color: #05BDBA;
+  box-shadow: none;
+}
+
+.main-content.section-quotes :is(.field-input, .field-textarea, .field-select):focus {
+  border-color: #FBB13D;
+  box-shadow: none;
+}
+
+.main-content.section-scope :is(.field-input, .field-textarea, .field-select):focus {
+  border-color: #FE4E5C;
+  box-shadow: none;
+}
+
+.main-content.section-orders :is(.field-input, .field-textarea, .field-select):focus {
+  border-color: #2E51ED;
+  box-shadow: none;
+}
+
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1207,23 +1270,44 @@
 }
 
 .modal-section-label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
+  font-family: 'Roboto Mono', var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
   color: var(--teal);
   text-transform: uppercase;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   margin-bottom: 16px;
   padding-bottom: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
+}
+
+.modal-section-toggle {
+  width: 100%;
+  justify-content: space-between;
   gap: 8px;
+  border: 0;
+  background: transparent;
+  padding-left: 0;
+  padding-right: 0;
+  cursor: pointer;
+  text-align: left;
 }
 
 .modal-section-label i {
   font-size: 11px;
   opacity: 0.6;
+}
+
+.modal-section-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 200ms ease;
+}
+
+.modal-section-content.is-open {
+  max-height: 2000px;
 }
 
 /* ─── Checkbox ────────────────────────────────────────────── */
@@ -2662,6 +2746,12 @@ tr.drag-over {
   box-shadow: none;
 }
 
+.main-content.section-quotes .inline-edit:focus,
+.main-content.section-quotes .group-assign:focus {
+  border-color: #FBB13D;
+  box-shadow: none;
+}
+
 /* ─── Line Groups ────────────────────────────────────────── */
 
 .line-group {
@@ -3358,10 +3448,6 @@ tr.drag-over {
 [data-theme="light"] .search-wrap {
   background: var(--surface);
   border-color: var(--border);
-}
-
-[data-theme="light"] .search-wrap:focus-within {
-  border-color: var(--section-accent);
 }
 
 [data-theme="light"] .search-wrap i {
@@ -4489,8 +4575,7 @@ tr.drag-over {
 .field-textarea,
 .field-select,
 .inline-edit,
-.group-assign,
-.search-wrap {
+.group-assign {
   transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 

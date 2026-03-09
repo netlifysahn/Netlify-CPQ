@@ -34,11 +34,24 @@ function parseNumber(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+const COLLAPSIBLE_SECTION_KEYS = {
+  BASIC_INFO: 'basicInfo',
+  PRICING: 'pricing',
+  PACKAGE_COMPONENTS: 'packageComponents',
+  SERVICE: 'service',
+};
+
 export default function ProductModal({ product, products, onSave, onClose }) {
   const [f, setF] = useState(coerceProduct(product));
   const [jsonError, setJsonError] = useState('');
   const [memberQuery, setMemberQuery] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [openSections, setOpenSections] = useState({
+    [COLLAPSIBLE_SECTION_KEYS.BASIC_INFO]: true,
+    [COLLAPSIBLE_SECTION_KEYS.PRICING]: true,
+    [COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS]: true,
+    [COLLAPSIBLE_SECTION_KEYS.SERVICE]: true,
+  });
 
   const s = (k, v) => setF((p) => ({ ...p, [k]: v }));
   const sp = (k, v) => setF((p) => ({ ...p, default_price: { ...p.default_price, [k]: v } }));
@@ -133,6 +146,10 @@ export default function ProductModal({ product, products, onSave, onClose }) {
     });
   };
 
+  const toggleSection = (sectionKey) => {
+    setOpenSections((prev) => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
+  };
+
   const handleSave = () => {
     if (!ok) return;
 
@@ -171,219 +188,241 @@ export default function ProductModal({ product, products, onSave, onClose }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal modal-theme-products product-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-title">{product ? 'Edit Product' : 'New Product'}</div>
 
         <div className="modal-section">
-          <div className="modal-section-label">
-            <i className="fa-solid fa-tag" />
-            Basic Info
-          </div>
+          <button
+            type="button"
+            className="modal-section-label modal-section-toggle"
+            onClick={() => toggleSection(COLLAPSIBLE_SECTION_KEYS.BASIC_INFO)}
+            aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.BASIC_INFO]}
+          >
+            <span>Basic Info</span>
+            <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.BASIC_INFO] ? 'fa-chevron-up' : 'fa-chevron-down'}`} />
+          </button>
 
-          <div className="field">
-            <label className="field-label">Product Name</label>
-            <input className="field-input" value={f.name} onChange={(e) => s('name', e.target.value)} placeholder="e.g. Netlify Enterprise" />
-          </div>
-
-          <div className="grid-2">
+          <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.BASIC_INFO] ? 'is-open' : ''}`}>
             <div className="field">
-              <label className="field-label">SKU</label>
-              <input className="field-input" value={f.sku} onChange={(e) => s('sku', e.target.value.toUpperCase())} placeholder="NTL-XXX" style={{ fontFamily: "'Menlo', monospace" }} />
+              <label className="field-label">Product Name</label>
+              <input className="field-input" value={f.name} onChange={(e) => s('name', e.target.value)} placeholder="e.g. Netlify Enterprise" />
             </div>
+
+            <div className="grid-2">
+              <div className="field">
+                <label className="field-label">SKU</label>
+                <input className="field-input" value={f.sku} onChange={(e) => s('sku', e.target.value.toUpperCase())} placeholder="NTL-XXX" style={{ fontFamily: "'Menlo', monospace" }} />
+              </div>
+              <div className="field">
+                <label className="field-label">Category</label>
+                <select
+                  className="field-select"
+                  value={getProductCategory(f)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    s('category', val);
+                    s('type', val);
+                    // Auto-set configuration_method when switching to/from bundle
+                    s('configuration_method', val === 'bundle' ? 'bundle' : 'none');
+                  }}
+                >
+                  {categoryOptions.map((t) => (
+                    <option key={t} value={t}>{TYPE_LABELS[t] || (t.charAt(0).toUpperCase() + t.slice(1))}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div className="field">
-              <label className="field-label">Category</label>
-              <select
-                className="field-select"
-                value={getProductCategory(f)}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  s('category', val);
-                  s('type', val);
-                  // Auto-set configuration_method when switching to/from bundle
-                  s('configuration_method', val === 'bundle' ? 'bundle' : 'none');
-                }}
-              >
-                {categoryOptions.map((t) => (
-                  <option key={t} value={t}>{TYPE_LABELS[t] || (t.charAt(0).toUpperCase() + t.slice(1))}</option>
-                ))}
-              </select>
+              <label className="field-label">Description</label>
+              <textarea className="field-textarea" value={f.description} onChange={(e) => s('description', e.target.value)} placeholder="Product description..." />
             </div>
-          </div>
 
-          <div className="field">
-            <label className="field-label">Description</label>
-            <textarea className="field-textarea" value={f.description} onChange={(e) => s('description', e.target.value)} placeholder="Product description..." />
-          </div>
-
-          <div className="grid-2">
-            <div className="checkbox-row">
-              <input type="checkbox" checked={f.active} onChange={(e) => s('active', e.target.checked)} id="pActive" />
-              <label htmlFor="pActive" className="checkbox-label">Active in catalog</label>
-            </div>
-            <div className="checkbox-row">
-              <input type="checkbox" checked={f.hide} onChange={(e) => s('hide', e.target.checked)} id="pHide" />
-              <label htmlFor="pHide" className="checkbox-label">Hide from quotes</label>
+            <div className="grid-2">
+              <div className="checkbox-row">
+                <input type="checkbox" checked={f.active} onChange={(e) => s('active', e.target.checked)} id="pActive" />
+                <label htmlFor="pActive" className="checkbox-label">Active in catalog</label>
+              </div>
+              <div className="checkbox-row">
+                <input type="checkbox" checked={f.hide} onChange={(e) => s('hide', e.target.checked)} id="pHide" />
+                <label htmlFor="pHide" className="checkbox-label">Hide from quotes</label>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="modal-section">
-          <div className="modal-section-label">
-            <i className="fa-solid fa-dollar-sign" />
-            Pricing
-          </div>
+          <button
+            type="button"
+            className="modal-section-label modal-section-toggle"
+            onClick={() => toggleSection(COLLAPSIBLE_SECTION_KEYS.PRICING)}
+            aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.PRICING]}
+          >
+            <span>Pricing</span>
+            <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.PRICING] ? 'fa-chevron-up' : 'fa-chevron-down'}`} />
+          </button>
 
-          <div className="grid-3">
-            <div className="field">
-              <label className="field-label">Monthly Price ($)</label>
-              <input className="field-input" type="number" min="0" step="0.01" value={f.default_price.amount} onChange={(e) => sp('amount', e.target.value)} placeholder="0.00" />
-            </div>
-            <div className="field">
-              <label className="field-label">Unit</label>
-              <select className="field-select" value={f.default_price.unit} onChange={(e) => sp('unit', e.target.value)}>
-                {PRICE_UNITS.map((u) => (
-                  <option key={u} value={u}>{UNIT_LABELS[u]}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label className="field-label">Method</label>
-              <select className="field-select" value={f.default_price.pricing_method} onChange={(e) => sp('pricing_method', e.target.value)}>
-                {PRICING_METHODS.map((m) => (
-                  <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="field">
-            <label className="field-label">Unit of Measure</label>
-            <input className="field-input" value={f.unit_of_measure} onChange={(e) => s('unit_of_measure', e.target.value)} placeholder="e.g. credits, members, instances" />
-          </div>
-
-          {monthlyAmount > 0 && (
-            <div className="price-preview">
-              <div className="price-preview-item">
-                <div className="price-preview-label">12mo</div>
-                <div className="price-preview-value">{fmtPrice(monthlyAmount * 12)}</div>
+          <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.PRICING] ? 'is-open' : ''}`}>
+            <div className="grid-3">
+              <div className="field">
+                <label className="field-label">Monthly Price ($)</label>
+                <input className="field-input" type="number" min="0" step="0.01" value={f.default_price.amount} onChange={(e) => sp('amount', e.target.value)} placeholder="0.00" />
               </div>
-              <div className="price-preview-item">
-                <div className="price-preview-label">24mo</div>
-                <div className="price-preview-value">{fmtPrice(monthlyAmount * 24)}</div>
+              <div className="field">
+                <label className="field-label">Unit</label>
+                <select className="field-select" value={f.default_price.unit} onChange={(e) => sp('unit', e.target.value)}>
+                  {PRICE_UNITS.map((u) => (
+                    <option key={u} value={u}>{UNIT_LABELS[u]}</option>
+                  ))}
+                </select>
               </div>
-              <div className="price-preview-item">
-                <div className="price-preview-label">36mo</div>
-                <div className="price-preview-value">{fmtPrice(monthlyAmount * 36)}</div>
+              <div className="field">
+                <label className="field-label">Method</label>
+                <select className="field-select" value={f.default_price.pricing_method} onChange={(e) => sp('pricing_method', e.target.value)}>
+                  {PRICING_METHODS.map((m) => (
+                    <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>
+                  ))}
+                </select>
               </div>
             </div>
-          )}
+
+            {monthlyAmount > 0 && (
+              <div className="price-preview">
+                <div className="price-preview-item">
+                  <div className="price-preview-label">12mo</div>
+                  <div className="price-preview-value">{fmtPrice(monthlyAmount * 12)}</div>
+                </div>
+                <div className="price-preview-item">
+                  <div className="price-preview-label">24mo</div>
+                  <div className="price-preview-value">{fmtPrice(monthlyAmount * 24)}</div>
+                </div>
+                <div className="price-preview-item">
+                  <div className="price-preview-label">36mo</div>
+                  <div className="price-preview-value">{fmtPrice(monthlyAmount * 36)}</div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {isBundleProduct(f) && (
           <div className="modal-section">
-            <div className="modal-section-label">
-              <i className="fa-solid fa-boxes-stacked" />
-              Package Components
-            </div>
+            <button
+              type="button"
+              className="modal-section-label modal-section-toggle"
+              onClick={() => toggleSection(COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS)}
+              aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS]}
+            >
+              <span>Package Components</span>
+              <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS] ? 'fa-chevron-up' : 'fa-chevron-down'}`} />
+            </button>
 
-            <div className="pkg-components">
-              {(f.members || []).length > 0 && (
-                <table className="pkg-components-table">
-                  <thead>
-                    <tr>
-                      <th>Product</th>
-                      <th>SKU</th>
-                      <th style={{ width: 70 }}>Qty</th>
-                      <th>Unit</th>
-                      <th style={{ width: 36 }} />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(f.members || []).map((member, index) => (
-                      <tr key={`${member.product_id}_${index}`}>
-                        <td>{member.name || productMap.get(member.product_id)?.name || 'Unknown'}</td>
-                        <td className="cell-sku">{member.sku || productMap.get(member.product_id)?.sku || ''}</td>
-                        <td>
-                          <input
-                            className="field-input"
-                            type="number"
-                            min="1"
-                            step="1"
-                            value={member.qty ?? member.default_quantity ?? 1}
-                            onChange={(e) => updateMember(index, 'qty', parseInt(e.target.value, 10) || 1)}
-                            style={{ width: '100%', padding: '4px 6px', textAlign: 'center' }}
-                          />
-                        </td>
-                        <td>{UNIT_LABELS[member.unit_type || member.price_behavior] || member.unit_type || 'Flat'}</td>
-                        <td>
-                          <button type="button" className="action-btn delete" onClick={() => removeMember(index)} title="Remove">
-                            <i className="fa-solid fa-xmark" />
-                          </button>
-                        </td>
+            <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS] ? 'is-open' : ''}`}>
+              <div className="pkg-components">
+                {(f.members || []).length > 0 && (
+                  <table className="pkg-components-table">
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th>SKU</th>
+                        <th style={{ width: 70 }}>Qty</th>
+                        <th>Unit</th>
+                        <th style={{ width: 36 }} />
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-
-              {(f.members || []).length === 0 && (
-                <div className="bundle-members-empty">No components added.</div>
-              )}
-
-              <div className="bundle-picker-wrap">
-                <button type="button" className="btn-secondary bundle-add-btn" onClick={() => setPickerOpen((prev) => !prev)}>
-                  Add Component
-                </button>
-
-                {pickerOpen && (
-                  <div className="bundle-picker">
-                    <input
-                      className="field-input bundle-picker-search"
-                      value={memberQuery}
-                      onChange={(e) => setMemberQuery(e.target.value)}
-                      placeholder="Search products..."
-                    />
-                    <div className="bundle-picker-list">
-                      {filteredPickerProducts.length === 0 && <div className="bundle-picker-empty">No matching products</div>}
-                      {filteredPickerProducts.map((candidate) => (
-                        <button key={candidate.id} type="button" className="bundle-picker-item" onClick={() => addMember(candidate.id)}>
-                          <span>{candidate.name}</span>
-                          <span className="bundle-picker-sku">{candidate.sku}</span>
-                        </button>
+                    </thead>
+                    <tbody>
+                      {(f.members || []).map((member, index) => (
+                        <tr key={`${member.product_id}_${index}`}>
+                          <td>{member.name || productMap.get(member.product_id)?.name || 'Unknown'}</td>
+                          <td className="cell-sku">{member.sku || productMap.get(member.product_id)?.sku || ''}</td>
+                          <td>
+                            <input
+                              className="field-input"
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={member.qty ?? member.default_quantity ?? 1}
+                              onChange={(e) => updateMember(index, 'qty', parseInt(e.target.value, 10) || 1)}
+                              style={{ width: '100%', padding: '4px 6px', textAlign: 'center' }}
+                            />
+                          </td>
+                          <td>{UNIT_LABELS[member.unit_type || member.price_behavior] || member.unit_type || 'Flat'}</td>
+                          <td>
+                            <button type="button" className="action-btn delete" onClick={() => removeMember(index)} title="Remove">
+                              <i className="fa-solid fa-xmark" />
+                            </button>
+                          </td>
+                        </tr>
                       ))}
-                    </div>
-                  </div>
+                    </tbody>
+                  </table>
                 )}
+
+                {(f.members || []).length === 0 && (
+                  <div className="bundle-members-empty">No components added.</div>
+                )}
+
+                <div className="bundle-picker-wrap">
+                  <button type="button" className="btn-secondary bundle-add-btn" onClick={() => setPickerOpen((prev) => !prev)}>
+                    Add Component
+                  </button>
+
+                  {pickerOpen && (
+                    <div className="bundle-picker">
+                      <input
+                        className="field-input bundle-picker-search"
+                        value={memberQuery}
+                        onChange={(e) => setMemberQuery(e.target.value)}
+                        placeholder="Search products..."
+                      />
+                      <div className="bundle-picker-list">
+                        {filteredPickerProducts.length === 0 && <div className="bundle-picker-empty">No matching products</div>}
+                        {filteredPickerProducts.map((candidate) => (
+                          <button key={candidate.id} type="button" className="bundle-picker-item" onClick={() => addMember(candidate.id)}>
+                            <span>{candidate.name}</span>
+                            <span className="bundle-picker-sku">{candidate.sku}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         )}
 
         <div className="modal-section">
-          <div className="modal-section-label">
-            <i className="fa-solid fa-gear" />
-            Service
-          </div>
+          <button
+            type="button"
+            className="modal-section-label modal-section-toggle"
+            onClick={() => toggleSection(COLLAPSIBLE_SECTION_KEYS.SERVICE)}
+            aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.SERVICE]}
+          >
+            <span>Service</span>
+            <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.SERVICE] ? 'fa-chevron-up' : 'fa-chevron-down'}`} />
+          </button>
 
-          <div className="grid-2">
-            <div className="field">
-              <label className="field-label">Default Term (months)</label>
-              <input className="field-input" type="number" value={f.default_term} onChange={(e) => s('default_term', parseInt(e.target.value, 10) || 0)} />
-            </div>
-            <div className="field">
-              <label className="field-label">Term Behavior</label>
-              <select className="field-select" value={f.term_behavior} onChange={(e) => s('term_behavior', e.target.value)}>
-                {TERM_BEHAVIORS.map((b) => (
-                  <option key={b} value={b}>{b.charAt(0).toUpperCase() + b.slice(1)}</option>
-                ))}
-              </select>
+          <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.SERVICE] ? 'is-open' : ''}`}>
+            <div className="grid-2">
+              <div className="field">
+                <label className="field-label">Default Term (months)</label>
+                <input className="field-input" type="number" value={f.default_term} onChange={(e) => s('default_term', parseInt(e.target.value, 10) || 0)} />
+              </div>
+              <div className="field">
+                <label className="field-label">Term Behavior</label>
+                <select className="field-select" value={f.term_behavior} onChange={(e) => s('term_behavior', e.target.value)}>
+                  {TERM_BEHAVIORS.map((b) => (
+                    <option key={b} value={b}>{b.charAt(0).toUpperCase() + b.slice(1)}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="modal-section">
           <div className="modal-section-label">
-            <i className="fa-solid fa-shield-halved" />
             Entitlements
           </div>
 
@@ -411,7 +450,6 @@ export default function ProductModal({ product, products, onSave, onClose }) {
 
         <div className="modal-section">
           <div className="modal-section-label">
-            <i className="fa-solid fa-gear" />
             Configuration
           </div>
 

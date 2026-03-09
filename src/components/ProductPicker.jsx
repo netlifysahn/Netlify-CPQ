@@ -54,7 +54,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
   if (!multiSelect) {
     return (
       <div className="modal-overlay" onClick={onClose}>
-        <div className="modal picker-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal picker-modal modal-theme-quotes" onClick={(e) => e.stopPropagation()}>
           <div className="modal-title">Add Product</div>
           <div className="search-wrap" style={{ marginBottom: 16 }}>
             <i className="fa-solid fa-magnifying-glass" />
@@ -94,7 +94,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
   // Multi-select category picker
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal picker-modal-v2" onClick={(e) => e.stopPropagation()}>
+      <div className="modal picker-modal-v2 modal-theme-quotes" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="picker-v2-header">
           <div className="picker-v2-title">Add Products</div>
