@@ -80,7 +80,7 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
             aria-expanded={openSections[SECTIONS.CUSTOMER]}
           >
             <span>Customer Information</span>
-            <i className={`fa-solid ${openSections[SECTIONS.CUSTOMER] ? 'fa-chevron-down' : 'fa-chevron-up'}`} />
+            <i className={`fa-solid ${openSections[SECTIONS.CUSTOMER] ? 'fa-chevron-down' : 'fa-chevron-right'}`} />
           </button>
 
           <div className={`modal-section-content ${openSections[SECTIONS.CUSTOMER] ? 'is-open' : ''}`}>
@@ -134,7 +134,7 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
             aria-expanded={openSections[SECTIONS.TERM]}
           >
             <span>Subscription Term</span>
-            <i className={`fa-solid ${openSections[SECTIONS.TERM] ? 'fa-chevron-down' : 'fa-chevron-up'}`} />
+            <i className={`fa-solid ${openSections[SECTIONS.TERM] ? 'fa-chevron-down' : 'fa-chevron-right'}`} />
           </button>
 
           <div className={`modal-section-content ${openSections[SECTIONS.TERM] ? 'is-open' : ''}`}>
@@ -178,7 +178,7 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
             aria-expanded={openSections[SECTIONS.BILLING]}
           >
             <span>Billing &amp; Payment</span>
-            <i className={`fa-solid ${openSections[SECTIONS.BILLING] ? 'fa-chevron-down' : 'fa-chevron-up'}`} />
+            <i className={`fa-solid ${openSections[SECTIONS.BILLING] ? 'fa-chevron-down' : 'fa-chevron-right'}`} />
           </button>
 
           <div className={`modal-section-content ${openSections[SECTIONS.BILLING] ? 'is-open' : ''}`}>
@@ -231,7 +231,7 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
             aria-expanded={openSections[SECTIONS.INTERNAL]}
           >
             <span>Internal</span>
-            <i className={`fa-solid ${openSections[SECTIONS.INTERNAL] ? 'fa-chevron-down' : 'fa-chevron-up'}`} />
+            <i className={`fa-solid ${openSections[SECTIONS.INTERNAL] ? 'fa-chevron-down' : 'fa-chevron-right'}`} />
           </button>
 
           <div className={`modal-section-content ${openSections[SECTIONS.INTERNAL] ? 'is-open' : ''}`}>

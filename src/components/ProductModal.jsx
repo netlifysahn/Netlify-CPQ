@@ -227,7 +227,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
             aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.BASIC_INFO]}
           >
             <span>Basic Info</span>
-            <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.BASIC_INFO] ? 'fa-chevron-down' : 'fa-chevron-up'}`} />
+            <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.BASIC_INFO] ? 'fa-chevron-down' : 'fa-chevron-right'}`} />
           </button>
 
           <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.BASIC_INFO] ? 'is-open' : ''}`}>
@@ -296,7 +296,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
             aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.PRICING]}
           >
             <span>Pricing</span>
-            <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.PRICING] ? 'fa-chevron-down' : 'fa-chevron-up'}`} />
+            <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.PRICING] ? 'fa-chevron-down' : 'fa-chevron-right'}`} />
           </button>
 
           <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.PRICING] ? 'is-open' : ''}`}>
@@ -351,7 +351,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
               aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS]}
             >
               <span>Package Components</span>
-              <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS] ? 'fa-chevron-down' : 'fa-chevron-up'}`} />
+              <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS] ? 'fa-chevron-down' : 'fa-chevron-right'}`} />
             </button>
 
             <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS] ? 'is-open' : ''}`}>
@@ -417,7 +417,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
             aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.SERVICE]}
           >
             <span>Service</span>
-            <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.SERVICE] ? 'fa-chevron-down' : 'fa-chevron-up'}`} />
+            <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.SERVICE] ? 'fa-chevron-down' : 'fa-chevron-right'}`} />
           </button>
 
           <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.SERVICE] ? 'is-open' : ''}`}>
@@ -446,7 +446,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
             aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS]}
           >
             <span>Entitlements</span>
-            <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS] ? 'fa-chevron-down' : 'fa-chevron-up'}`} />
+            <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS] ? 'fa-chevron-down' : 'fa-chevron-right'}`} />
           </button>
 
           <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS] ? 'is-open' : ''}`}>
@@ -481,7 +481,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
             aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.CONFIGURATION]}
           >
             <span>Configuration</span>
-            <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.CONFIGURATION] ? 'fa-chevron-down' : 'fa-chevron-up'}`} />
+            <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.CONFIGURATION] ? 'fa-chevron-down' : 'fa-chevron-right'}`} />
           </button>
 
           <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.CONFIGURATION] ? 'is-open' : ''}`}>
