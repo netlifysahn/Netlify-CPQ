@@ -1446,6 +1446,29 @@
   font-weight: 600;
 }
 
+/* Drag and drop reordering */
+.col-drag {
+  width: 28px;
+  padding: 0 4px !important;
+  text-align: center;
+}
+.drag-handle {
+  color: var(--text-faint);
+  font-size: 12px;
+  cursor: grab;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+.drag-handle:hover {
+  opacity: 1;
+}
+tr.drag-active {
+  opacity: 0.4;
+}
+tr.drag-over {
+  box-shadow: inset 0 2px 0 0 var(--teal);
+}
+
 /* PKG badge */
 .pkg-badge {
   display: inline-block;

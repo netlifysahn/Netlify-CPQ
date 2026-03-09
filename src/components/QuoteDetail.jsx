@@ -87,6 +87,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [collapsedPkgs, setCollapsedPkgs] = useState(new Set());
   const [addingToPackageId, setAddingToPackageId] = useState(null);
+  const [dropTargetId, setDropTargetId] = useState(null);
+  const dragRef = useRef(null); // { type: 'top'|'sub', id, parentId? }
   const moreRef = useRef(null);
 
   useEffect(() => {
@@ -262,6 +264,88 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       d.line_items = d.line_items.map((l) => l.group_id === groupId ? { ...l, group_id: null } : l);
       return d;
     });
+  };
+
+  // ── Drag and drop reordering (edit mode) ──
+  const handleDragStart = (e, lineId, type, parentId) => {
+    dragRef.current = { type, id: lineId, parentId };
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', lineId);
+    requestAnimationFrame(() => {
+      const row = e.target.closest('tr');
+      if (row) row.classList.add('drag-active');
+    });
+  };
+
+  const handleDragEnd = (e) => {
+    dragRef.current = null;
+    setDropTargetId(null);
+    document.querySelectorAll('.drag-active').forEach((el) => el.classList.remove('drag-active'));
+  };
+
+  const handleDragOver = (e, targetId, targetType, targetParentId) => {
+    e.preventDefault();
+    const drag = dragRef.current;
+    if (!drag || drag.id === targetId) { setDropTargetId(null); return; }
+    // Sub-components can only reorder within their parent
+    if (drag.type === 'sub' && (targetType !== 'sub' || targetParentId !== drag.parentId)) { setDropTargetId(null); return; }
+    // Top-level items can only reorder among top-level
+    if (drag.type === 'top' && targetType !== 'top') { setDropTargetId(null); return; }
+    e.dataTransfer.dropEffect = 'move';
+    setDropTargetId(targetId);
+  };
+
+  const handleDrop = (e, targetId, targetType, targetParentId) => {
+    e.preventDefault();
+    const drag = dragRef.current;
+    if (!drag || drag.id === targetId) { handleDragEnd(e); return; }
+
+    updateDraft((d) => {
+      const items = [...d.line_items];
+
+      if (drag.type === 'top' && targetType === 'top') {
+        // Group items into blocks: each top-level + its sub-components
+        const blocks = [];
+        const used = new Set();
+        for (let i = 0; i < items.length; i++) {
+          if (used.has(items[i].id)) continue;
+          if (!items[i].parent_line_id) {
+            const block = [items[i]];
+            used.add(items[i].id);
+            if (items[i].is_package) {
+              for (let j = i + 1; j < items.length; j++) {
+                if (items[j].parent_line_id === items[i].id) {
+                  block.push(items[j]);
+                  used.add(items[j].id);
+                }
+              }
+            }
+            blocks.push({ id: items[i].id, lines: block });
+          }
+        }
+        const dragIdx = blocks.findIndex((b) => b.id === drag.id);
+        const targetIdx = blocks.findIndex((b) => b.id === targetId);
+        if (dragIdx === -1 || targetIdx === -1) return d;
+        const [moved] = blocks.splice(dragIdx, 1);
+        blocks.splice(targetIdx, 0, moved);
+        d.line_items = blocks.flatMap((b) => b.lines);
+      } else if (drag.type === 'sub' && targetType === 'sub' && drag.parentId === targetParentId) {
+        // Reorder sub-components within a package
+        const subIndices = [];
+        items.forEach((l, i) => { if (l.parent_line_id === drag.parentId) subIndices.push(i); });
+        const subs = subIndices.map((i) => items[i]);
+        const dragSubIdx = subs.findIndex((s) => s.id === drag.id);
+        const targetSubIdx = subs.findIndex((s) => s.id === targetId);
+        if (dragSubIdx === -1 || targetSubIdx === -1) return d;
+        const [moved] = subs.splice(dragSubIdx, 1);
+        subs.splice(targetSubIdx, 0, moved);
+        subIndices.forEach((idx, i) => { items[idx] = subs[i]; });
+        d.line_items = items;
+      }
+      return d;
+    });
+
+    handleDragEnd(e);
   };
 
   // ── Status changes (view mode) ──
@@ -548,6 +632,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     const editTableHead = (
       <thead>
         <tr>
+          <th className="col-drag" />
           <th>Product</th>
           <th>SKU</th>
           <th>Unit</th>
@@ -568,7 +653,16 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       const extended = calcLineExtended(line);
 
       return (
-        <tr key={line.id}>
+        <tr
+          key={line.id}
+          className={dropTargetId === line.id ? 'drag-over' : ''}
+          draggable
+          onDragStart={(e) => handleDragStart(e, line.id, 'top')}
+          onDragEnd={handleDragEnd}
+          onDragOver={(e) => handleDragOver(e, line.id, 'top')}
+          onDrop={(e) => handleDrop(e, line.id, 'top')}
+        >
+          <td className="col-drag"><i className="fa-solid fa-grip-vertical drag-handle" /></td>
           <td className="line-td-product"><div className="cell-name">{line.product_name}</div></td>
           <td><span className="cell-sku">{line.product_sku}</span></td>
           <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
@@ -631,7 +725,15 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
 
       return (
         <React.Fragment key={line.id}>
-          <tr className="line-row-package">
+          <tr
+            className={`line-row-package${dropTargetId === line.id ? ' drag-over' : ''}`}
+            draggable
+            onDragStart={(e) => handleDragStart(e, line.id, 'top')}
+            onDragEnd={handleDragEnd}
+            onDragOver={(e) => handleDragOver(e, line.id, 'top')}
+            onDrop={(e) => handleDrop(e, line.id, 'top')}
+          >
+            <td className="col-drag"><i className="fa-solid fa-grip-vertical drag-handle" /></td>
             <td className="line-td-product">
               <button className="pkg-chevron" onClick={() => togglePackage(line.id)}>
                 <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
@@ -661,8 +763,17 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             const unitType = sub.unit_type || 'flat';
             const ext = calcLineExtended(sub);
             return (
-              <tr key={sub.id} className="line-row-sub">
-                <td className="line-td-product" style={{ paddingLeft: 36 }}>
+              <tr
+                key={sub.id}
+                className={`line-row-sub${dropTargetId === sub.id ? ' drag-over' : ''}`}
+                draggable
+                onDragStart={(e) => handleDragStart(e, sub.id, 'sub', line.id)}
+                onDragEnd={handleDragEnd}
+                onDragOver={(e) => handleDragOver(e, sub.id, 'sub', line.id)}
+                onDrop={(e) => handleDrop(e, sub.id, 'sub', line.id)}
+              >
+                <td className="col-drag" style={{ paddingLeft: 20 }}><i className="fa-solid fa-grip-vertical drag-handle" /></td>
+                <td className="line-td-product" style={{ paddingLeft: 16 }}>
                   <div className="cell-name">{sub.product_name}</div>
                   <div className="cell-sku">{sub.product_sku}</div>
                 </td>
@@ -677,7 +788,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 <td className="col-actions">
                   <div className="actions-group">
                     <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(sub.id)}>
-                      <i className="fa-solid fa-xmark" />
+                      <i className="fa-solid fa-trash-can" />
                     </button>
                   </div>
                 </td>
@@ -686,7 +797,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           })}
           {expanded && (
             <tr className="line-row-sub">
-              <td colSpan={10} style={{ paddingLeft: 36 }}>
+              <td colSpan={11} style={{ paddingLeft: 36 }}>
                 <button
                   type="button"
                   className="pkg-add-component-link"
