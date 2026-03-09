@@ -1480,8 +1480,8 @@ tr.drag-over {
   font-weight: 700;
   letter-spacing: 0.5px;
   border-radius: 4px;
-  background: var(--teal-muted);
-  color: var(--teal);
+  background: #05BDBA;
+  color: #fff;
   vertical-align: middle;
 }
 
@@ -2164,7 +2164,19 @@ tr.drag-over {
   display: flex;
   align-items: stretch;
   margin-bottom: 40px;
-  padding: 0;
+  padding: 24px 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+[data-theme="light"] .qd-summary {
+  background: #fff;
+  border-color: #e8eaed;
+  border-top-color: #e8eaed;
+  border-top-width: 2px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .qd-summary-item {
@@ -2188,11 +2200,11 @@ tr.drag-over {
 
 .qd-summary-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.30);
   text-transform: uppercase;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.12em;
   margin-bottom: var(--space-sm);
 }
 
@@ -2208,7 +2220,7 @@ tr.drag-over {
 .qd-summary-value {
   font-family: var(--font-heading);
   font-size: 28px;
-  font-weight: 300;
+  font-weight: 600;
   color: var(--text-strong);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -2228,6 +2240,19 @@ tr.drag-over {
 }
 
 /* ─── Line Editor ────────────────────────────────────────── */
+
+.qd-lines-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+[data-theme="light"] .qd-lines-card {
+  background: #fff;
+  border-color: #e8eaed;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
 
 .qd-lines-section {
   margin-bottom: 40px;
@@ -2259,24 +2284,30 @@ tr.drag-over {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
+  padding: 0 4px;
 }
 
 .line-table th {
   font-size: 9px;
-  padding: 10px 8px;
-}
-
-.line-table th:first-child {
-  padding-left: 0;
+  padding: 10px 12px;
 }
 
 .line-table td {
-  height: 48px;
-  padding: 0 8px;
+  height: 52px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+[data-theme="light"] .line-table td {
+  border-bottom-color: #f1f3f5;
+}
+
+.line-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .line-td-product {
-  padding-left: 0 !important;
+  padding-left: 12px !important;
 }
 
 /* Line remove: hidden until row hover, trash icon */
@@ -2318,27 +2349,73 @@ tr.drag-over {
 .line-row-package td {
   font-weight: 600;
 }
+[data-theme="light"] .line-row-package td {
+  background: #f8f9fb;
+  border-left: 3px solid #05BDBA;
+}
+.line-row-package .line-td-product {
+  padding-left: 8px !important;
+}
+.line-row-package .cell-name {
+  font-weight: 700;
+  font-size: 14px;
+}
 
-/* Sub-line row — subtle background to show nesting */
+/* Component count pill on package row */
+.pkg-count-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--teal);
+  border: 1px solid var(--teal);
+  background: transparent;
+  padding: 1px 8px;
+  border-radius: 10px;
+  margin-left: 0;
+}
+[data-theme="light"] .pkg-count-pill {
+  color: #05BDBA;
+  border-color: #05BDBA;
+}
+
+/* Sub-line row — subtle left border to connect to parent */
 .line-row-sub td {
   background: rgba(255, 255, 255, 0.02);
 }
 [data-theme="light"] .line-row-sub td {
-  background: rgba(0, 0, 0, 0.015);
+  background: transparent;
+}
+[data-theme="light"] .line-row-sub .line-td-product {
+  border-left: 2px solid #e8eaed;
+  padding-left: 30px !important;
+}
+.line-row-sub .line-td-product {
+  border-left: 2px solid var(--border);
+  padding-left: 30px !important;
+}
+.line-row-sub .cell-name {
+  font-size: 13px;
+}
+.line-row-sub .cell-sku {
+  font-size: 11px;
 }
 
-/* Line footer actions (Add Product + New Group) */
+/* Line footer actions (Add Product + New Group) — inside card */
 .qd-line-footer-actions {
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  margin-top: var(--space-md);
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+[data-theme="light"] .qd-line-footer-actions {
+  border-top-color: #f1f3f5;
 }
 
 /* New Group link below line items */
 .qd-new-group-link {
   display: inline-block;
-  margin-top: var(--space-md);
+  margin-top: 0;
   background: none;
   border: none;
   color: rgba(255, 255, 255, 0.25);
@@ -3478,8 +3555,8 @@ tr.drag-over {
 }
 
 [data-theme="light"] .pkg-badge {
-  background: rgba(5, 189, 186, 0.12);
-  color: #05BDBA;
+  background: #05BDBA;
+  color: #fff;
 }
 [data-theme="light"] .pkg-components-table th {
   color: #6B7685;

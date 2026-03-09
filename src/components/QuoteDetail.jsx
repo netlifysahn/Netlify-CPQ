@@ -53,6 +53,12 @@ function AnimatedValue({ value, pulseKey }) {
   return <div className="qd-summary-value" ref={ref}>{value}</div>;
 }
 
+// Display currency — show dash for zero values in line tables
+const displayCurrency = (v) => {
+  const n = typeof v === 'number' && !isNaN(v) ? v : 0;
+  return n === 0 ? '—' : fmtCurrency(n);
+};
+
 // Backfill missing fields on older quotes
 const normalizeQuote = (q) => {
   if (!q || typeof q !== 'object') {
@@ -453,8 +459,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
 
     const val = line[field] ?? 0;
     let display;
-    if (field === 'discount_percent') display = `${val}%`;
-    else if (field === 'discount_amount' || field === 'list_price' || field === 'net_price') display = fmtCurrency(val);
+    if (field === 'discount_percent') display = val > 0 ? `${val}%` : '—';
+    else if (field === 'discount_amount' || field === 'list_price' || field === 'net_price') display = displayCurrency(val);
     else display = val;
 
     return (
@@ -484,7 +490,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 </button>
                 <div style={{ display: 'inline-block', verticalAlign: 'middle' }}>
                   <div className="cell-name">{line.product_name}<span className="pkg-badge">PKG</span></div>
-                  <div className="cell-sku">{subs.length} component{subs.length !== 1 ? 's' : ''}</div>
+                  <div><span className="pkg-count-pill">{subs.length} component{subs.length !== 1 ? 's' : ''}</span></div>
                 </div>
               </td>
               <td><span className="cell-sku">Package</span></td>
@@ -712,13 +718,13 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           </td>
           <td>
             {included
-              ? <span className="price-annual">$0</span>
-              : <span className="price-monthly">{fmtCurrency(line.net_price ?? line.list_price ?? 0)}</span>}
+              ? <span className="price-annual">—</span>
+              : <span className="price-monthly">{displayCurrency(line.net_price ?? line.list_price ?? 0)}</span>}
           </td>
           <td>
             {included
-              ? <span className="price-annual">$0</span>
-              : <span className="price-monthly">{fmtCurrency(extended)}</span>}
+              ? <span className="price-annual">—</span>
+              : <span className="price-monthly">{displayCurrency(extended)}</span>}
           </td>
           <td className="col-actions">
             <div className="actions-group">
@@ -764,7 +770,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               </button>
               <div style={{ display: 'inline-block', verticalAlign: 'middle' }}>
                 <div className="cell-name">{line.product_name}<span className="pkg-badge">PKG</span></div>
-                <div className="cell-sku">{subs.length} component{subs.length !== 1 ? 's' : ''}</div>
+                <div><span className="pkg-count-pill">{subs.length} component{subs.length !== 1 ? 's' : ''}</span></div>
               </div>
             </td>
             <td><span className="cell-sku">{line.product_sku}</span></td>
@@ -774,7 +780,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             <td><span className="cell-locked">—</span></td>
             <td><span className="cell-locked">—</span></td>
             <td><span className="cell-locked">—</span></td>
-            <td><span className="price-monthly">{fmtCurrency(pkgTotal)}</span></td>
+            <td><span className="price-monthly">{displayCurrency(pkgTotal)}</span></td>
             <td className="col-actions">
               <div className="actions-group">
                 <button className="action-btn delete line-remove-btn" title="Remove package" onClick={() => removeDraftLine(line.id)}>
@@ -807,8 +813,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 <td>{renderEditableCell(sub, 'list_price', { step: '0.01', min: '0' })}</td>
                 <td>{renderEditableCell(sub, 'discount_percent', { step: '0.1', min: '0', max: '100' })}</td>
                 <td>{renderEditableCell(sub, 'discount_amount', { step: '0.01', min: '0' })}</td>
-                <td><span className="price-monthly">{fmtCurrency(sub.net_price ?? sub.list_price ?? 0)}</span></td>
-                <td><span className="price-monthly">{fmtCurrency(ext)}</span></td>
+                <td><span className="price-monthly">{displayCurrency(sub.net_price ?? sub.list_price ?? 0)}</span></td>
+                <td><span className="price-monthly">{displayCurrency(ext)}</span></td>
                 <td className="col-actions">
                   <div className="actions-group">
                     <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(sub.id)}>
@@ -860,60 +866,62 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
 
         {/* Edit line items table */}
         <div className="qd-lines-section">
-          {items.length === 0 ? (
-            <div className="edit-empty-state">
-              <div className="edit-empty-icon"><i className="fa-solid fa-plus" /></div>
-              <div className="edit-empty-title">Start building your quote</div>
-              <div className="edit-empty-text">Select products from the catalog to get started</div>
-              <button className="edit-empty-cta" onClick={() => setShowPicker(true)}>
-                <i className="fa-solid fa-box-open" /> Browse Products
+          <div className="qd-lines-card">
+            {items.length === 0 ? (
+              <div className="edit-empty-state">
+                <div className="edit-empty-icon"><i className="fa-solid fa-plus" /></div>
+                <div className="edit-empty-title">Start building your quote</div>
+                <div className="edit-empty-text">Select products from the catalog to get started</div>
+                <button className="edit-empty-cta" onClick={() => setShowPicker(true)}>
+                  <i className="fa-solid fa-box-open" /> Browse Products
+                </button>
+              </div>
+            ) : (
+              <div className="line-editor-table-wrap">
+                {topLevel.length > 0 && (
+                  <table className="data-table line-table">
+                    {editTableHead}
+                    <tbody>{topLevel.map(renderEditRow)}</tbody>
+                  </table>
+                )}
+
+                {groups.map((group) => {
+                  const gLines = groupedItems(group.id);
+                  return (
+                    <div key={group.id} className="line-group">
+                      <div className="line-group-header">
+                        <div className="line-group-name">
+                          <i className="fa-solid fa-layer-group" /> {group.name}
+                        </div>
+                        <div className="line-group-meta">
+                          <span className="line-group-subtotal">{fmtCurrency(groupSubtotal(group.id))}/mo</span>
+                          <button className="action-btn delete" title="Remove group" onClick={() => removeDraftGroup(group.id)}>
+                            <i className="fa-solid fa-xmark" />
+                          </button>
+                        </div>
+                      </div>
+                      {gLines.length > 0 ? (
+                        <table className="data-table line-table">
+                          {editTableHead}
+                          <tbody>{gLines.map(renderEditRow)}</tbody>
+                        </table>
+                      ) : (
+                        <div className="line-group-empty">No lines in this group. Assign lines using the dropdown.</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="qd-line-footer-actions">
+              <button className="btn-primary" onClick={() => setShowPicker(true)}>
+                <i className="fa-solid fa-plus" /> Add Product
+              </button>
+              <button className="qd-new-group-link" onClick={() => setShowGroupModal(true)}>
+                + New Group
               </button>
             </div>
-          ) : (
-            <div className="line-editor-table-wrap">
-              {topLevel.length > 0 && (
-                <table className="data-table line-table">
-                  {editTableHead}
-                  <tbody>{topLevel.map(renderEditRow)}</tbody>
-                </table>
-              )}
-
-              {groups.map((group) => {
-                const gLines = groupedItems(group.id);
-                return (
-                  <div key={group.id} className="line-group">
-                    <div className="line-group-header">
-                      <div className="line-group-name">
-                        <i className="fa-solid fa-layer-group" /> {group.name}
-                      </div>
-                      <div className="line-group-meta">
-                        <span className="line-group-subtotal">{fmtCurrency(groupSubtotal(group.id))}/mo</span>
-                        <button className="action-btn delete" title="Remove group" onClick={() => removeDraftGroup(group.id)}>
-                          <i className="fa-solid fa-xmark" />
-                        </button>
-                      </div>
-                    </div>
-                    {gLines.length > 0 ? (
-                      <table className="data-table line-table">
-                        {editTableHead}
-                        <tbody>{gLines.map(renderEditRow)}</tbody>
-                      </table>
-                    ) : (
-                      <div className="line-group-empty">No lines in this group. Assign lines using the dropdown.</div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="qd-line-footer-actions">
-            <button className="btn-primary" onClick={() => setShowPicker(true)}>
-              <i className="fa-solid fa-plus" /> Add Product
-            </button>
-            <button className="qd-new-group-link" onClick={() => setShowGroupModal(true)}>
-              + New Group
-            </button>
           </div>
         </div>
 
