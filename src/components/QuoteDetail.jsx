@@ -498,21 +498,21 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               <td><span className="cell-locked">—</span></td>
               <td><span className="cell-locked">—</span></td>
               <td><span className="cell-locked">—</span></td>
-              <td><span className="price-monthly">{fmtCurrency(pkgTotal)}</span></td>
+              <td><span className="price-monthly">{displayCurrency(pkgTotal)}</span></td>
             </tr>
             {expanded && subs.map((sub) => {
               const ext = calcLineExtended(sub);
               return (
                 <tr key={sub.id} className="line-row-sub">
-                  <td className="line-td-product" style={{ paddingLeft: 36 }}>
+                  <td className="line-td-product qd-view-sub-product">
                     <div className="cell-name">{sub.product_name}</div>
                   </td>
                   <td><span className="cell-sku">{getUnitLabel(sub.unit_type || 'flat')}</span></td>
                   <td>{sub.quantity}</td>
-                  <td>{fmtCurrency(sub.list_price ?? 0)}</td>
+                  <td>{displayCurrency(sub.list_price ?? 0)}</td>
                   <td>{(sub.discount_percent ?? 0) > 0 ? `${sub.discount_percent}%` : '—'}</td>
-                  <td>{fmtCurrency(sub.net_price ?? sub.list_price ?? 0)}</td>
-                  <td><span className="price-monthly">{fmtCurrency(ext)}</span></td>
+                  <td>{displayCurrency(sub.net_price ?? sub.list_price ?? 0)}</td>
+                  <td><span className="price-monthly">{displayCurrency(ext)}</span></td>
                 </tr>
               );
             })}
@@ -529,10 +529,10 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           </td>
           <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
           <td>{line.quantity}</td>
-          <td>{isIncluded(unitType) ? '—' : fmtCurrency(line.list_price ?? 0)}</td>
+          <td>{isIncluded(unitType) ? '—' : displayCurrency(line.list_price ?? 0)}</td>
           <td>{isIncluded(unitType) ? '—' : ((line.discount_percent ?? 0) > 0 ? `${line.discount_percent}%` : '—')}</td>
-          <td>{isIncluded(unitType) ? '$0' : fmtCurrency(line.net_price ?? line.list_price ?? 0)}</td>
-          <td><span className="price-monthly">{isIncluded(unitType) ? '$0' : fmtCurrency(extended)}</span></td>
+          <td>{isIncluded(unitType) ? '—' : displayCurrency(line.net_price ?? line.list_price ?? 0)}</td>
+          <td><span className="price-monthly">{isIncluded(unitType) ? '—' : displayCurrency(extended)}</span></td>
         </tr>
       );
     };
@@ -616,20 +616,22 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               <div className="empty-state-text">Click "Edit Lines" to add products to this quote</div>
             </div>
           ) : (
-            <table className="data-table line-table">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Unit</th>
-                  <th>Qty</th>
-                  <th>List Price</th>
-                  <th>Disc %</th>
-                  <th>Net Price</th>
-                  <th>Extended</th>
-                </tr>
-              </thead>
-              <tbody>{viewItems.map(renderViewRow)}</tbody>
-            </table>
+            <div className="qd-view-lines-card">
+              <table className="data-table line-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Unit</th>
+                    <th>Qty</th>
+                    <th>List Price</th>
+                    <th>Disc %</th>
+                    <th>Net Price</th>
+                    <th>Extended</th>
+                  </tr>
+                </thead>
+                <tbody>{viewItems.map(renderViewRow)}</tbody>
+              </table>
+            </div>
           )}
         </div>
 
