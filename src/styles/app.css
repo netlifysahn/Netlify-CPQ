@@ -2521,6 +2521,253 @@ tr.drag-over {
 }
 
 
+/* ─── Product Picker v2 (multi-select, category-based) ───── */
+
+.picker-modal-v2 {
+  width: 720px;
+  max-width: 90vw;
+  height: 560px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.picker-v2-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.picker-v2-title {
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-strong);
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.picker-v2-search {
+  margin: 0;
+}
+
+.picker-v2-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.picker-v2-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  padding: 12px 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.picker-v2-cat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.picker-v2-cat:hover {
+  color: var(--text-body);
+}
+
+.picker-v2-cat.active {
+  color: var(--teal);
+  font-weight: 600;
+  border-left-color: var(--teal);
+}
+
+.picker-v2-cat-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 6px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.picker-v2-cat.active .picker-v2-cat-count {
+  background: var(--teal-muted);
+  color: var(--teal);
+}
+
+.picker-v2-grid-wrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.picker-v2-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.picker-v2-card {
+  position: relative;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.picker-v2-card:hover {
+  border-color: var(--border-default);
+}
+
+.picker-v2-card.selected {
+  border-color: var(--teal);
+  background: var(--teal-muted);
+}
+
+.picker-v2-card.existing {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.picker-v2-card-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.picker-v2-checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-default);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #fff;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.picker-v2-checkbox.checked {
+  background: var(--teal);
+  border-color: var(--teal);
+}
+
+.picker-v2-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-strong);
+  margin-bottom: 2px;
+  padding-right: 24px;
+}
+
+.picker-v2-card-sku {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+
+.picker-v2-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.picker-v2-card-price {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-body);
+}
+
+.picker-v2-card-existing {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 6px;
+}
+
+.picker-v2-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border);
+}
+
+/* Light theme overrides */
+[data-theme="light"] .picker-v2-cat {
+  color: #6B7685;
+}
+[data-theme="light"] .picker-v2-cat:hover {
+  color: #353A3E;
+}
+[data-theme="light"] .picker-v2-cat.active {
+  color: #05BDBA;
+}
+[data-theme="light"] .picker-v2-cat-count {
+  color: #6B7685;
+  background: #F0F1F3;
+}
+[data-theme="light"] .picker-v2-cat.active .picker-v2-cat-count {
+  background: rgba(5, 189, 186, 0.12);
+  color: #05BDBA;
+}
+[data-theme="light"] .picker-v2-card {
+  background: #fff;
+  border-color: #E9EBED;
+}
+[data-theme="light"] .picker-v2-card:hover {
+  border-color: #D1D5DA;
+}
+[data-theme="light"] .picker-v2-card.selected {
+  border-color: #05BDBA;
+  background: rgba(5, 189, 186, 0.06);
+}
+[data-theme="light"] .picker-v2-checkbox {
+  border-color: #D1D5DA;
+}
+[data-theme="light"] .picker-v2-checkbox.checked {
+  background: #05BDBA;
+  border-color: #05BDBA;
+}
+[data-theme="light"] .picker-v2-card-name {
+  color: #1B1A1C;
+}
+[data-theme="light"] .picker-v2-card-price {
+  color: #353A3E;
+}
+[data-theme="light"] .picker-v2-header {
+  border-bottom-color: #E9EBED;
+}
+[data-theme="light"] .picker-v2-sidebar {
+  border-right-color: #E9EBED;
+}
+[data-theme="light"] .picker-v2-footer {
+  border-top-color: #E9EBED;
+}
+
 /* ─── Scrollbar ───────────────────────────────────────────── */
 
 .modal::-webkit-scrollbar {

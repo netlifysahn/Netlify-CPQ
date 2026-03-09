@@ -956,6 +956,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             products={availableProducts}
             onAdd={addLineToDraft}
             onClose={() => setShowPicker(false)}
+            multiSelect
+            existingProductIds={new Set((draft?.line_items || []).map((l) => l.product_id))}
           />
         )}
         {addingToPackageId && (
