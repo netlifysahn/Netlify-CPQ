@@ -3026,38 +3026,76 @@ tr.drag-over {
 /* ─── Light Mode — Component Overrides ───────────────────── */
 
 /* Sidebar */
+/* ─── Sidebar — Light Mode ─────────────────────────────── */
 [data-theme="light"] .sidebar {
   background: #ffffff;
   border-right: 1px solid rgba(0, 0, 0, 0.07);
+  width: 220px;
 }
 
+[data-theme="light"] .main-content {
+  margin-left: 220px;
+}
+
+/* Logo area */
 [data-theme="light"] .sidebar-brand {
-  border-bottom-color: rgba(0, 0, 0, 0.07);
+  padding: 24px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 0;
+}
+
+[data-theme="light"] .sidebar-brand img,
+[data-theme="light"] .sidebar-brand svg {
+  max-height: 28px;
+  width: auto;
 }
 
 [data-theme="light"] .sidebar-brand-text {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: #0a0a0a;
 }
 
+/* Nav section */
+[data-theme="light"] .sidebar-nav {
+  padding: 16px 0 0 0;
+  gap: 2px;
+}
+
+/* Nav items */
 [data-theme="light"] .sidebar-item {
-  color: #6b7280;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin: 0 12px;
+  gap: 10px;
+  transition: background 120ms ease;
 }
 
 [data-theme="light"] .sidebar-item i {
-  opacity: 0.7;
+  font-size: 16px;
+  width: 18px;
+  opacity: 1;
+  color: #9ca3af;
 }
 
 [data-theme="light"] .sidebar-item:hover {
   color: #374151;
+  background: rgba(0, 0, 0, 0.04);
 }
 
 [data-theme="light"] .sidebar-item.active {
   color: #05BDBA;
-  background: rgba(5, 189, 186, 0.06);
+  background: rgba(5, 189, 186, 0.07);
+  border-left: 2px solid #05BDBA;
+  padding-left: 14px;
 }
 
 [data-theme="light"] .sidebar-item.active::before {
-  background: #05BDBA;
+  background: transparent;
 }
 
 [data-theme="light"] .sidebar-item.active i {
@@ -3074,21 +3112,22 @@ tr.drag-over {
   color: #9ca3af;
 }
 
-/* Sidebar hover/active — clean, no colored tints */
+/* Sidebar hover — clean, no colored tints */
 [data-theme="light"] .sidebar-item.section-products:hover,
 [data-theme="light"] .sidebar-item.section-pricebooks:hover,
 [data-theme="light"] .sidebar-item.section-scope:hover,
 [data-theme="light"] .sidebar-item.section-quotes:hover,
 [data-theme="light"] .sidebar-item.section-orders:hover {
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(0, 0, 0, 0.04);
 }
 
+/* Sidebar active — unified teal */
 [data-theme="light"] .sidebar-item.section-products.active,
 [data-theme="light"] .sidebar-item.section-pricebooks.active,
 [data-theme="light"] .sidebar-item.section-scope.active,
 [data-theme="light"] .sidebar-item.section-quotes.active,
 [data-theme="light"] .sidebar-item.section-orders.active {
-  background: rgba(5, 189, 186, 0.06);
+  background: rgba(5, 189, 186, 0.07);
   color: #05BDBA;
 }
 
@@ -3105,7 +3144,7 @@ tr.drag-over {
 [data-theme="light"] .sidebar-item.section-scope.active::before,
 [data-theme="light"] .sidebar-item.section-quotes.active::before,
 [data-theme="light"] .sidebar-item.section-orders.active::before {
-  background: #05BDBA;
+  background: transparent;
 }
 
 /* Remove pulse animation on active dots in light mode */
