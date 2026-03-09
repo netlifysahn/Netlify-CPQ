@@ -490,7 +490,6 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 </button>
                 <div style={{ display: 'inline-block', verticalAlign: 'middle' }}>
                   <div className="cell-name">{line.product_name}<span className="pkg-badge">PKG</span></div>
-                  <div><span className="pkg-count-pill">{subs.length} component{subs.length !== 1 ? 's' : ''}</span></div>
                 </div>
               </td>
               <td><span className="cell-sku">Package</span></td>
@@ -500,13 +499,6 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               <td><span className="cell-locked">—</span></td>
               <td><span className="price-monthly">{displayCurrency(pkgTotal)}</span></td>
             </tr>
-            {expanded && (
-              <tr className="line-row-pkg-eyebrow">
-                <td colSpan={7}>
-                  <div className="pkg-members-label">Package Members</div>
-                </td>
-              </tr>
-            )}
             {expanded && subs.map((sub) => {
               const ext = calcLineExtended(sub);
               return (
@@ -564,8 +556,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               </div>
             </div>
             <div className="qd-actions">
-              <button className="qd-status-btn qd-edit-lines-btn" onClick={enterEditMode} style={{ background: '#05BDBA', color: '#fff', fontWeight: 600, border: 'none', borderRadius: '6px', padding: '8px 16px', height: '36px', cursor: 'pointer' }}>
-                {q.line_items.length > 0 && <i className="fa-solid fa-pen-to-square" />} {q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
+              <button className="qd-status-btn qd-edit-lines-btn" onClick={enterEditMode} style={{ background: '#FBB13D', color: '#fff', fontWeight: 600, border: 'none', borderRadius: '6px', padding: '8px 16px', height: '36px', cursor: 'pointer' }}>
+                {q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
               </button>
               {statusOptions().map((s) => (
                 <button key={s} className="qd-status-btn" onClick={() => changeStatus(s)}>

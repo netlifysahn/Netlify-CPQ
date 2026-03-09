@@ -2468,8 +2468,7 @@ tr.drag-over {
 
 /* View-mode sub-component rows */
 .qd-view-sub-product {
-  padding-left: 48px !important;
-  border-left: 2px solid rgba(5, 189, 186, 0.25);
+  padding-left: 32px !important;
 }
 
 .qd-view-lines-card .line-row-sub .qd-view-sub-product .cell-name {
@@ -4173,6 +4172,9 @@ tr.drag-over {
 
 [data-theme="light"] .qd-title {
   color: var(--text-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 [data-theme="light"] .qd-meta {
@@ -4231,7 +4233,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .qd-summary-divider {
-  background: var(--border);
+  background: #FBB13D;
 }
 
 [data-theme="light"] .qd-summary-label {
@@ -4247,7 +4249,8 @@ tr.drag-over {
 
 [data-theme="light"] .qd-summary-value {
   color: var(--text-strong);
-  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 300;
   font-variant-numeric: tabular-nums;
 }
 
@@ -4288,7 +4291,7 @@ tr.drag-over {
 }
 
 [data-theme="light"] .qd-view-lines-card .line-row-sub td {
-  background: rgba(0, 0, 0, 0.015);
+  background: #f9fafb;
 }
 
 [data-theme="light"] .qd-view-lines-card .line-row-sub .qd-view-sub-product .cell-name {
