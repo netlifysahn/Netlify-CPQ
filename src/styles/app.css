@@ -125,7 +125,7 @@
   gap: 12px;
   padding: 10px 16px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
   border: none;
@@ -295,20 +295,20 @@
 
 .page-label {
   font-family: var(--font-mono);
-  font-weight: 500;
+  font-weight: 700;
   font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.62);
+  letter-spacing: 0.12em;
+  color: var(--teal);
   margin-bottom: var(--space-xs);
 }
 
 .page-title {
-  font-family: var(--font-heading);
+  font-family: var(--font-body);
   font-size: var(--text-page-title);
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-strong);
-  letter-spacing: var(--letter-spacing-heading);
+  letter-spacing: -0.02em;
   margin-bottom: var(--space-xs);
 }
 
@@ -801,6 +801,7 @@
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 14px;
+  font-variant-numeric: tabular-nums;
   color: rgba(255, 255, 255, 1);
 }
 
@@ -808,6 +809,7 @@
   font-family: var(--font-body);
   font-weight: 400;
   font-size: 13px;
+  font-variant-numeric: tabular-nums;
   color: rgba(255, 255, 255, 0.55);
 }
 
@@ -2152,6 +2154,20 @@ tr.drag-over {
   font-weight: 300;
   color: var(--text-strong);
   letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes value-pulse {
+  0% { transform: scale(1.04); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.qd-summary-value.value-changed {
+  animation: value-pulse 300ms ease-out;
+}
+
+.qd-summary-item.qd-summary-tcv {
+  border-left: 2px solid var(--teal);
 }
 
 /* ─── Line Editor ────────────────────────────────────────── */
@@ -2319,6 +2335,8 @@ tr.drag-over {
   transition: background var(--transition);
   font-family: var(--font-body);
   font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   color: var(--text-strong);
 }
 
@@ -2340,6 +2358,8 @@ tr.drag-over {
   color: var(--text-strong);
   font-family: var(--font-body);
   font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   padding: 4px 6px;
   width: 80px;
   outline: none;
@@ -2584,12 +2604,12 @@ tr.drag-over {
 
 /* Page header */
 [data-theme="light"] .page-label {
-  color: #4b5563;
+  color: #05BDBA;
 }
 
 [data-theme="light"] .page-title {
   color: #1B1A1C;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 [data-theme="light"] .page-subtitle {

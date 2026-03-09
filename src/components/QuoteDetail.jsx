@@ -40,6 +40,19 @@ class QuoteDetailErrorBoundary extends Component {
   }
 }
 
+// Animated summary value — pulses on change
+function AnimatedValue({ value, pulseKey }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || pulseKey === 0) return;
+    el.classList.remove('value-changed');
+    void el.offsetWidth;
+    el.classList.add('value-changed');
+  }, [pulseKey]);
+  return <div className="qd-summary-value" ref={ref}>{value}</div>;
+}
+
 // Backfill missing fields on older quotes
 const normalizeQuote = (q) => {
   if (!q || typeof q !== 'object') {
@@ -90,6 +103,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   const [dropTargetId, setDropTargetId] = useState(null);
   const dragRef = useRef(null); // { type: 'top'|'sub', id, parentId? }
   const moreRef = useRef(null);
+  const prevTotalsRef = useRef(null);
+  const [pulseKey, setPulseKey] = useState(0);
 
   useEffect(() => {
     const handler = (e) => {
@@ -367,6 +382,15 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     : q;
   const totals = calcQuoteTotals(liveData);
   const meta = STATUS_META[q.status] || STATUS_META.draft;
+
+  // Detect summary value changes and trigger pulse animation
+  const totalsFingerprint = `${totals.monthly}|${totals.annual}|${totals.tcv}`;
+  useEffect(() => {
+    if (prevTotalsRef.current !== null && prevTotalsRef.current !== totalsFingerprint) {
+      setPulseKey((k) => k + 1);
+    }
+    prevTotalsRef.current = totalsFingerprint;
+  }, [totalsFingerprint]);
 
   const statusOptions = () => {
     const opts = [];
@@ -910,19 +934,19 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           <div className="qd-summary-item">
             <div className="qd-summary-label">MRR</div>
             {totals.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountMonthly)}</div>}
-            <div className="qd-summary-value">{fmtCurrency(totals.monthly)}</div>
+            <AnimatedValue value={fmtCurrency(totals.monthly)} pulseKey={pulseKey} />
           </div>
           <div className="qd-summary-divider" />
           <div className="qd-summary-item">
             <div className="qd-summary-label">ARR</div>
             {totals.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountAnnual)}</div>}
-            <div className="qd-summary-value">{fmtCurrency(totals.annual)}</div>
+            <AnimatedValue value={fmtCurrency(totals.annual)} pulseKey={pulseKey} />
           </div>
           <div className="qd-summary-divider" />
-          <div className="qd-summary-item">
+          <div className="qd-summary-item qd-summary-tcv">
             <div className="qd-summary-label">TCV ({q.term_months}mo)</div>
             {totals.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountTcv)}</div>}
-            <div className="qd-summary-value">{fmtCurrency(totals.tcv)}</div>
+            <AnimatedValue value={fmtCurrency(totals.tcv)} pulseKey={pulseKey} />
           </div>
         </div>
 
@@ -973,19 +997,19 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       <div className="qd-summary-item">
         <div className="qd-summary-label">MRR</div>
         {t.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(t.preDiscountMonthly)}</div>}
-        <div className="qd-summary-value">{fmtCurrency(t.monthly)}</div>
+        <AnimatedValue value={fmtCurrency(t.monthly)} pulseKey={pulseKey} />
       </div>
       <div className="qd-summary-divider" />
       <div className="qd-summary-item">
         <div className="qd-summary-label">ARR</div>
         {t.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(t.preDiscountAnnual)}</div>}
-        <div className="qd-summary-value">{fmtCurrency(t.annual)}</div>
+        <AnimatedValue value={fmtCurrency(t.annual)} pulseKey={pulseKey} />
       </div>
       <div className="qd-summary-divider" />
-      <div className="qd-summary-item">
+      <div className="qd-summary-item qd-summary-tcv">
         <div className="qd-summary-label">TCV ({source.term_months}mo)</div>
         {t.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(t.preDiscountTcv)}</div>}
-        <div className="qd-summary-value">{fmtCurrency(t.tcv)}</div>
+        <AnimatedValue value={fmtCurrency(t.tcv)} pulseKey={pulseKey} />
       </div>
       {t.hasQuoteDiscount && (
         <>
