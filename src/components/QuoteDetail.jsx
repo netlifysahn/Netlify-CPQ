@@ -527,10 +527,12 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     );
   };
 
+  const sectionDivider = { height: '1px', background: 'rgba(0,0,0,0.06)', margin: 0 };
+
   const renderDetailCards = (source) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-      {/* Card 1 — Customer Information */}
-      <div style={cardStyle}>
+    <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: 0, marginBottom: '12px' }}>
+      {/* Customer Information */}
+      <div>
         <div style={cardHeaderStyle} onClick={() => toggleCard('customer')}>
           <span style={eyebrowStyle}>Customer Information</span>
           <i className={`fa-solid ${detailCards.customer ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={chevronStyle} />
@@ -549,8 +551,10 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         )}
       </div>
 
-      {/* Card 2 — Subscription Term */}
-      <div style={cardStyle}>
+      <div style={sectionDivider} />
+
+      {/* Subscription Term */}
+      <div>
         <div style={cardHeaderStyle} onClick={() => toggleCard('term')}>
           <span style={eyebrowStyle}>Subscription Term</span>
           <i className={`fa-solid ${detailCards.term ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={chevronStyle} />
@@ -563,8 +567,10 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         )}
       </div>
 
-      {/* Card 3 — Billing & Payment */}
-      <div style={cardStyle}>
+      <div style={sectionDivider} />
+
+      {/* Billing & Payment */}
+      <div>
         <div style={cardHeaderStyle} onClick={() => toggleCard('billing')}>
           <span style={eyebrowStyle}>Billing & Payment</span>
           <i className={`fa-solid ${detailCards.billing ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={chevronStyle} />
