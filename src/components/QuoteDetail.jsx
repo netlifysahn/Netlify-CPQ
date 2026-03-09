@@ -492,7 +492,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         return (
           <React.Fragment key={line.id}>
             <tr className="line-row-package">
-              <td className="line-td-product" style={{ width: '35%', minWidth: '200px' }}>
+              <td className="line-td-product" style={{ width: '25%', minWidth: '200px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
                   <span className="pkg-badge">PKG</span>
@@ -512,7 +512,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               const ext = calcLineExtended(sub);
               return (
                 <tr key={sub.id} className="line-row-sub">
-                  <td className="line-td-product qd-view-sub-product pkg-sub-product" style={{ width: '35%', minWidth: '200px' }}>
+                  <td className="line-td-product qd-view-sub-product pkg-sub-product" style={{ width: '25%', minWidth: '200px' }}>
                     <div className="cell-name">{sub.product_name}</div>
                   </td>
                   <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(sub.unit_type || 'flat')}</span></td>
@@ -532,7 +532,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       const extended = calcLineExtended(line);
       return (
         <tr key={line.id}>
-          <td className="line-td-product" style={{ width: '35%', minWidth: '200px' }}>
+          <td className="line-td-product" style={{ width: '25%', minWidth: '200px' }}>
             <div className="cell-name">{line.product_name}</div>
           </td>
           <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
@@ -637,7 +637,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               <table className="data-table line-table">
                 <thead>
                   <tr>
-                    <th style={{ width: '35%', minWidth: '200px' }}>Product</th>
+                    <th style={{ width: '25%', minWidth: '200px' }}>Product</th>
                     <th style={{ width: '10%' }}>Unit</th>
                     <th style={{ width: '10%' }}>Qty</th>
                     <th style={{ width: '10%' }}>List Price</th>
