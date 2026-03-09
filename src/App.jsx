@@ -297,7 +297,7 @@ export default function App() {
       <nav className="sidebar">
         <div className="sidebar-brand">
           <NetlifyLogo size={34} theme={theme} />
-          <span className="sidebar-brand-text">Deal Studio</span>
+          <span className="sidebar-brand-text">DEAL STUDIO</span>
         </div>
         <div className="sidebar-nav">
           {NAV_ITEMS.map((item) => (
