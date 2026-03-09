@@ -128,7 +128,6 @@ export default function ProductModal({ product, products, onSave, onClose }) {
         sort_order: (prev.members || []).length + 1,
       }],
     }));
-    setPickerOpen(false);
   };
 
   const updateMember = (index, key, value) => {
