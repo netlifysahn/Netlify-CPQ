@@ -3099,6 +3099,13 @@ tr.drag-over {
   --amber: #d97706;
   --purple: #7c3aed;
   --red: #dc2626;
+
+  /* Neutralize section tints — no colored backgrounds in light mode */
+  --section-products-tint: rgba(0, 0, 0, 0.04);
+  --section-pricebooks-tint: rgba(0, 0, 0, 0.04);
+  --section-scope-tint: rgba(0, 0, 0, 0.04);
+  --section-quotes-tint: rgba(0, 0, 0, 0.04);
+  --section-orders-tint: rgba(0, 0, 0, 0.04);
 }
 
 [data-theme="light"] .app-layout {
@@ -3142,7 +3149,7 @@ tr.drag-over {
 /* Nav section */
 [data-theme="light"] .sidebar-nav {
   padding: 16px 0 0 0;
-  gap: 2px;
+  gap: 0;
 }
 
 /* Nav items */
@@ -3150,11 +3157,11 @@ tr.drag-over {
   color: #1a1a1a;
   font-size: 13px;
   font-weight: 600;
-  padding: 10px 16px;
+  padding: 10px 12px;
   border-radius: 8px;
-  margin: 4px 8px;
+  margin: 2px 8px;
   gap: 10px;
-  border-left: none;
+  border: none;
   transition: background 120ms ease;
 }
 
@@ -3178,9 +3185,10 @@ tr.drag-over {
   color: #05BDBA;
   background: rgba(5, 189, 186, 0.08);
   border: none;
-  border-left: 2px solid #05BDBA;
   box-shadow: none;
   outline: none;
+  border-left: 2px solid #05BDBA;
+  padding-left: 10px;
 }
 
 [data-theme="light"] .sidebar-item.active i {
@@ -3399,7 +3407,7 @@ tr.drag-over {
 
 [data-theme="light"] .data-table-products th,
 [data-theme="light"] .data-table-products td {
-  border-bottom-color: rgba(0, 0, 0, 0.05);
+  border-bottom-color: rgba(0, 0, 0, 0.10);
 }
 
 [data-theme="light"] .data-table-products .cell-sku {
