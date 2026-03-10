@@ -431,7 +431,7 @@ export default function App() {
               <div className="toolbar-select-wrap">
                 <select className="field-select toolbar-picklist" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                   {statuses.map((s) => (
-                    <option key={s} value={s}>{s === 'All' ? 'All Statuses' : s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                    <option key={s} value={s}>{s === 'All' ? 'Quote Status' : s.charAt(0).toUpperCase() + s.slice(1)}</option>
                   ))}
                 </select>
                 <span className="toolbar-select-icon" aria-hidden="true">
