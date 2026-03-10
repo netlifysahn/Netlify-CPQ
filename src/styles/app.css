@@ -611,7 +611,7 @@
   padding: 8px 16px;
   height: 36px;
   font-size: 14px;
-  border-radius: 6px;
+  border-radius: 8px;
   border: none;
   background: var(--teal);
   color: #ffffff;
@@ -1072,11 +1072,13 @@
 
 .modal-title {
   font-family: 'Poppins', sans-serif;
-  font-size: 32px;
-  font-weight: 300;
+  font-size: 25.6px;
+  font-weight: 400;
   letter-spacing: -0.01em;
   color: #ffffff;
   margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .modal-actions {
@@ -1105,12 +1107,12 @@
 
 .field-input {
   width: 100%;
-  padding: 8px 12px;
-  height: 36px;
+  padding: 10px 14px;
+  height: auto;
   font-size: 14px;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   color: #ffffff;
   outline: none;
   font-family: var(--font-body);
@@ -1130,11 +1132,11 @@
 
 .field-textarea {
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 14px;
   font-size: 14px;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   color: #ffffff;
   outline: none;
   font-family: var(--font-body);
@@ -1156,12 +1158,12 @@
 
 .field-select {
   width: 100%;
-  padding: 0 12px;
-  height: 36px;
+  padding: 10px 14px;
+  height: auto;
   font-size: 14px;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   color: #ffffff;
   outline: none;
   font-family: var(--font-body);
@@ -1184,13 +1186,18 @@
   --modal-focus-accent-tint: rgba(5, 189, 186, 0.12);
 }
 
-.product-modal .modal-title {
-  font-size: 25.6px;
-}
 
 .modal-theme-quotes {
   --modal-focus-accent: #FBB13D;
   --modal-focus-accent-tint: rgba(251, 177, 50, 0.12);
+}
+.modal-theme-quotes .btn-save {
+  background: #FBB13D;
+  border-color: #FBB13D;
+}
+.modal-theme-quotes .btn-save:hover {
+  background: #e9a235;
+  border-color: #e9a235;
 }
 
 .modal-theme-scope {
@@ -1206,6 +1213,7 @@
 .modal :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select):focus {
   border-color: var(--modal-focus-accent, var(--section-accent));
   box-shadow: none !important;
+  outline: none;
 }
 
 .modal .search-wrap:focus-within {
@@ -1933,12 +1941,14 @@ tr.drag-over {
 }
 
 .confirm-title {
-  font-family: var(--font-heading);
-  font-size: var(--text-section-header);
+  font-family: 'Poppins', sans-serif;
+  font-size: 25.6px;
   color: var(--text-strong);
-  font-weight: 300;
-  letter-spacing: var(--letter-spacing-heading);
-  margin-bottom: var(--space-sm);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin-bottom: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .confirm-message {
@@ -2052,7 +2062,7 @@ tr.drag-over {
   padding: 8px 16px;
   height: 36px;
   font-size: 14px;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: transparent;
   color: rgba(255, 255, 255, 0.6);
@@ -2952,8 +2962,8 @@ tr.drag-over {
 /* ─── Product Picker v2 (multi-select, category-based) ───── */
 
 .picker-modal-v2 {
-  width: 900px;
-  max-width: 920px;
+  width: 760px;
+  max-width: 760px;
   height: 560px;
   max-height: 85vh;
   display: flex;
@@ -2963,16 +2973,16 @@ tr.drag-over {
 }
 
 .picker-v2-header {
-  padding: 28px 32px 20px;
-  border-bottom: 1px solid var(--border);
+  padding: 32px 32px 20px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .picker-v2-title {
   font-family: 'Poppins', sans-serif;
-  font-size: 28px;
+  font-size: 25.6px;
   font-weight: 400;
   color: var(--text-strong);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   margin-bottom: 14px;
 }
 
@@ -3158,7 +3168,7 @@ tr.drag-over {
   justify-content: space-between;
   align-items: center;
   padding: 14px 32px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid #e5e7eb;
 }
 
 /* Picker v2 light overrides */
@@ -3588,7 +3598,7 @@ tr.drag-over {
   background: var(--teal);
   border-color: var(--teal);
   color: #fff;
-  border-radius: 6px;
+  border-radius: 8px;
   box-shadow: 0 1px 2px rgba(5, 189, 186, 0.2);
   font-weight: 600;
 }
@@ -3672,7 +3682,7 @@ tr.drag-over {
 [data-theme="light"] .btn-cancel {
   border-color: var(--border-default);
   color: var(--text-secondary, #374151);
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 [data-theme="light"] .btn-cancel:hover {
@@ -3971,11 +3981,11 @@ tr.drag-over {
 }
 
 [data-theme="light"] .modal-actions {
-  border-top-color: var(--border);
+  border-top-color: #e5e7eb;
 }
 
 [data-theme="light"] .modal-section {
-  border-top-color: var(--border);
+  border-top-color: #e5e7eb;
 }
 
 [data-theme="light"] .modal-section-label {
@@ -3995,13 +4005,14 @@ tr.drag-over {
 
 [data-theme="light"] .field-input {
   background: var(--surface);
-  border-color: var(--border);
+  border-color: #e5e7eb;
   color: var(--text-strong);
 }
 
 [data-theme="light"] .field-input:focus {
   border-color: var(--section-accent);
   box-shadow: none;
+  outline: none;
 }
 
 [data-theme="light"] .field-input::placeholder {
@@ -4010,13 +4021,14 @@ tr.drag-over {
 
 [data-theme="light"] .field-textarea {
   background: var(--surface);
-  border-color: var(--border);
+  border-color: #e5e7eb;
   color: var(--text-strong);
 }
 
 [data-theme="light"] .field-textarea:focus {
   border-color: var(--section-accent);
   box-shadow: none;
+  outline: none;
 }
 
 [data-theme="light"] .field-textarea::placeholder {
@@ -4025,13 +4037,14 @@ tr.drag-over {
 
 [data-theme="light"] .field-select {
   background: var(--surface);
-  border-color: var(--border);
+  border-color: #e5e7eb;
   color: var(--text-strong);
 }
 
 [data-theme="light"] .field-select:focus {
   border-color: var(--section-accent);
   box-shadow: none;
+  outline: none;
 }
 
 [data-theme="light"] .field-select option {

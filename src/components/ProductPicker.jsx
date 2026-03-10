@@ -54,7 +54,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
   if (!multiSelect) {
     return (
       <div className="modal-overlay" onClick={onClose}>
-        <div className="modal picker-modal modal-theme-quotes" onClick={(e) => e.stopPropagation()}>
+        <div className="modal picker-modal modal-theme-products" onClick={(e) => e.stopPropagation()}>
           <div className="modal-title">Add Product</div>
           <div className="search-wrap" style={{ marginBottom: 16 }}>
             <i className="fa-solid fa-magnifying-glass" />
@@ -186,7 +186,6 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
             className="btn-primary"
             disabled={selected.size === 0}
             onClick={handleConfirm}
-            style={{ backgroundColor: '#FBB13D', color: '#ffffff', borderColor: '#FBB13D' }}
           >
             Add{selected.size > 0 ? ` ${selected.size} ` : ' '}Product{selected.size !== 1 ? 's' : ''}
           </button>
