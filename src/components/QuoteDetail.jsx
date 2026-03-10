@@ -670,32 +670,17 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         return s + calcLineExtended(l);
       }, 0);
 
-    const editColGroup = (
-      <colgroup>
-        <col style={{ width: '32px' }} />
-        <col style={{ width: '25%' }} />
-        <col style={{ width: '10%' }} />
-        <col style={{ width: '8%' }} />
-        <col style={{ width: '12%' }} />
-        <col style={{ width: '10%' }} />
-        <col style={{ width: '12%' }} />
-        <col style={{ width: '12%' }} />
-        <col style={{ width: '5%' }} />
-      </colgroup>
-    );
-
     const editTableHead = (
       <thead>
         <tr>
-          <th className="col-drag" />
-          <th>Product</th>
-          <th>Unit</th>
-          <th>Qty</th>
-          <th>List Price</th>
-          <th>Disc %</th>
-          <th>Net Price</th>
-          <th>Extended</th>
-          <th className="col-actions" />
+          <th style={{ width: '25%', minWidth: '200px' }}>Product</th>
+          <th style={{ width: '10%' }}>Unit</th>
+          <th style={{ width: '10%' }}>Qty</th>
+          <th style={{ width: '10%' }}>List Price</th>
+          <th style={{ width: '10%' }}>Disc %</th>
+          <th style={{ width: '10%' }}>Net Price</th>
+          <th style={{ width: '10%' }}>Extended</th>
+          <th style={{ width: '60px' }} />
         </tr>
       </thead>
     );
@@ -714,22 +699,16 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           onDragOver={(e) => handleDragOver(e, line.id, 'top')}
           onDrop={(e) => handleDrop(e, line.id, 'top')}
         >
-          <td className="col-drag"><i className="fa-solid fa-grip-vertical drag-handle" /></td>
-          <td className="line-td-product"><div className="cell-name">{line.product_name}</div></td>
-          <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
-          <td>{included ? <span className="cell-locked">1</span> : renderEditableCell(line, 'quantity', { step: '1', min: '1' })}</td>
-          <td>{included ? <span className="price-annual">—</span> : renderEditableCell(line, 'list_price', { step: '0.01', min: '0' })}</td>
-          <td>{included ? <span className="price-annual">—</span> : renderEditableCell(line, 'discount_percent', { step: '0.1', min: '0', max: '100' })}</td>
-          <td>{included ? <span className="price-annual">—</span> : <span className="price-monthly">{displayCurrency(line.net_price ?? line.list_price ?? 0)}</span>}</td>
-          <td>{included ? <span className="price-annual">—</span> : <span className="price-monthly">{displayCurrency(extended)}</span>}</td>
-          <td className="col-actions">
+          <td className="line-td-product" style={{ width: '25%', minWidth: '200px' }}><div className="cell-name">{line.product_name}</div></td>
+          <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
+          <td style={{ width: '10%' }}>{included ? <span className="cell-locked">1</span> : renderEditableCell(line, 'quantity', { step: '1', min: '1' })}</td>
+          <td style={{ width: '10%' }}>{included ? <span className="price-annual">—</span> : renderEditableCell(line, 'list_price', { step: '0.01', min: '0' })}</td>
+          <td style={{ width: '10%' }}>{included ? <span className="price-annual">—</span> : renderEditableCell(line, 'discount_percent', { step: '0.1', min: '0', max: '100' })}</td>
+          <td style={{ width: '10%' }}>{included ? <span className="price-annual">—</span> : <span className="price-monthly">{displayCurrency(line.net_price ?? line.list_price ?? 0)}</span>}</td>
+          <td style={{ width: '10%' }}>{included ? <span className="price-annual">—</span> : <span className="price-monthly">{displayCurrency(extended)}</span>}</td>
+          <td style={{ width: '60px' }}>
             <div className="actions-group">
-              {groups.length > 0 && (
-                <select className="group-assign" value={line.group_id || ''} onChange={(e) => updateDraftLineField(line.id, 'group_id', e.target.value || null)} title="Assign to group">
-                  <option value="">No group</option>
-                  {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-                </select>
-              )}
+              <i className="fa-solid fa-grip-vertical drag-handle edit-drag-handle" />
               <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(line.id)}><i className="fa-solid fa-trash-can" /></button>
             </div>
           </td>
@@ -751,8 +730,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             onDragOver={(e) => handleDragOver(e, line.id, 'top')}
             onDrop={(e) => handleDrop(e, line.id, 'top')}
           >
-            <td className="col-drag"><i className="fa-solid fa-grip-vertical drag-handle" /></td>
-            <td className="line-td-product">
+            <td className="line-td-product" style={{ width: '25%', minWidth: '200px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
                 <span className="pkg-badge">PKG</span>
@@ -761,10 +739,11 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 </button>
               </div>
             </td>
-            <td /><td /><td /><td /><td />
-            <td><span className="price-monthly">{displayCurrency(pkgTotal)}</span></td>
-            <td className="col-actions">
+            <td style={{ width: '10%' }} /><td style={{ width: '10%' }} /><td style={{ width: '10%' }} /><td style={{ width: '10%' }} /><td style={{ width: '10%' }} />
+            <td style={{ width: '10%' }}><span className="price-monthly">{displayCurrency(pkgTotal)}</span></td>
+            <td style={{ width: '60px' }}>
               <div className="actions-group">
+                <i className="fa-solid fa-grip-vertical drag-handle edit-drag-handle" />
                 <button className="action-btn delete line-remove-btn" title="Remove package" onClick={() => removeDraftLine(line.id)}><i className="fa-solid fa-trash-can" /></button>
               </div>
             </td>
@@ -777,16 +756,16 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 onDragStart={(e) => handleDragStart(e, sub.id, 'sub', line.id)} onDragEnd={handleDragEnd}
                 onDragOver={(e) => handleDragOver(e, sub.id, 'sub', line.id)} onDrop={(e) => handleDrop(e, sub.id, 'sub', line.id)}
               >
-                <td className="col-drag" style={{ paddingLeft: 20 }}><i className="fa-solid fa-grip-vertical drag-handle" /></td>
-                <td className="line-td-product pkg-sub-product"><div className="cell-name">{sub.product_name}</div></td>
-                <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
-                <td>{renderEditableCell(sub, 'quantity', { step: '1', min: '1' })}</td>
-                <td>{renderEditableCell(sub, 'list_price', { step: '0.01', min: '0' })}</td>
-                <td>{renderEditableCell(sub, 'discount_percent', { step: '0.1', min: '0', max: '100' })}</td>
-                <td><span className="price-monthly">{displayCurrency(sub.net_price ?? sub.list_price ?? 0)}</span></td>
-                <td><span className="price-monthly">{displayCurrency(ext)}</span></td>
-                <td className="col-actions">
+                <td className="line-td-product pkg-sub-product" style={{ width: '25%', minWidth: '200px' }}><div className="cell-name">{sub.product_name}</div></td>
+                <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
+                <td style={{ width: '10%' }}>{renderEditableCell(sub, 'quantity', { step: '1', min: '1' })}</td>
+                <td style={{ width: '10%' }}>{renderEditableCell(sub, 'list_price', { step: '0.01', min: '0' })}</td>
+                <td style={{ width: '10%' }}>{renderEditableCell(sub, 'discount_percent', { step: '0.1', min: '0', max: '100' })}</td>
+                <td style={{ width: '10%' }}><span className="price-monthly">{displayCurrency(sub.net_price ?? sub.list_price ?? 0)}</span></td>
+                <td style={{ width: '10%' }}><span className="price-monthly">{displayCurrency(ext)}</span></td>
+                <td style={{ width: '60px' }}>
                   <div className="actions-group">
+                    <i className="fa-solid fa-grip-vertical drag-handle edit-drag-handle" />
                     <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(sub.id)}><i className="fa-solid fa-trash-can" /></button>
                   </div>
                 </td>
@@ -795,7 +774,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           })}
           {expanded && (
             <tr className="line-row-sub">
-              <td colSpan={9} style={{ paddingLeft: 36 }}>
+              <td colSpan={8} style={{ paddingLeft: 36 }}>
                 <button type="button" className="pkg-add-component-link" onClick={() => setAddingToPackageId(addingToPackageId === line.id ? null : line.id)}>
                   Add Component
                 </button>
@@ -828,7 +807,6 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             <div className="line-editor-table-wrap">
               {topLevel.length > 0 && (
                 <table className="data-table line-table">
-                  {editColGroup}
                   {editTableHead}
                   <tbody>{topLevel.map(renderEditRow)}</tbody>
                 </table>
@@ -845,7 +823,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                       </div>
                     </div>
                     {gLines.length > 0 ? (
-                      <table className="data-table line-table">{editColGroup}{editTableHead}<tbody>{gLines.map(renderEditRow)}</tbody></table>
+                      <table className="data-table line-table">{editTableHead}<tbody>{gLines.map(renderEditRow)}</tbody></table>
                     ) : (
                       <div className="line-group-empty">No lines in this group. Assign lines using the dropdown.</div>
                     )}

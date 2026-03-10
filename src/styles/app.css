@@ -4525,6 +4525,22 @@ tr.drag-over {
   opacity: 1;
 }
 
+.edit-drag-handle {
+  opacity: 0;
+  cursor: grab;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  transition: opacity 150ms ease;
+}
+
+.data-table tbody tr:hover .edit-drag-handle {
+  opacity: 0.5;
+}
+
+.data-table tbody tr:hover .edit-drag-handle:hover {
+  opacity: 1;
+}
+
 .data-table tbody tr .actions-group .action-btn.delete:hover {
   color: var(--red);
 }
