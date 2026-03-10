@@ -186,7 +186,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
             className="btn-primary"
             disabled={selected.size === 0}
             onClick={handleConfirm}
-            style={{ background: selected.size > 0 ? '#05BDBA' : undefined, color: '#ffffff' }}
+            style={{ backgroundColor: '#00AD9F', color: '#ffffff', borderColor: '#00AD9F' }}
           >
             Add{selected.size > 0 ? ` ${selected.size} ` : ' '}Product{selected.size !== 1 ? 's' : ''}
           </button>

@@ -3177,6 +3177,16 @@ tr.drag-over {
 [data-theme="light"] .picker-v2-footer {
   border-top-color: rgba(0, 0, 0, 0.06);
 }
+[data-theme="light"] .picker-v2-footer .btn-primary {
+  background: #00AD9F;
+  border-color: #00AD9F;
+  color: #ffffff;
+}
+[data-theme="light"] .picker-v2-footer .btn-primary:hover {
+  background: #009990;
+  border-color: #009990;
+  color: #ffffff;
+}
 
 /* ─── Scrollbar ───────────────────────────────────────────── */
 
