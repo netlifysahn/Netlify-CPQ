@@ -33,7 +33,7 @@ export default function QuoteList({ quotes, onNew, onOpen, onDupe, onDelete }) {
           <tr>
             <th>Quote</th>
             <th>Customer</th>
-            <th>Monthly</th>
+            <th>ACV</th>
             <th>TCV</th>
             <th>Term</th>
             <th>Status</th>
@@ -55,7 +55,7 @@ export default function QuoteList({ quotes, onNew, onOpen, onDupe, onDelete }) {
                   <span className="cell-customer">{q.customer_name || '\u2014'}</span>
                 </td>
                 <td>
-                  <span className="cell-amount">{totals.monthly > 0 ? fmtCurrency(totals.monthly) : '\u2014'}</span>
+                  <span className="cell-amount">{totals.monthly > 0 ? fmtCurrency(totals.monthly * 12) : '\u2014'}</span>
                 </td>
                 <td>
                   <span className="cell-amount">{totals.tcv > 0 ? fmtCurrency(totals.tcv) : '\u2014'}</span>
