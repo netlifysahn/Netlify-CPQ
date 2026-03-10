@@ -574,8 +574,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         {detailCards.billing && (
           <div style={cardBodyStyle}>
             <DetailInput label="Billing Schedule" field="billing_schedule" value={source.billing_schedule} options={['Annual', 'Semi-Annual', 'Quarterly', 'Monthly']} onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Payment Method" field="payment_method" value={source.payment_method} placeholder="Select..." onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Payment Terms" field="payment_terms" value={source.payment_terms} placeholder="Net 30" onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Payment Method" field="payment_method" value={source.payment_method} options={['Credit Card', 'ACH / Bank Transfer', 'Wire Transfer', 'Check', 'Invoice']} onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Payment Terms" field="payment_terms" value={source.payment_terms} options={['Net 30', 'Net 45', 'Net 60', 'Due on Receipt']} onChange={handleFieldChange} onBlur={handleFieldBlur} />
             <DetailInput label="PO #" field="po_number" value={source.po_number} placeholder="Optional" mono onChange={handleFieldChange} onBlur={handleFieldBlur} />
             <DetailInput label="VAT #" field="vat_number" value={source.vat_number} placeholder="Optional" mono onChange={handleFieldChange} onBlur={handleFieldBlur} />
           </div>
