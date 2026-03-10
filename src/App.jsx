@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import './styles/app.css';
 import { PRODUCT_TYPES, TYPE_LABELS, genId, getProductCategory, sortProductsByType } from './data/catalog';
 import { genQuoteNumber } from './data/quotes';
@@ -40,40 +40,10 @@ export default function App() {
   useTheme();
   const [page, setPage] = useState('products');
 
-  // ── Data persistence layer ──
-  // JSON seed files = shared baseline (committed to repo, consistent across deploys)
-  // localStorage = runtime persistence (survives page reloads per browser)
-  // On load: localStorage wins if present, otherwise seed from JSON files
-  // On mutate: always write to localStorage immediately
-  const loadData = (storageKey, seedData) => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch { /* ignore */ }
-    return Array.isArray(seedData) ? seedData : [];
-  };
-
-  const [products, setProducts] = useState(() => loadData('ds-products', seedProducts));
-  const [pricebooks, setPricebooks] = useState(() => loadData('ds-pricebooks', seedPricebooks));
-  const [quotes, setQuotes] = useState(() => loadData('ds-quotes', seedQuotes));
-
-  // Persist to localStorage on every change
-  const isFirstRender = useRef({ products: true, pricebooks: true, quotes: true });
-  useEffect(() => {
-    if (isFirstRender.current.products) { isFirstRender.current.products = false; return; }
-    try { localStorage.setItem('ds-products', JSON.stringify(products)); } catch {}
-  }, [products]);
-  useEffect(() => {
-    if (isFirstRender.current.pricebooks) { isFirstRender.current.pricebooks = false; return; }
-    try { localStorage.setItem('ds-pricebooks', JSON.stringify(pricebooks)); } catch {}
-  }, [pricebooks]);
-  useEffect(() => {
-    if (isFirstRender.current.quotes) { isFirstRender.current.quotes = false; return; }
-    try { localStorage.setItem('ds-quotes', JSON.stringify(quotes)); } catch {}
-  }, [quotes]);
+  // ── Data loaded exclusively from static JSON files ──
+  const [products, setProducts] = useState(() => [...seedProducts]);
+  const [pricebooks, setPricebooks] = useState(() => [...seedPricebooks]);
+  const [quotes, setQuotes] = useState(() => [...seedQuotes]);
 
   const [search, setSearch] = useState('');
   const [pricebookSearch, setPricebookSearch] = useState('');
