@@ -8,7 +8,6 @@ import {
   TYPE_LABELS,
   UNIT_LABELS,
   emptyProduct,
-  fmtPrice,
   getProductCategory,
   isBundleProduct,
 } from '../data/catalog';
@@ -89,7 +88,6 @@ export default function ProductModal({ product, products, onSave, onClose }) {
     }
   })();
 
-  const monthlyAmount = parseFloat(f.default_price.amount) || 0;
   const isPackage = isBundleProduct(f) || getProductCategory(f) === 'bundle';
   const productMap = useMemo(() => new Map((products || []).map((p) => [p.id, p])), [products]);
   const nonBundleProducts = useMemo(() => {
@@ -323,22 +321,6 @@ export default function ProductModal({ product, products, onSave, onClose }) {
               </div>
             </div>
 
-            {monthlyAmount > 0 && (
-              <div className="price-preview">
-                <div className="price-preview-item">
-                  <div className="price-preview-label">12 month</div>
-                  <div className="price-preview-value">{fmtPrice(monthlyAmount * 12)}</div>
-                </div>
-                <div className="price-preview-item">
-                  <div className="price-preview-label">24 month</div>
-                  <div className="price-preview-value">{fmtPrice(monthlyAmount * 24)}</div>
-                </div>
-                <div className="price-preview-item">
-                  <div className="price-preview-label">36 month</div>
-                  <div className="price-preview-value">{fmtPrice(monthlyAmount * 36)}</div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
