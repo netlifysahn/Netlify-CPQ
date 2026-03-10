@@ -887,32 +887,6 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           </div>
         </div>
 
-        {/* Edit mode: editable quote discount in summary */}
-        <div className="qd-summary" style={{ marginTop: '16px' }}>
-          <div className="qd-summary-item">
-            <div className="qd-summary-label">Quote Discount %</div>
-            <div className="qd-summary-value">
-              <input className="inline-edit qd-discount-input" type="number" min="0" max="100" step="0.1" value={hd}
-                onChange={(e) => updateDraft((d) => ({ ...d, header_discount: parseFloat(e.target.value) || 0 }))} />
-            </div>
-          </div>
-          <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
-          <div className="qd-summary-item">
-            <div className="qd-summary-label">MRR</div>
-            <AnimatedValue value={fmtCurrency(totals.monthly)} pulseKey={pulseKey} />
-          </div>
-          <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
-          <div className="qd-summary-item">
-            <div className="qd-summary-label">ARR</div>
-            <AnimatedValue value={fmtCurrency(totals.annual)} pulseKey={pulseKey} />
-          </div>
-          <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
-          <div className="qd-summary-item qd-summary-tcv">
-            <div className="qd-summary-label">TCV ({q.term_months} month)</div>
-            <AnimatedValue value={fmtCurrency(totals.tcv)} pulseKey={pulseKey} />
-          </div>
-        </div>
-
         {/* Edit mode modals */}
         {showPicker && (
           <ProductPicker products={availableProducts} onAdd={addLineToDraft} onClose={() => setShowPicker(false)} multiSelect existingProductIds={new Set()} />
@@ -1152,8 +1126,33 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         </div>
       </div>
 
-      {/* Summary (blurred in edit mode — edit table has its own summary) */}
-      {!isEditing && (
+      {/* Summary */}
+      {isEditing ? (
+        <div className="qd-summary" style={{ marginTop: '16px' }}>
+          <div className="qd-summary-item">
+            <div className="qd-summary-label">Quote Discount %</div>
+            <div className="qd-summary-value">
+              <input className="inline-edit qd-discount-input" type="number" min="0" max="100" step="0.1" value={draft?.header_discount ?? 0}
+                onChange={(e) => updateDraft((d) => ({ ...d, header_discount: parseFloat(e.target.value) || 0 }))} />
+            </div>
+          </div>
+          <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
+          <div className="qd-summary-item">
+            <div className="qd-summary-label">MRR</div>
+            <AnimatedValue value={fmtCurrency(totals.monthly)} pulseKey={pulseKey} />
+          </div>
+          <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
+          <div className="qd-summary-item">
+            <div className="qd-summary-label">ARR</div>
+            <AnimatedValue value={fmtCurrency(totals.annual)} pulseKey={pulseKey} />
+          </div>
+          <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
+          <div className="qd-summary-item qd-summary-tcv">
+            <div className="qd-summary-label">TCV ({q.term_months} month)</div>
+            <AnimatedValue value={fmtCurrency(totals.tcv)} pulseKey={pulseKey} />
+          </div>
+        </div>
+      ) : (
         <div>
           {renderSummary(totals, q)}
         </div>
