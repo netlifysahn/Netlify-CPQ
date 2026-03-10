@@ -838,11 +838,18 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         <div className="qd-lines-card">
           {items.length === 0 ? (
             <div className="edit-empty-state">
-              <div className="edit-empty-icon"><i className="fa-solid fa-plus" /></div>
+              <div className="nomi-scene">
+                <div className="nomi-water">
+                  <svg className="nomi-wave" viewBox="0 0 200 40" preserveAspectRatio="none">
+                    <path d="M0,20 C30,12 70,28 100,20 C130,12 170,28 200,20 L200,40 L0,40 Z" fill="#e0f2fe" />
+                  </svg>
+                </div>
+                <img src="/Nomi.svg" alt="Nomi" className="nomi-character" />
+              </div>
               <div className="edit-empty-title">Start building your quote</div>
               <div className="edit-empty-text">Select products from the catalog to get started</div>
               <button className="edit-empty-cta" onClick={() => setShowPicker(true)}>
-                <i className="fa-solid fa-box-open" /> Browse Products
+                Browse Products
               </button>
             </div>
           ) : (
