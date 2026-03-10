@@ -880,7 +880,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         </div>
 
         {/* Edit mode: editable quote discount in summary */}
-        <div className="qd-summary">
+        <div className="qd-summary" style={{ marginTop: '16px' }}>
           <div className="qd-summary-item">
             <div className="qd-summary-label">Quote Discount %</div>
             <div className="qd-summary-value">
@@ -1008,7 +1008,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   return (
     <div className="quote-detail">
       {/* Header */}
-      <div className="qd-header" style={blurStyle}>
+      <div className="qd-header">
         <button className="back-btn" onClick={onBack}>
           <i className="fa-solid fa-arrow-left" /> Back to Quotes
         </button>
@@ -1107,7 +1107,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       </div>
 
       {/* Overage Rates */}
-      <div style={{ ...(!isEditing ? {} : blurStyle), marginTop: '24px', marginBottom: '24px' }}>
+      <div style={{ marginTop: '24px', marginBottom: '24px' }}>
         <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', cursor: 'pointer', userSelect: 'none' }} onClick={() => toggleCard('overage')}>
             <span style={{ fontFamily: "'Roboto Mono', monospace", fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9ca3af' }}>Overage Rates</span>
@@ -1130,7 +1130,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       )}
 
       {/* Footer info */}
-      <div style={blurStyle}>
+      <div>
         {renderFooterInfo(q)}
       </div>
 

@@ -1844,8 +1844,8 @@ tr.drag-over {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--teal-muted);
-  color: var(--teal);
+  background: #FFF8EC;
+  color: #FBB13D;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1878,13 +1878,13 @@ tr.drag-over {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  background: #05BDBA;
+  background: #FBB13D;
   color: #fff;
   transition: background 150ms ease;
 }
 
 .edit-empty-cta:hover {
-  background: var(--teal-dark);
+  background: #e9a235;
 }
 
 /* ─── Confirm Modal ───────────────────────────────────────── */
@@ -2941,6 +2941,10 @@ tr.drag-over {
 .picker-v2-search {
   margin: 0;
 }
+.picker-v2-search:focus-within {
+  border-color: #FBB13D !important;
+  box-shadow: none !important;
+}
 
 .picker-v2-body {
   display: flex;
@@ -2982,9 +2986,9 @@ tr.drag-over {
 }
 
 .picker-v2-cat.active {
-  color: var(--teal);
+  color: #FBB13D;
   font-weight: 600;
-  border-left-color: var(--teal);
+  border-left-color: #FBB13D;
 }
 
 .picker-v2-cat-count {
@@ -2999,8 +3003,8 @@ tr.drag-over {
 }
 
 .picker-v2-cat.active .picker-v2-cat-count {
-  background: var(--teal-muted);
-  color: var(--teal);
+  background: #FFF8EC;
+  color: #FBB13D;
 }
 
 .picker-v2-grid-wrap {
@@ -3127,15 +3131,16 @@ tr.drag-over {
   color: #1a1a1a;
 }
 [data-theme="light"] .picker-v2-cat.active {
-  color: #05BDBA;
+  color: #FBB13D;
+  border-left-color: #FBB13D;
 }
 [data-theme="light"] .picker-v2-cat-count {
   color: #6b7280;
   background: #f3f4f6;
 }
 [data-theme="light"] .picker-v2-cat.active .picker-v2-cat-count {
-  background: rgba(5, 189, 186, 0.08);
-  color: #05BDBA;
+  background: #FFF8EC;
+  color: #FBB13D;
 }
 [data-theme="light"] .picker-v2-card {
   background: #ffffff;
@@ -3177,15 +3182,22 @@ tr.drag-over {
 [data-theme="light"] .picker-v2-footer {
   border-top-color: rgba(0, 0, 0, 0.06);
 }
-[data-theme="light"] .picker-v2-footer .btn-primary {
-  background: #00AD9F;
-  border-color: #00AD9F;
-  color: #ffffff;
+.picker-v2-footer .btn-primary {
+  background: #00AD9F !important;
+  border-color: #00AD9F !important;
+  color: #ffffff !important;
+  border-radius: 8px;
 }
-[data-theme="light"] .picker-v2-footer .btn-primary:hover {
-  background: #009990;
-  border-color: #009990;
-  color: #ffffff;
+.picker-v2-footer .btn-primary:hover {
+  background: #009990 !important;
+  border-color: #009990 !important;
+  color: #ffffff !important;
+}
+.picker-v2-footer .btn-primary:disabled {
+  background: #d1d5db !important;
+  border-color: #d1d5db !important;
+  color: #ffffff !important;
+  cursor: not-allowed;
 }
 
 /* ─── Scrollbar ───────────────────────────────────────────── */
@@ -4346,6 +4358,16 @@ tr.drag-over {
 
 [data-theme="light"] .qd-line-footer-actions {
   border-top-color: var(--border);
+}
+[data-theme="light"] .qd-line-footer-actions .btn-primary {
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #374151;
+}
+[data-theme="light"] .qd-line-footer-actions .btn-primary:hover {
+  border-color: #FBB13D;
+  color: #FBB13D;
+  background: transparent;
 }
 
 [data-theme="light"] .qd-new-group-link {
