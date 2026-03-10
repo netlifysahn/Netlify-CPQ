@@ -2240,10 +2240,10 @@ tr.drag-over {
 }
 
 .qd-header {
-  margin-bottom: 40px;
+  margin-bottom: 24px;
   padding-top: 24px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .qd-header-row {
@@ -4172,7 +4172,7 @@ tr.drag-over {
 /* ─── Quote detail ─────────────────────────────────────────── */
 
 [data-theme="light"] .qd-header {
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
 }
 
 [data-theme="light"] .qd-quote-number {
