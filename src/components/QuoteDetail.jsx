@@ -840,14 +840,15 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             <div className="edit-empty-state">
               <div className="nomi-scene">
                 <div className="nomi-clip">
-                  <img src="/Nomi.svg" alt="Nomi" className="nomi-character" />
+                  <img
+                    src="/Nomi.svg"
+                    alt="Nomi"
+                    className="nomi-character"
+                    onAnimationEnd={(e) => { e.target.classList.add('nomi-resting'); }}
+                  />
                 </div>
-                <div className="nomi-ripple nomi-ripple-1" />
-                <div className="nomi-ripple nomi-ripple-2" />
-                <div className="nomi-ripple nomi-ripple-3" />
               </div>
               <div className="edit-empty-title">Start building your quote</div>
-              <div className="edit-empty-text">Select products from the catalog to get started</div>
               <button className="edit-empty-cta" onClick={() => setShowPicker(true)}>
                 Browse Products
               </button>

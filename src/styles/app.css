@@ -1843,9 +1843,9 @@ tr.drag-over {
 /* ── Nomi narwhal animation scene ── */
 .nomi-scene {
   position: relative;
-  width: 100px;
-  height: 80px;
-  margin-bottom: 8px;
+  width: 90px;
+  height: 72px;
+  margin-bottom: 0;
 }
 
 .nomi-clip {
@@ -1853,66 +1853,44 @@ tr.drag-over {
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 72px;
-  height: 60px;
+  width: 65px;
+  height: 54px;
   overflow: hidden;
 }
 
 .nomi-character {
   position: absolute;
-  width: 72px;
+  width: 65px;
   left: 0;
   bottom: 0;
-  animation: nomi-cycle 6s ease-in-out infinite;
+  animation: nomi-enter 4s ease-in-out forwards;
 }
 
-/* Concentric ripple rings */
-.nomi-ripple {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 12px;
-  height: 6px;
-  border: 1px solid #bae6fd;
-  border-radius: 50%;
-  transform: translateX(-50%) scale(1);
-  opacity: 0;
-  pointer-events: none;
-  animation: nomi-ripple 6s ease-out infinite;
+/* After the entrance, switch to the permanent bob */
+.nomi-character.nomi-resting {
+  animation: nomi-bob 2s ease-in-out infinite;
+  transform: translateY(55%);
 }
 
-.nomi-ripple-1 { animation-delay: 0s; }
-.nomi-ripple-2 { animation-delay: 0.2s; }
-.nomi-ripple-3 { animation-delay: 0.4s; }
-
-@keyframes nomi-ripple {
-  0%, 25% { opacity: 0; transform: translateX(-50%) scale(1); }
-  30% { opacity: 0.3; transform: translateX(-50%) scale(1); }
-  50% { opacity: 0.2; transform: translateX(-50%) scale(4); }
-  65% { opacity: 0; transform: translateX(-50%) scale(6); }
-  100% { opacity: 0; transform: translateX(-50%) scale(6); }
-}
-
-@keyframes nomi-cycle {
+@keyframes nomi-enter {
   /* submerged */
   0% { transform: translateY(100%); }
   /* horn tip rises */
-  10% { transform: translateY(60%); }
+  15% { transform: translateY(60%); }
   /* face peeks out */
-  22% { transform: translateY(20%) rotate(0deg); }
+  35% { transform: translateY(20%) rotate(0deg); }
   /* hold + sway */
-  30% { transform: translateY(20%) rotate(-2deg); }
-  38% { transform: translateY(20%) rotate(2deg); }
-  44% { transform: translateY(20%) rotate(0deg); }
+  45% { transform: translateY(20%) rotate(-2deg); }
+  55% { transform: translateY(20%) rotate(2deg); }
+  60% { transform: translateY(20%) rotate(0deg); }
   /* sink to resting — crown + horn visible */
-  58% { transform: translateY(55%) rotate(0deg); }
-  /* gentle bob at rest */
-  65% { transform: translateY(52%) rotate(0deg); }
-  72% { transform: translateY(55%) rotate(0deg); }
-  79% { transform: translateY(52%) rotate(0deg); }
-  86% { transform: translateY(55%) rotate(0deg); }
-  /* pause then loop */
-  100% { transform: translateY(100%); }
+  85% { transform: translateY(55%) rotate(0deg); }
+  100% { transform: translateY(55%) rotate(0deg); }
+}
+
+@keyframes nomi-bob {
+  0%, 100% { transform: translateY(55%); }
+  50% { transform: translateY(52%); }
 }
 
 .edit-empty-title {
@@ -1920,13 +1898,8 @@ tr.drag-over {
   font-size: 18px;
   font-weight: 700;
   color: var(--text-strong);
-  margin-bottom: 6px;
-}
-
-.edit-empty-text {
-  font-size: 14px;
-  color: var(--text-muted);
-  margin-bottom: 20px;
+  margin-top: 12px;
+  margin-bottom: 16px;
 }
 
 .edit-empty-cta {
@@ -1935,20 +1908,18 @@ tr.drag-over {
   gap: 8px;
   padding: 10px 24px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   font-family: var(--font-body);
   border: none;
-  border-radius: 0;
+  border-radius: 8px;
   cursor: pointer;
-  background: transparent;
-  color: #FBB13D;
-  transition: all 150ms ease;
-  text-decoration: none;
+  background: #FBB13D;
+  color: #fff;
+  transition: background 150ms ease;
 }
 
 .edit-empty-cta:hover {
-  background: transparent;
-  text-decoration: underline;
+  background: #e9a235;
 }
 
 /* ─── Confirm Modal ───────────────────────────────────────── */
