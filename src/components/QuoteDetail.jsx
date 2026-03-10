@@ -587,165 +587,76 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   // ════════════════════════════════════════
   //  VIEW MODE
   // ════════════════════════════════════════
-  const renderViewMode = () => {
-    const viewItems = q.line_items.filter((l) => !l.parent_line_id);
+  // ── Blur style for non-table sections during edit mode ──
+  const blurStyle = mode === 'edit' ? { filter: 'blur(4px)', opacity: 0.4, pointerEvents: 'none', transition: 'filter 0.2s, opacity 0.2s' } : {};
 
-    const renderViewRow = (line) => {
-      if (line.is_package) {
-        const subs = getSubLines(q.line_items, line.id);
-        const expanded = !collapsedPkgs.has(line.id);
-        const pkgTotal = calcPkgExtended(q.line_items, line.id);
-        return (
-          <React.Fragment key={line.id}>
-            <tr className="line-row-package">
-              <td className="line-td-product" style={{ width: '25%', minWidth: '200px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
-                  <span className="pkg-badge">PKG</span>
-                  <button className="pkg-chevron" onClick={() => togglePackage(line.id)} style={{ marginLeft: 0 }}>
-                    <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
-                  </button>
-                </div>
-              </td>
-              <td style={{ width: '10%' }} />
-              <td style={{ width: '10%' }} />
-              <td style={{ width: '10%' }} />
-              <td style={{ width: '10%' }} />
-              <td style={{ width: '10%' }} />
-              <td style={{ width: '10%' }}><span className="price-monthly">{displayCurrency(pkgTotal)}</span></td>
-            </tr>
-            {expanded && subs.map((sub) => {
-              const ext = calcLineExtended(sub);
-              return (
-                <tr key={sub.id} className="line-row-sub">
-                  <td className="line-td-product qd-view-sub-product pkg-sub-product" style={{ width: '25%', minWidth: '200px' }}>
-                    <div className="cell-name">{sub.product_name}</div>
-                  </td>
-                  <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(sub.unit_type || 'flat')}</span></td>
-                  <td style={{ width: '10%' }}>{sub.quantity}</td>
-                  <td style={{ width: '10%' }}>{displayCurrency(sub.list_price ?? 0)}</td>
-                  <td style={{ width: '10%' }}>{(sub.discount_percent ?? 0) > 0 ? `${sub.discount_percent}%` : '—'}</td>
-                  <td style={{ width: '10%' }}>{displayCurrency(sub.net_price ?? sub.list_price ?? 0)}</td>
-                  <td style={{ width: '10%' }}><span className="price-monthly">{displayCurrency(ext)}</span></td>
-                </tr>
-              );
-            })}
-          </React.Fragment>
-        );
-      }
-
-      const unitType = line.unit_type || 'flat';
-      const extended = calcLineExtended(line);
+  // ── View mode table rows ──
+  const renderViewRow = (line) => {
+    if (line.is_package) {
+      const subs = getSubLines(q.line_items, line.id);
+      const expanded = !collapsedPkgs.has(line.id);
+      const pkgTotal = calcPkgExtended(q.line_items, line.id);
       return (
-        <tr key={line.id}>
-          <td className="line-td-product" style={{ width: '25%', minWidth: '200px' }}>
-            <div className="cell-name">{line.product_name}</div>
-          </td>
-          <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
-          <td style={{ width: '10%' }}>{line.quantity}</td>
-          <td style={{ width: '10%' }}>{isIncluded(unitType) ? '—' : displayCurrency(line.list_price ?? 0)}</td>
-          <td style={{ width: '10%' }}>{isIncluded(unitType) ? '—' : ((line.discount_percent ?? 0) > 0 ? `${line.discount_percent}%` : '—')}</td>
-          <td style={{ width: '10%' }}>{isIncluded(unitType) ? '—' : displayCurrency(line.net_price ?? line.list_price ?? 0)}</td>
-          <td style={{ width: '10%' }}><span className="price-monthly">{isIncluded(unitType) ? '—' : displayCurrency(extended)}</span></td>
-        </tr>
+        <React.Fragment key={line.id}>
+          <tr className="line-row-package">
+            <td className="line-td-product" style={{ width: '25%', minWidth: '200px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
+                <span className="pkg-badge">PKG</span>
+                <button className="pkg-chevron" onClick={() => togglePackage(line.id)} style={{ marginLeft: 0 }}>
+                  <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
+                </button>
+              </div>
+            </td>
+            <td style={{ width: '10%' }} />
+            <td style={{ width: '10%' }} />
+            <td style={{ width: '10%' }} />
+            <td style={{ width: '10%' }} />
+            <td style={{ width: '10%' }} />
+            <td style={{ width: '10%' }}><span className="price-monthly">{displayCurrency(pkgTotal)}</span></td>
+          </tr>
+          {expanded && subs.map((sub) => {
+            const ext = calcLineExtended(sub);
+            return (
+              <tr key={sub.id} className="line-row-sub">
+                <td className="line-td-product qd-view-sub-product pkg-sub-product" style={{ width: '25%', minWidth: '200px' }}>
+                  <div className="cell-name">{sub.product_name}</div>
+                </td>
+                <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(sub.unit_type || 'flat')}</span></td>
+                <td style={{ width: '10%' }}>{sub.quantity}</td>
+                <td style={{ width: '10%' }}>{displayCurrency(sub.list_price ?? 0)}</td>
+                <td style={{ width: '10%' }}>{(sub.discount_percent ?? 0) > 0 ? `${sub.discount_percent}%` : '—'}</td>
+                <td style={{ width: '10%' }}>{displayCurrency(sub.net_price ?? sub.list_price ?? 0)}</td>
+                <td style={{ width: '10%' }}><span className="price-monthly">{displayCurrency(ext)}</span></td>
+              </tr>
+            );
+          })}
+        </React.Fragment>
       );
-    };
+    }
 
+    const unitType = line.unit_type || 'flat';
+    const extended = calcLineExtended(line);
     return (
-      <div className="quote-detail">
-        {/* Header */}
-        <div className="qd-header">
-          <button className="back-btn" onClick={onBack}>
-            <i className="fa-solid fa-arrow-left" /> Back to Quotes
-          </button>
-          <div className="qd-header-info">
-            <div className="qd-quote-number">{q.quote_number}</div>
-            <h1 className="qd-title">{q.name || 'Untitled Quote'}</h1>
-          </div>
-          <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', margin: '16px 0 0', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px' }}>
-            <select
-              className="qd-status-btn"
-              value={q.status}
-              onChange={(e) => changeStatus(e.target.value)}
-              style={{ appearance: 'auto', cursor: 'pointer', padding: '8px 12px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a' }}
-            >
-              {Object.entries(STATUS_META).map(([key, { label }]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </select>
-            <button className="qd-status-btn" onClick={() => generateQuotePdf(q)} style={{ padding: '8px 16px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a', cursor: 'pointer' }}>
-              Generate Quote PDF
-            </button>
-            <button onClick={enterEditMode} style={{ background: '#FBB13D', color: '#fff', fontWeight: 600, border: 'none', borderRadius: '6px', padding: '8px 16px', height: '36px', cursor: 'pointer', fontSize: '13px' }}>
-              {q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
-            </button>
-            <div className="qd-more-wrap" ref={moreRef}>
-              <button className="qd-more-btn" onClick={() => setShowMoreMenu(!showMoreMenu)}>
-                <i className="fa-solid fa-ellipsis" />
-              </button>
-              {showMoreMenu && (
-                <div className="qd-more-menu">
-                  <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(q.id); }}>
-                    <i className="fa-solid fa-trash-can" /> Delete Quote
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Detail Cards ── */}
-        {renderDetailCards(q)}
-
-        {/* Read-only line items table */}
-        <div className="qd-lines-section">
-          <div className="line-editor-header">
-            <div className="line-editor-title">Line Items</div>
-          </div>
-
-          {q.line_items.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-numeral">0</div>
-              <div className="empty-state-eyebrow">Line Items</div>
-              <div className="empty-state-title">No line items</div>
-              <div className="empty-state-text">Click "Edit Lines" to add products to this quote</div>
-            </div>
-          ) : (
-            <div className="qd-view-lines-card">
-              <table className="data-table line-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: '25%', minWidth: '200px' }}>Product</th>
-                    <th style={{ width: '10%' }}>Unit</th>
-                    <th style={{ width: '10%' }}>Qty</th>
-                    <th style={{ width: '10%' }}>List Price</th>
-                    <th style={{ width: '10%' }}>Disc %</th>
-                    <th style={{ width: '10%' }}>Net Price</th>
-                    <th style={{ width: '10%' }}>Extended</th>
-                  </tr>
-                </thead>
-                <tbody>{viewItems.map(renderViewRow)}</tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Summary */}
-        {renderSummary(totals, q)}
-
-        {/* Footer info */}
-        {renderFooterInfo(q)}
-
-        {/* Confirm modal */}
-        {confirm && renderConfirmModal()}
-      </div>
+      <tr key={line.id}>
+        <td className="line-td-product" style={{ width: '25%', minWidth: '200px' }}>
+          <div className="cell-name">{line.product_name}</div>
+        </td>
+        <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
+        <td style={{ width: '10%' }}>{line.quantity}</td>
+        <td style={{ width: '10%' }}>{isIncluded(unitType) ? '—' : displayCurrency(line.list_price ?? 0)}</td>
+        <td style={{ width: '10%' }}>{isIncluded(unitType) ? '—' : ((line.discount_percent ?? 0) > 0 ? `${line.discount_percent}%` : '—')}</td>
+        <td style={{ width: '10%' }}>{isIncluded(unitType) ? '—' : displayCurrency(line.net_price ?? line.list_price ?? 0)}</td>
+        <td style={{ width: '10%' }}><span className="price-monthly">{isIncluded(unitType) ? '—' : displayCurrency(extended)}</span></td>
+      </tr>
     );
   };
 
   // ════════════════════════════════════════
-  //  EDIT MODE
+  //  EDIT MODE TABLE (inline)
   // ════════════════════════════════════════
-  const renderEditMode = () => {
+  const renderEditTable = () => {
+    if (!draft) return null;
     const items = draft.line_items;
     const groups = draft.groups;
     const hd = draft.header_discount;
@@ -791,7 +702,6 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       const unitType = line.unit_type || 'flat';
       const included = isIncluded(unitType);
       const extended = calcLineExtended(line);
-
       return (
         <tr
           key={line.id}
@@ -805,47 +715,20 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           <td className="col-drag"><i className="fa-solid fa-grip-vertical drag-handle" /></td>
           <td className="line-td-product"><div className="cell-name">{line.product_name}</div></td>
           <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
-          <td>
-            {included
-              ? <span className="cell-locked">1</span>
-              : renderEditableCell(line, 'quantity', { step: '1', min: '1' })}
-          </td>
-          <td>
-            {included
-              ? <span className="price-annual">—</span>
-              : renderEditableCell(line, 'list_price', { step: '0.01', min: '0' })}
-          </td>
-          <td>
-            {included
-              ? <span className="price-annual">—</span>
-              : renderEditableCell(line, 'discount_percent', { step: '0.1', min: '0', max: '100' })}
-          </td>
-          <td>
-            {included
-              ? <span className="price-annual">—</span>
-              : <span className="price-monthly">{displayCurrency(line.net_price ?? line.list_price ?? 0)}</span>}
-          </td>
-          <td>
-            {included
-              ? <span className="price-annual">—</span>
-              : <span className="price-monthly">{displayCurrency(extended)}</span>}
-          </td>
+          <td>{included ? <span className="cell-locked">1</span> : renderEditableCell(line, 'quantity', { step: '1', min: '1' })}</td>
+          <td>{included ? <span className="price-annual">—</span> : renderEditableCell(line, 'list_price', { step: '0.01', min: '0' })}</td>
+          <td>{included ? <span className="price-annual">—</span> : renderEditableCell(line, 'discount_percent', { step: '0.1', min: '0', max: '100' })}</td>
+          <td>{included ? <span className="price-annual">—</span> : <span className="price-monthly">{displayCurrency(line.net_price ?? line.list_price ?? 0)}</span>}</td>
+          <td>{included ? <span className="price-annual">—</span> : <span className="price-monthly">{displayCurrency(extended)}</span>}</td>
           <td className="col-actions">
             <div className="actions-group">
               {groups.length > 0 && (
-                <select
-                  className="group-assign"
-                  value={line.group_id || ''}
-                  onChange={(e) => updateDraftLineField(line.id, 'group_id', e.target.value || null)}
-                  title="Assign to group"
-                >
+                <select className="group-assign" value={line.group_id || ''} onChange={(e) => updateDraftLineField(line.id, 'group_id', e.target.value || null)} title="Assign to group">
                   <option value="">No group</option>
                   {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
                 </select>
               )}
-              <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(line.id)}>
-                <i className="fa-solid fa-trash-can" />
-              </button>
+              <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(line.id)}><i className="fa-solid fa-trash-can" /></button>
             </div>
           </td>
         </tr>
@@ -856,7 +739,6 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       const expanded = !collapsedPkgs.has(line.id);
       const subs = getSubLines(items, line.id);
       const pkgTotal = calcPkgExtended(items, line.id);
-
       return (
         <React.Fragment key={line.id}>
           <tr
@@ -877,17 +759,11 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 </button>
               </div>
             </td>
-            <td />
-            <td />
-            <td />
-            <td />
-            <td />
+            <td /><td /><td /><td /><td />
             <td><span className="price-monthly">{displayCurrency(pkgTotal)}</span></td>
             <td className="col-actions">
               <div className="actions-group">
-                <button className="action-btn delete line-remove-btn" title="Remove package" onClick={() => removeDraftLine(line.id)}>
-                  <i className="fa-solid fa-trash-can" />
-                </button>
+                <button className="action-btn delete line-remove-btn" title="Remove package" onClick={() => removeDraftLine(line.id)}><i className="fa-solid fa-trash-can" /></button>
               </div>
             </td>
           </tr>
@@ -895,19 +771,12 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             const unitType = sub.unit_type || 'flat';
             const ext = calcLineExtended(sub);
             return (
-              <tr
-                key={sub.id}
-                className={`line-row-sub${dropTargetId === sub.id ? ' drag-over' : ''}`}
-                draggable
-                onDragStart={(e) => handleDragStart(e, sub.id, 'sub', line.id)}
-                onDragEnd={handleDragEnd}
-                onDragOver={(e) => handleDragOver(e, sub.id, 'sub', line.id)}
-                onDrop={(e) => handleDrop(e, sub.id, 'sub', line.id)}
+              <tr key={sub.id} className={`line-row-sub${dropTargetId === sub.id ? ' drag-over' : ''}`} draggable
+                onDragStart={(e) => handleDragStart(e, sub.id, 'sub', line.id)} onDragEnd={handleDragEnd}
+                onDragOver={(e) => handleDragOver(e, sub.id, 'sub', line.id)} onDrop={(e) => handleDrop(e, sub.id, 'sub', line.id)}
               >
                 <td className="col-drag" style={{ paddingLeft: 20 }}><i className="fa-solid fa-grip-vertical drag-handle" /></td>
-                <td className="line-td-product pkg-sub-product">
-                  <div className="cell-name">{sub.product_name}</div>
-                </td>
+                <td className="line-td-product pkg-sub-product"><div className="cell-name">{sub.product_name}</div></td>
                 <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
                 <td>{renderEditableCell(sub, 'quantity', { step: '1', min: '1' })}</td>
                 <td>{renderEditableCell(sub, 'list_price', { step: '0.01', min: '0' })}</td>
@@ -916,9 +785,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 <td><span className="price-monthly">{displayCurrency(ext)}</span></td>
                 <td className="col-actions">
                   <div className="actions-group">
-                    <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(sub.id)}>
-                      <i className="fa-solid fa-trash-can" />
-                    </button>
+                    <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(sub.id)}><i className="fa-solid fa-trash-can" /></button>
                   </div>
                 </td>
               </tr>
@@ -927,11 +794,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           {expanded && (
             <tr className="line-row-sub">
               <td colSpan={9} style={{ paddingLeft: 36 }}>
-                <button
-                  type="button"
-                  className="pkg-add-component-link"
-                  onClick={() => setAddingToPackageId(addingToPackageId === line.id ? null : line.id)}
-                >
+                <button type="button" className="pkg-add-component-link" onClick={() => setAddingToPackageId(addingToPackageId === line.id ? null : line.id)}>
                   Add Component
                 </button>
               </td>
@@ -948,144 +811,85 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     };
 
     return (
-      <div className="quote-detail qd-edit-mode">
-        {/* Edit mode header */}
-        <div className="qd-edit-header">
-          <button className="back-btn" onClick={cancelEdit}>
-            <i className="fa-solid fa-arrow-left" /> Back to Quote Detail
-          </button>
-          <div className="qd-header-info">
-            <div className="qd-quote-number">{q.quote_number}</div>
-            <h1 className="qd-title">{q.name || 'Untitled Quote'}</h1>
-          </div>
-          <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', margin: '16px 0 0', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px' }}>
-            <button onClick={cancelEdit} style={{ padding: '8px 16px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a', cursor: 'pointer' }}>
-              Cancel
-            </button>
-            <button onClick={saveEdit} style={{ background: '#FBB13D', color: '#fff', fontWeight: 600, border: 'none', borderRadius: '6px', padding: '8px 16px', height: '36px', cursor: 'pointer', fontSize: '13px' }}>
-              Save
-            </button>
-          </div>
-        </div>
-
-        {/* Edit line items table */}
-        <div className="qd-lines-section">
-          <div className="line-editor-header">
-            <div className="line-editor-title">Edit Line Items</div>
-          </div>
-          <div className="qd-lines-card">
-            {items.length === 0 ? (
-              <div className="edit-empty-state">
-                <div className="edit-empty-icon"><i className="fa-solid fa-plus" /></div>
-                <div className="edit-empty-title">Start building your quote</div>
-                <div className="edit-empty-text">Select products from the catalog to get started</div>
-                <button className="edit-empty-cta" onClick={() => setShowPicker(true)}>
-                  <i className="fa-solid fa-box-open" /> Browse Products
-                </button>
-              </div>
-            ) : (
-              <div className="line-editor-table-wrap">
-                {topLevel.length > 0 && (
-                  <table className="data-table line-table">
-                    {editColGroup}
-                    {editTableHead}
-                    <tbody>{topLevel.map(renderEditRow)}</tbody>
-                  </table>
-                )}
-
-                {groups.map((group) => {
-                  const gLines = groupedItems(group.id);
-                  return (
-                    <div key={group.id} className="line-group">
-                      <div className="line-group-header">
-                        <div className="line-group-name">
-                          <i className="fa-solid fa-layer-group" /> {group.name}
-                        </div>
-                        <div className="line-group-meta">
-                          <span className="line-group-subtotal">{fmtCurrency(groupSubtotal(group.id))}/mo</span>
-                          <button className="action-btn delete" title="Remove group" onClick={() => removeDraftGroup(group.id)}>
-                            <i className="fa-solid fa-xmark" />
-                          </button>
-                        </div>
-                      </div>
-                      {gLines.length > 0 ? (
-                        <table className="data-table line-table">
-                          {editColGroup}
-                          {editTableHead}
-                          <tbody>{gLines.map(renderEditRow)}</tbody>
-                        </table>
-                      ) : (
-                        <div className="line-group-empty">No lines in this group. Assign lines using the dropdown.</div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            <div className="qd-line-footer-actions">
-              <button className="btn-primary" onClick={() => setShowPicker(true)}>
-                Add Product
-              </button>
-              <button className="qd-new-group-link" onClick={() => setShowGroupModal(true)}>
-                New Group
+      <>
+        <div className="qd-lines-card">
+          {items.length === 0 ? (
+            <div className="edit-empty-state">
+              <div className="edit-empty-icon"><i className="fa-solid fa-plus" /></div>
+              <div className="edit-empty-title">Start building your quote</div>
+              <div className="edit-empty-text">Select products from the catalog to get started</div>
+              <button className="edit-empty-cta" onClick={() => setShowPicker(true)}>
+                <i className="fa-solid fa-box-open" /> Browse Products
               </button>
             </div>
+          ) : (
+            <div className="line-editor-table-wrap">
+              {topLevel.length > 0 && (
+                <table className="data-table line-table">
+                  {editColGroup}
+                  {editTableHead}
+                  <tbody>{topLevel.map(renderEditRow)}</tbody>
+                </table>
+              )}
+              {groups.map((group) => {
+                const gLines = groupedItems(group.id);
+                return (
+                  <div key={group.id} className="line-group">
+                    <div className="line-group-header">
+                      <div className="line-group-name"><i className="fa-solid fa-layer-group" /> {group.name}</div>
+                      <div className="line-group-meta">
+                        <span className="line-group-subtotal">{fmtCurrency(groupSubtotal(group.id))}/mo</span>
+                        <button className="action-btn delete" title="Remove group" onClick={() => removeDraftGroup(group.id)}><i className="fa-solid fa-xmark" /></button>
+                      </div>
+                    </div>
+                    {gLines.length > 0 ? (
+                      <table className="data-table line-table">{editColGroup}{editTableHead}<tbody>{gLines.map(renderEditRow)}</tbody></table>
+                    ) : (
+                      <div className="line-group-empty">No lines in this group. Assign lines using the dropdown.</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <div className="qd-line-footer-actions">
+            <button className="btn-primary" onClick={() => setShowPicker(true)}>Add Product</button>
+            <button className="qd-new-group-link" onClick={() => setShowGroupModal(true)}>New Group</button>
           </div>
         </div>
 
-        {/* Running totals with editable quote discount */}
+        {/* Edit mode: editable quote discount in summary */}
         <div className="qd-summary">
           <div className="qd-summary-item">
             <div className="qd-summary-label">Quote Discount %</div>
             <div className="qd-summary-value">
-              <input
-                className="inline-edit qd-discount-input"
-                type="number"
-                min="0"
-                max="100"
-                step="0.1"
-                value={hd}
-                onChange={(e) => updateDraft((d) => ({ ...d, header_discount: parseFloat(e.target.value) || 0 }))}
-              />
+              <input className="inline-edit qd-discount-input" type="number" min="0" max="100" step="0.1" value={hd}
+                onChange={(e) => updateDraft((d) => ({ ...d, header_discount: parseFloat(e.target.value) || 0 }))} />
             </div>
           </div>
           <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
           <div className="qd-summary-item">
             <div className="qd-summary-label">MRR</div>
-            {totals.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountMonthly)}</div>}
             <AnimatedValue value={fmtCurrency(totals.monthly)} pulseKey={pulseKey} />
           </div>
           <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
           <div className="qd-summary-item">
             <div className="qd-summary-label">ARR</div>
-            {totals.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountAnnual)}</div>}
             <AnimatedValue value={fmtCurrency(totals.annual)} pulseKey={pulseKey} />
           </div>
           <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
           <div className="qd-summary-item qd-summary-tcv">
             <div className="qd-summary-label">TCV ({q.term_months} month)</div>
-            {totals.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(totals.preDiscountTcv)}</div>}
             <AnimatedValue value={fmtCurrency(totals.tcv)} pulseKey={pulseKey} />
           </div>
         </div>
 
-        {/* Modals */}
+        {/* Edit mode modals */}
         {showPicker && (
-          <ProductPicker
-            products={availableProducts}
-            onAdd={addLineToDraft}
-            onClose={() => setShowPicker(false)}
-            multiSelect
-            existingProductIds={new Set()}
-          />
+          <ProductPicker products={availableProducts} onAdd={addLineToDraft} onClose={() => setShowPicker(false)} multiSelect existingProductIds={new Set()} />
         )}
         {addingToPackageId && (
-          <ProductPicker
-            products={availableProducts.filter((p) => !isBundleProduct(p))}
-            onAdd={(product) => addSubComponentToDraft(product, addingToPackageId)}
-            onClose={() => setAddingToPackageId(null)}
-          />
+          <ProductPicker products={availableProducts.filter((p) => !isBundleProduct(p))} onAdd={(product) => addSubComponentToDraft(product, addingToPackageId)} onClose={() => setAddingToPackageId(null)} />
         )}
         {showGroupModal && (
           <div className="modal-overlay" onClick={() => { setShowGroupModal(false); setGroupName(''); }}>
@@ -1093,14 +897,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               <div className="modal-title">New Group</div>
               <div className="field">
                 <label className="field-label">Group Name</label>
-                <input
-                  className="field-input"
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
-                  placeholder="e.g. Platform Services"
-                  autoFocus
-                  onKeyDown={(e) => { if (e.key === 'Enter') addDraftGroup(); }}
-                />
+                <input className="field-input" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g. Platform Services" autoFocus onKeyDown={(e) => { if (e.key === 'Enter') addDraftGroup(); }} />
               </div>
               <div className="modal-actions">
                 <button className="btn-secondary" onClick={() => { setShowGroupModal(false); setGroupName(''); }}>Cancel</button>
@@ -1109,7 +906,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             </div>
           </div>
         )}
-      </div>
+      </>
     );
   };
 
@@ -1184,5 +981,124 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     </div>
   );
 
-  return mode === 'edit' ? renderEditMode() : renderViewMode();
+  const isEditing = mode === 'edit';
+  const viewItems = q.line_items.filter((l) => !l.parent_line_id);
+
+  return (
+    <div className="quote-detail">
+      {/* Header */}
+      <div className="qd-header" style={blurStyle}>
+        <button className="back-btn" onClick={onBack}>
+          <i className="fa-solid fa-arrow-left" /> Back to Quotes
+        </button>
+        <div className="qd-header-info">
+          <div className="qd-quote-number">{q.quote_number}</div>
+          <h1 className="qd-title">{q.name || 'Untitled Quote'}</h1>
+        </div>
+      </div>
+
+      {/* Action bar */}
+      <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', margin: '0 0 24px', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px', ...(isEditing ? {} : {}) }}>
+        {isEditing ? (
+          <>
+            <button onClick={cancelEdit} style={{ padding: '8px 16px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a', cursor: 'pointer' }}>
+              Cancel
+            </button>
+            <button onClick={saveEdit} style={{ background: '#FBB13D', color: '#fff', fontWeight: 600, border: 'none', borderRadius: '6px', padding: '8px 16px', height: '36px', cursor: 'pointer', fontSize: '13px' }}>
+              Save
+            </button>
+          </>
+        ) : (
+          <>
+            <select
+              value={q.status}
+              onChange={(e) => changeStatus(e.target.value)}
+              style={{ appearance: 'auto', cursor: 'pointer', padding: '8px 12px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a' }}
+            >
+              {Object.entries(STATUS_META).map(([key, { label }]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </select>
+            <button onClick={() => generateQuotePdf(q)} style={{ padding: '8px 16px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a', cursor: 'pointer' }}>
+              Generate Quote PDF
+            </button>
+            <button onClick={enterEditMode} style={{ background: '#FBB13D', color: '#fff', fontWeight: 600, border: 'none', borderRadius: '6px', padding: '8px 16px', height: '36px', cursor: 'pointer', fontSize: '13px' }}>
+              {q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
+            </button>
+            <div className="qd-more-wrap" ref={moreRef}>
+              <button className="qd-more-btn" onClick={() => setShowMoreMenu(!showMoreMenu)}>
+                <i className="fa-solid fa-ellipsis" />
+              </button>
+              {showMoreMenu && (
+                <div className="qd-more-menu">
+                  <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(q.id); }}>
+                    <i className="fa-solid fa-trash-can" /> Delete Quote
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Detail Cards */}
+      <div style={blurStyle}>
+        {renderDetailCards(q)}
+      </div>
+
+      {/* Line Items */}
+      <div className="qd-lines-section">
+        <div className="line-editor-header">
+          <div className="line-editor-title">{isEditing ? 'Edit Line Items' : 'Line Items'}</div>
+        </div>
+
+        {isEditing ? (
+          renderEditTable()
+        ) : (
+          <>
+            {q.line_items.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-numeral">0</div>
+                <div className="empty-state-eyebrow">Line Items</div>
+                <div className="empty-state-title">No line items</div>
+                <div className="empty-state-text">Click "Edit Lines" to add products to this quote</div>
+              </div>
+            ) : (
+              <div className="qd-view-lines-card">
+                <table className="data-table line-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '25%', minWidth: '200px' }}>Product</th>
+                      <th style={{ width: '10%' }}>Unit</th>
+                      <th style={{ width: '10%' }}>Qty</th>
+                      <th style={{ width: '10%' }}>List Price</th>
+                      <th style={{ width: '10%' }}>Disc %</th>
+                      <th style={{ width: '10%' }}>Net Price</th>
+                      <th style={{ width: '10%' }}>Extended</th>
+                    </tr>
+                  </thead>
+                  <tbody>{viewItems.map(renderViewRow)}</tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Summary (blurred in edit mode — edit table has its own summary) */}
+      {!isEditing && (
+        <div>
+          {renderSummary(totals, q)}
+        </div>
+      )}
+
+      {/* Footer info */}
+      <div style={blurStyle}>
+        {renderFooterInfo(q)}
+      </div>
+
+      {/* Confirm modal */}
+      {confirm && renderConfirmModal()}
+    </div>
+  );
 }
