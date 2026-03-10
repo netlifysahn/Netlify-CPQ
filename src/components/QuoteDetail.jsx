@@ -597,8 +597,6 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   // ════════════════════════════════════════
   //  VIEW MODE
   // ════════════════════════════════════════
-  // ── Blur style for non-table sections during edit mode ──
-  const blurStyle = mode === 'edit' ? { filter: 'blur(4px)', opacity: 0.4, pointerEvents: 'none', transition: 'filter 0.2s, opacity 0.2s' } : {};
 
   // ── View mode table rows ──
   const renderViewRow = (line) => {
@@ -1068,14 +1066,12 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       </div>
 
       {/* Detail Cards */}
-      <div style={blurStyle}>
-        {renderDetailCards(q)}
-      </div>
+      {renderDetailCards(q)}
 
       {/* Line Items */}
       <div className="qd-lines-section">
         <div className="line-editor-header">
-          <div className="line-editor-title">{isEditing ? 'Edit Line Items' : 'Line Items'}</div>
+          <div className="line-editor-title">Line Items</div>
         </div>
 
         {isEditing ? (
