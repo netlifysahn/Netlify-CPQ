@@ -412,10 +412,9 @@
 }
 
 .search-wrap:focus-within {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border-color: rgba(0, 0, 0, 0.12);
-  transition: all 150ms ease;
+  box-shadow: none;
+  transition: border-color 150ms ease;
 }
 
 .search-wrap i {
@@ -1116,7 +1115,7 @@
   outline: none;
   font-family: var(--font-body);
   box-sizing: border-box;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: border-color 150ms ease;
 }
 
 .field-input:focus {
@@ -1142,7 +1141,7 @@
   min-height: 60px;
   resize: vertical;
   box-sizing: border-box;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: border-color 150ms ease;
 }
 
 .field-textarea:focus {
@@ -1167,7 +1166,7 @@
   outline: none;
   font-family: var(--font-body);
   box-sizing: border-box;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: border-color 150ms ease;
 }
 
 .field-select:focus {
@@ -1210,10 +1209,9 @@
 }
 
 .modal .search-wrap:focus-within {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border-color: rgba(0, 0, 0, 0.12);
-  transition: all 150ms ease;
+  box-shadow: none;
+  transition: border-color 150ms ease;
 }
 
 .main-content.section-products :is(.field-input, .field-textarea, .field-select):focus,
@@ -4593,7 +4591,7 @@ tr.drag-over {
 .field-select,
 .inline-edit,
 .group-assign {
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: border-color 150ms ease;
 }
 
 /* 5. Modal — ease in with opacity + slide */

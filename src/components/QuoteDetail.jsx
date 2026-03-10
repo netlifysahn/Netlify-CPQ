@@ -486,10 +486,10 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   const eyebrowStyle = { fontFamily: "'Roboto Mono', monospace", fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9ca3af' };
   const cardBodyStyle = { padding: '4px 24px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' };
   const dcLabelStyle = { fontSize: '14px', color: '#0f172a', fontWeight: 500, fontFamily: "'Mulish', sans-serif", marginBottom: '6px' };
-  const dcInputStyle = { fontSize: '14px', color: '#0a0a0a', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 14px', width: '100%', outline: 'none', boxSizing: 'border-box', background: '#fff', transition: 'border-color 0.15s, box-shadow 0.15s' };
+  const dcInputStyle = { fontSize: '14px', color: '#0a0a0a', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 14px', width: '100%', outline: 'none', boxSizing: 'border-box', background: '#fff', transition: 'border-color 0.15s' };
   const dcFocusHandlers = {
-    onFocus: (e) => { e.target.style.borderColor = '#FBB13D'; e.target.style.boxShadow = '0 0 0 3px rgba(251,177,61,0.15)'; },
-    onBlur: (e) => { e.target.style.borderColor = '#e5e7eb'; e.target.style.boxShadow = 'none'; },
+    onFocus: (e) => { e.target.style.borderColor = '#FBB13D'; },
+    onBlur: (e) => { e.target.style.borderColor = '#e5e7eb'; },
   };
   const chevronStyle = { fontSize: '12px', color: '#9ca3af' };
   const sectionDivider = { height: '1px', background: 'rgba(0,0,0,0.06)', margin: 0 };
