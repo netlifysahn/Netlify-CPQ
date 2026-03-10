@@ -344,7 +344,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                       <tr>
                         <th>Product</th>
                         <th>SKU</th>
-                        <th style={{ width: 70 }}>Qty</th>
+                        <th style={{ width: 120, minWidth: 120 }}>Qty</th>
                         <th>Unit</th>
                         <th style={{ width: 36 }} />
                       </tr>
