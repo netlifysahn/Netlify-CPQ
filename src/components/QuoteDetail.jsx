@@ -706,7 +706,19 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           onDragOver={(e) => handleDragOver(e, line.id, 'top')}
           onDrop={(e) => handleDrop(e, line.id, 'top')}
         >
-          <td className="line-td-product" style={{ width: '23%', minWidth: '200px' }}><div className="cell-name">{line.product_name}</div></td>
+          <td className="line-td-product" style={{ width: '23%', minWidth: '200px' }}>
+            {line.name_editable ? (
+              <input
+                className="inline-edit"
+                type="text"
+                value={line.product_name}
+                onChange={(e) => updateDraftLineField(line.id, 'product_name', e.target.value)}
+                style={{ width: '100%', fontWeight: 500 }}
+              />
+            ) : (
+              <div className="cell-name">{line.product_name}</div>
+            )}
+          </td>
           <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
           <td style={{ width: '12%' }}>{included ? <span className="cell-locked">1</span> : renderEditableCell(line, 'quantity', { step: '1', min: '1' })}</td>
           <td style={{ width: '10%' }}>{included ? <span className="price-annual">—</span> : renderEditableCell(line, 'list_price', { step: '0.01', min: '0' })}</td>
@@ -739,7 +751,17 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           >
             <td className="line-td-product" style={{ width: '23%', minWidth: '200px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
+                {line.name_editable ? (
+                  <input
+                    className="inline-edit"
+                    type="text"
+                    value={line.product_name}
+                    onChange={(e) => updateDraftLineField(line.id, 'product_name', e.target.value)}
+                    style={{ flex: 1, fontWeight: 500 }}
+                  />
+                ) : (
+                  <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
+                )}
                 <span className="pkg-badge">PKG</span>
                 <button className="pkg-chevron" onClick={() => togglePackage(line.id)} style={{ marginLeft: 0 }}>
                   <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
@@ -763,7 +785,19 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 onDragStart={(e) => handleDragStart(e, sub.id, 'sub', line.id)} onDragEnd={handleDragEnd}
                 onDragOver={(e) => handleDragOver(e, sub.id, 'sub', line.id)} onDrop={(e) => handleDrop(e, sub.id, 'sub', line.id)}
               >
-                <td className="line-td-product pkg-sub-product" style={{ width: '23%', minWidth: '200px' }}><div className="cell-name">{sub.product_name}</div></td>
+                <td className="line-td-product pkg-sub-product" style={{ width: '23%', minWidth: '200px' }}>
+                  {sub.name_editable ? (
+                    <input
+                      className="inline-edit"
+                      type="text"
+                      value={sub.product_name}
+                      onChange={(e) => updateDraftLineField(sub.id, 'product_name', e.target.value)}
+                      style={{ width: '100%', fontWeight: 500 }}
+                    />
+                  ) : (
+                    <div className="cell-name">{sub.product_name}</div>
+                  )}
+                </td>
                 <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
                 <td style={{ width: '12%' }}>{renderEditableCell(sub, 'quantity', { step: '1', min: '1' })}</td>
                 <td style={{ width: '10%' }}>{renderEditableCell(sub, 'list_price', { step: '0.01', min: '0' })}</td>

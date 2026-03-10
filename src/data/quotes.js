@@ -82,6 +82,7 @@ export const emptyLineItem = (product, listPrice) => {
     discount_percent: 0,
     discount_amount: 0,
     net_price: isIncluded(unitType) ? 0 : price,
+    name_editable: !!product.config?.edit_name,
     sort_order: 0,
   };
 };
@@ -96,6 +97,7 @@ export const emptyPackageLine = (product) => ({
   unit_type: 'flat',
   group_id: null,
   is_package: true,
+  name_editable: !!product.config?.edit_name,
   quantity: 0,
   list_price: 0,
   discount_percent: 0,
@@ -125,6 +127,7 @@ export const emptySubLineItem = (memberProduct, member, parentLineId, listPrice)
     unit_type: unitType,
     group_id: null,
     parent_line_id: parentLineId,
+    name_editable: !!memberProduct.config?.edit_name,
     quantity: qty,
     list_price: effectivePrice,
     ...synced,
