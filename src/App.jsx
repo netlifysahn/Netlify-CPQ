@@ -26,23 +26,15 @@ const COMING_SOON_META = {
   orders: { icon: 'fa-cart-shopping', title: 'Orders', label: 'Order Management', subtitle: 'Track and manage customer orders' },
 };
 
+// Always light mode
 function useTheme() {
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('deal-studio-theme');
-    return saved || 'light';
-  });
-
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('deal-studio-theme', theme);
-  }, [theme]);
-
-  const toggle = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
-  return { theme, toggle };
+    document.documentElement.setAttribute('data-theme', 'light');
+  }, []);
 }
 
 export default function App() {
-  const { theme, toggle: toggleTheme } = useTheme();
+  useTheme();
   const [page, setPage] = useState('products');
   const [products, setProducts] = useState([]);
   const [pricebooks, setPricebooks] = useState([]);
@@ -296,7 +288,7 @@ export default function App() {
     <div className="app-layout">
       <nav className="sidebar">
         <div className="sidebar-brand">
-          <NetlifyLogo size={34} theme={theme} />
+          <NetlifyLogo size={34} />
           <span className="sidebar-brand-text">DEAL STUDIO</span>
         </div>
         <div className="sidebar-nav">
@@ -310,12 +302,6 @@ export default function App() {
               {item.label}
             </button>
           ))}
-        </div>
-        <div className="theme-toggle">
-          <button className="theme-toggle-btn" onClick={toggleTheme}>
-            <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'}`} />
-            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-          </button>
         </div>
       </nav>
 
