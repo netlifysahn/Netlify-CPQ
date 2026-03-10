@@ -612,7 +612,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             <td className="line-td-product" style={{ width: '23%', minWidth: '200px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
-                <i className="fa-solid fa-box-open" style={{ fontSize: '14px', color: '#6b7280' }} />
+                <span className="pkg-badge">PKG</span>
                 <button className="pkg-chevron" onClick={() => togglePackage(line.id)} style={{ marginLeft: 0 }}>
                   <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
                 </button>
@@ -763,7 +763,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 ) : (
                   <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
                 )}
-                <i className="fa-solid fa-box-open" style={{ fontSize: '14px', color: '#6b7280' }} />
+                <span className="pkg-badge">PKG</span>
                 <button className="pkg-chevron" onClick={() => togglePackage(line.id)} style={{ marginLeft: 0 }}>
                   <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
                 </button>
