@@ -445,7 +445,14 @@ export default function ProductModal({ product, products, onSave, onClose }) {
             onClick={() => toggleSection(COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS)}
             aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS]}
           >
-            <span>Entitlements</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              Entitlement Rules
+              <i
+                className="fa-solid fa-circle-info"
+                title="Defines the entitlement behavior for this product — e.g. how credits refresh and over what period. Values entered here are parsed and displayed as tags below the JSON field."
+                style={{ fontSize: '13px', color: '#94a3b8', cursor: 'help', fontWeight: 400 }}
+              />
+            </span>
             <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS] ? 'fa-chevron-down' : 'fa-chevron-right'}`} />
           </button>
 
