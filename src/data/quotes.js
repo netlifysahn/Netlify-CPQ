@@ -59,7 +59,7 @@ export const emptyQuote = (existingQuotes = []) => ({
 
 export const getUnitType = (product) => product?.default_price?.unit || 'flat';
 
-export const isQuantityEditable = (unitType) => unitType === 'per_member' || unitType === 'per_credit';
+export const isQuantityEditable = (unitType) => unitType === 'per_member' || unitType === 'per_credit' || unitType === 'per_build';
 
 export const isIncluded = (unitType) => unitType === 'included';
 

@@ -10,7 +10,7 @@ export const TYPE_LABELS = {
   addon: 'Add-ons',
   support: 'Support',
 };
-export const PRICE_UNITS = ['flat', 'per_member', 'per_credit', 'included'];
+export const PRICE_UNITS = ['flat', 'per_member', 'per_credit', 'per_build', 'included'];
 export const PRICING_METHODS = ['list', 'cost'];
 export const TERM_BEHAVIORS = ['included', 'excluded'];
 export const CONFIGURATION_METHODS = ['none', 'bundle'];
@@ -43,8 +43,9 @@ export const getProductCategory = (product) => {
 
 export const UNIT_LABELS = {
   flat: 'Flat',
-  per_member: '/ seat',
-  per_credit: '/ credit',
+  per_member: '/seat',
+  per_credit: '/credit',
+  per_build: '/build',
   included: 'Included',
 };
 
