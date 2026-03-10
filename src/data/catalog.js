@@ -5,9 +5,9 @@ export const PRODUCT_TYPES = ['bundle', 'platform', 'entitlements', 'addon', 'su
 export const TYPE_SORT_ORDER = PRODUCT_TYPES.reduce((acc, type, index) => ({ ...acc, [type]: index }), {});
 export const TYPE_LABELS = {
   bundle: 'Packages',
-  platform: 'Infrastructure',
+  platform: 'Platform',
   entitlements: 'Entitlements',
-  addon: 'Add-ons',
+  addon: 'Platform Add-Ons',
   support: 'Support',
 };
 export const PRICE_UNITS = ['flat', 'per_member', 'per_credit', 'per_build'];

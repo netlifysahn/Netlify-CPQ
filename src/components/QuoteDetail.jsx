@@ -6,7 +6,7 @@ import {
   syncDiscountFromPercent, syncDiscountFromAmount,
   isQuantityEditable, isIncluded, getUnitLabel,
 } from '../data/quotes';
-import { isBundleProduct } from '../data/catalog';
+import { isBundleProduct, TYPE_LABELS, getProductCategory } from '../data/catalog';
 import { generateQuotePdf } from '../utils/quotePdf';
 import ProductPicker from './ProductPicker';
 
@@ -71,6 +71,23 @@ const displayCurrency = (v) => {
 const fmtQty = (v) => {
   const n = typeof v === 'number' && !isNaN(v) ? v : 0;
   return n.toLocaleString('en-US');
+};
+
+// ── Category badge styles for grouped line item cards ──
+const CATEGORY_BADGE_STYLES = {
+  bundle: { background: 'transparent', color: '#0a0a0a', border: '1px solid #0a0a0a' },
+  support: { background: '#EFF6FF', color: '#2E51ED', border: '1px solid #BFDBFE' },
+  platform: { background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0' },
+  addon: { background: '#FAF5FF', color: '#7C3AED', border: '1px solid #E9D5FF' },
+  entitlements: { background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0' },
+};
+
+const CARD_ORDER_WITH_PACKAGE = ['bundle', 'support', 'addon', 'entitlements'];
+const CARD_ORDER_NO_PACKAGE = ['platform', 'entitlements', 'support', 'addon'];
+
+const getCategoryCardLabel = (category, hasPackage) => {
+  if (category === 'entitlements' && hasPackage) return 'Additional Entitlements';
+  return TYPE_LABELS[category] || category;
 };
 
 // ── Detail card styles (shared constants) ──
@@ -831,6 +848,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       return renderEditStandalone(line);
     };
 
+    const editCategoryGroups = groupLinesByCategory(items);
+
     return (
       <>
         <div className="qd-lines-card">
@@ -852,37 +871,30 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               </button>
             </div>
           ) : (
-            <div className="line-editor-table-wrap">
-              {topLevel.length > 0 && (
-                <table className="data-table line-table">
-                  {editTableHead}
-                  <tbody>{topLevel.map(renderEditRow)}</tbody>
-                </table>
-              )}
-              {groups.map((group) => {
-                const gLines = groupedItems(group.id);
-                return (
-                  <div key={group.id} className="line-group">
-                    <div className="line-group-header">
-                      <div className="line-group-name"><i className="fa-solid fa-layer-group" /> {group.name}</div>
-                      <div className="line-group-meta">
-                        <span className="line-group-subtotal">{fmtCurrency(groupSubtotal(group.id))}/mo</span>
-                        <button className="action-btn delete" title="Remove group" onClick={() => removeDraftGroup(group.id)}><i className="fa-solid fa-xmark" /></button>
-                      </div>
-                    </div>
-                    {gLines.length > 0 ? (
-                      <table className="data-table line-table">{editTableHead}<tbody>{gLines.map(renderEditRow)}</tbody></table>
-                    ) : (
-                      <div className="line-group-empty">No lines in this group. Assign lines using the dropdown.</div>
-                    )}
+            <div className="qd-grouped-cards">
+              {editCategoryGroups.map((group) => (
+                <div key={group.category} className="qd-category-card">
+                  <div className="qd-category-card-header">
+                    <span className="qd-category-card-title">{group.label}</span>
+                    <span className="qd-category-badge" style={group.badge}>{group.category === 'bundle' ? 'PKG' : group.label}</span>
                   </div>
-                );
-              })}
+                  {group.category === 'bundle' ? (
+                    <table className="data-table line-table">
+                      {editTableHead}
+                      <tbody>{group.lines.map((line) => renderEditPackage(line))}</tbody>
+                    </table>
+                  ) : (
+                    <table className="data-table line-table">
+                      {editTableHead}
+                      <tbody>{group.lines.map(renderEditStandalone)}</tbody>
+                    </table>
+                  )}
+                </div>
+              ))}
             </div>
           )}
           <div className="qd-line-footer-actions">
             <button className="btn-primary" onClick={() => setShowPicker(true)}>Add Product</button>
-            <button className="qd-new-group-link" onClick={() => setShowGroupModal(true)}>New Group</button>
           </div>
         </div>
 
@@ -986,6 +998,25 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   const isEditing = mode === 'edit';
   const viewItems = q.line_items.filter((l) => !l.parent_line_id);
 
+  // Group line items by category for card display
+  const groupLinesByCategory = (items) => {
+    const hasPackage = items.some((l) => l.is_package);
+    const order = hasPackage ? CARD_ORDER_WITH_PACKAGE : CARD_ORDER_NO_PACKAGE;
+    const topLevel = items.filter((l) => !l.parent_line_id);
+    const groups = {};
+    topLevel.forEach((line) => {
+      const cat = line.is_package ? 'bundle' : (line.product_type || 'platform');
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(line);
+    });
+    return order.filter((cat) => groups[cat] && groups[cat].length > 0).map((cat) => ({
+      category: cat,
+      label: getCategoryCardLabel(cat, hasPackage),
+      badge: CATEGORY_BADGE_STYLES[cat] || CATEGORY_BADGE_STYLES.platform,
+      lines: groups[cat],
+    }));
+  };
+
   return (
     <div className="quote-detail">
       {/* Header */}
@@ -1086,21 +1117,75 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 <div className="empty-state-text">Click "Edit Lines" to add products to this quote</div>
               </div>
             ) : (
-              <div className="qd-view-lines-card">
-                <table className="data-table line-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '23%', minWidth: '200px' }}>Product</th>
-                      <th style={{ width: '10%' }}>Unit</th>
-                      <th style={{ width: '12%' }}>Qty</th>
-                      <th style={{ width: '10%' }}>List Price</th>
-                      <th style={{ width: '10%' }}>Disc %</th>
-                      <th style={{ width: '10%' }}>Net Price</th>
-                      <th style={{ width: '10%' }}>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>{viewItems.map(renderViewRow)}</tbody>
-                </table>
+              <div className="qd-grouped-cards">
+                {groupLinesByCategory(q.line_items).map((group) => (
+                  <div key={group.category} className="qd-category-card">
+                    <div className="qd-category-card-header">
+                      <span className="qd-category-card-title">{group.label}</span>
+                      <span className="qd-category-badge" style={group.badge}>{group.category === 'bundle' ? 'PKG' : group.label}</span>
+                    </div>
+                    {group.category === 'bundle' ? (
+                      group.lines.map((line) => {
+                        const subs = getSubLines(q.line_items, line.id);
+                        const expanded = !collapsedPkgs.has(line.id);
+                        const pkgTotal = calcPkgExtended(q.line_items, line.id);
+                        return (
+                          <div key={line.id} className="qd-pkg-block">
+                            <div className="qd-pkg-header" onClick={() => togglePackage(line.id)}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} style={{ fontSize: '11px', color: '#9ca3af' }} />
+                                <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
+                                <span className="pkg-badge">PKG</span>
+                              </div>
+                              <span className="price-monthly">{displayCurrency(pkgTotal)}</span>
+                            </div>
+                            {expanded && subs.length > 0 && (
+                              <div className="qd-pkg-members">
+                                {subs.map((sub) => (
+                                  <div key={sub.id} className="qd-pkg-member-row">
+                                    <span className="qd-pkg-member-name">{sub.product_name}</span>
+                                    <span className="qd-pkg-member-qty">qty {sub.quantity}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <table className="data-table line-table">
+                        <thead>
+                          <tr>
+                            <th style={{ width: '25%', minWidth: '200px' }}>Product</th>
+                            <th style={{ width: '12%' }}>Qty</th>
+                            <th style={{ width: '13%' }}>List Price</th>
+                            <th style={{ width: '12%' }}>Disc %</th>
+                            <th style={{ width: '13%' }}>Net Price</th>
+                            <th style={{ width: '13%' }}>Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {group.lines.map((line) => {
+                            const unitType = line.unit_type || 'flat';
+                            const extended = calcLineExtended(line);
+                            return (
+                              <tr key={line.id}>
+                                <td className="line-td-product" style={{ width: '25%', minWidth: '200px' }}>
+                                  <div className="cell-name">{line.product_name}</div>
+                                </td>
+                                <td style={{ width: '12%' }}>{fmtQty(line.quantity)}</td>
+                                <td style={{ width: '13%' }}>{isIncluded(unitType) ? '—' : displayCurrency(line.list_price ?? 0)}</td>
+                                <td style={{ width: '12%' }}>{isIncluded(unitType) ? '—' : ((line.discount_percent ?? 0) > 0 ? `${line.discount_percent}%` : '—')}</td>
+                                <td style={{ width: '13%' }}>{isIncluded(unitType) ? '—' : displayCurrency(line.net_price ?? line.list_price ?? 0)}</td>
+                                <td style={{ width: '13%' }}><span className="price-monthly">{isIncluded(unitType) ? '—' : displayCurrency(extended)}</span></td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </>
