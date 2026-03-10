@@ -67,6 +67,45 @@ const displayCurrency = (v) => {
   return n === 0 ? '—' : fmtCurrency(n);
 };
 
+// ── Detail card styles (shared constants) ──
+const DC_LABEL_STYLE = { fontSize: '14px', color: '#0f172a', fontWeight: 500, fontFamily: "'Mulish', sans-serif", marginBottom: '6px' };
+const DC_INPUT_STYLE = { fontSize: '14px', color: '#0a0a0a', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 14px', width: '100%', outline: 'none', boxSizing: 'border-box', background: '#fff', transition: 'border-color 0.15s' };
+
+const handleDcFocus = (e) => { e.target.style.borderColor = '#FBB13D'; };
+const handleDcBlurStyle = (e) => { e.target.style.borderColor = '#e5e7eb'; };
+
+// Top-level component to avoid remount on parent state change
+function DetailInput({ label, field, value, placeholder, span2, type, mono, textarea, onChange, onBlur }) {
+  const style = mono ? { ...DC_INPUT_STYLE, fontFamily: "'Roboto Mono', monospace" } : DC_INPUT_STYLE;
+  const handleChange = (e) => onChange(field, e.target.value);
+  const handleBlur = (e) => { handleDcBlurStyle(e); onBlur(field, e.target.value); };
+  return (
+    <div style={span2 ? { gridColumn: '1 / -1' } : undefined}>
+      <div style={DC_LABEL_STYLE}>{label}</div>
+      {textarea ? (
+        <textarea
+          style={{ ...style, resize: 'vertical', minHeight: '60px' }}
+          value={value || ''}
+          placeholder={placeholder}
+          onChange={handleChange}
+          onFocus={handleDcFocus}
+          onBlur={handleBlur}
+        />
+      ) : (
+        <input
+          type={type || 'text'}
+          style={style}
+          value={value || ''}
+          placeholder={placeholder}
+          onChange={handleChange}
+          onFocus={handleDcFocus}
+          onBlur={handleBlur}
+        />
+      )}
+    </div>
+  );
+}
+
 // Backfill missing fields on older quotes
 const normalizeQuote = (q) => {
   if (!q || typeof q !== 'object') {
@@ -485,50 +524,13 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   const cardHeaderStyle = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', cursor: 'pointer', userSelect: 'none' };
   const eyebrowStyle = { fontFamily: "'Roboto Mono', monospace", fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9ca3af' };
   const cardBodyStyle = { padding: '4px 24px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' };
-  const dcLabelStyle = { fontSize: '14px', color: '#0f172a', fontWeight: 500, fontFamily: "'Mulish', sans-serif", marginBottom: '6px' };
-  const dcInputStyle = { fontSize: '14px', color: '#0a0a0a', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 14px', width: '100%', outline: 'none', boxSizing: 'border-box', background: '#fff', transition: 'border-color 0.15s' };
-  const dcFocusHandlers = {
-    onFocus: (e) => { e.target.style.borderColor = '#FBB13D'; },
-    onBlur: (e) => { e.target.style.borderColor = '#e5e7eb'; },
-  };
   const chevronStyle = { fontSize: '12px', color: '#9ca3af' };
   const sectionDivider = { height: '1px', background: 'rgba(0,0,0,0.06)', margin: 0 };
 
   const toggleCard = (key) => setDetailCards((p) => ({ ...p, [key]: !p[key] }));
 
-  const handleFieldBlur = (field, e) => {
-    dcFocusHandlers.onBlur(e);
-    persistQuote((prev) => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const DetailInput = ({ label, field, value, placeholder, span2, type, mono, textarea }) => {
-    const style = mono ? { ...dcInputStyle, fontFamily: "'Roboto Mono', monospace" } : dcInputStyle;
-    return (
-      <div style={span2 ? { gridColumn: '1 / -1' } : undefined}>
-        <div style={dcLabelStyle}>{label}</div>
-        {textarea ? (
-          <textarea
-            style={{ ...style, resize: 'vertical', minHeight: '60px' }}
-            value={value || ''}
-            placeholder={placeholder}
-            onChange={(e) => setQ((p) => ({ ...p, [field]: e.target.value }))}
-            onFocus={dcFocusHandlers.onFocus}
-            onBlur={(e) => handleFieldBlur(field, e)}
-          />
-        ) : (
-          <input
-            type={type || 'text'}
-            style={style}
-            value={value || ''}
-            placeholder={placeholder}
-            onChange={(e) => setQ((p) => ({ ...p, [field]: e.target.value }))}
-            onFocus={dcFocusHandlers.onFocus}
-            onBlur={(e) => handleFieldBlur(field, e)}
-          />
-        )}
-      </div>
-    );
-  };
+  const handleFieldChange = (field, value) => setQ((p) => ({ ...p, [field]: value }));
+  const handleFieldBlur = (field, value) => persistQuote((prev) => ({ ...prev, [field]: value }));
 
   const renderDetailCards = (source) => (
     <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: 0, marginBottom: '12px' }}>
@@ -540,14 +542,14 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         </div>
         {detailCards.customer && (
           <div style={cardBodyStyle}>
-            <DetailInput label="Customer Name" field="customer_name" value={source.customer_name} placeholder="Company name" span2 />
-            <DetailInput label="Primary Contact Name" field="contact_name" value={source.contact_name} placeholder="Full name" />
-            <DetailInput label="Primary Contact Email" field="contact_email" value={source.contact_email} placeholder="contact@company.com" type="email" />
-            <DetailInput label="Address" field="address" value={source.address} placeholder="Street, City, State, ZIP, Country" span2 textarea />
-            <DetailInput label="Billing Contact Name" field="billing_contact_name" value={source.billing_contact_name} placeholder="Full name" />
-            <DetailInput label="Billing Contact Email" field="billing_contact_email" value={source.billing_contact_email} placeholder="billing@company.com" type="email" />
-            <DetailInput label="Invoice Email" field="invoice_email" value={source.invoice_email} placeholder="invoices@company.com" type="email" />
-            <DetailInput label="Netlify Account ID" field="account_id" value={source.account_id} placeholder="e.g. acct_abc123" mono />
+            <DetailInput label="Customer Name" field="customer_name" value={source.customer_name} placeholder="Company name" span2 onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Primary Contact Name" field="contact_name" value={source.contact_name} placeholder="Full name" onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Primary Contact Email" field="contact_email" value={source.contact_email} placeholder="contact@company.com" type="email" onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Address" field="address" value={source.address} placeholder="Street, City, State, ZIP, Country" span2 textarea onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Billing Contact Name" field="billing_contact_name" value={source.billing_contact_name} placeholder="Full name" onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Billing Contact Email" field="billing_contact_email" value={source.billing_contact_email} placeholder="billing@company.com" type="email" onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Invoice Email" field="invoice_email" value={source.invoice_email} placeholder="invoices@company.com" type="email" onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Netlify Account ID" field="account_id" value={source.account_id} placeholder="e.g. acct_abc123" mono onChange={handleFieldChange} onBlur={handleFieldBlur} />
           </div>
         )}
       </div>
@@ -562,8 +564,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         </div>
         {detailCards.term && (
           <div style={cardBodyStyle}>
-            <DetailInput label="Subscription Start Date" field="start_date" value={source.start_date} type="date" />
-            <DetailInput label="Subscription Term (Months)" field="term_months" value={source.term_months} placeholder="12" />
+            <DetailInput label="Subscription Start Date" field="start_date" value={source.start_date} type="date" onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Subscription Term (Months)" field="term_months" value={source.term_months} placeholder="12" onChange={handleFieldChange} onBlur={handleFieldBlur} />
           </div>
         )}
       </div>
@@ -578,11 +580,11 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         </div>
         {detailCards.billing && (
           <div style={cardBodyStyle}>
-            <DetailInput label="Billing Schedule" field="billing_schedule" value={source.billing_schedule} placeholder="Annual" />
-            <DetailInput label="Payment Method" field="payment_method" value={source.payment_method} placeholder="Select..." />
-            <DetailInput label="Payment Terms" field="payment_terms" value={source.payment_terms} placeholder="Net 30" />
-            <DetailInput label="PO #" field="po_number" value={source.po_number} placeholder="Optional" mono />
-            <DetailInput label="VAT #" field="vat_number" value={source.vat_number} placeholder="Optional" mono />
+            <DetailInput label="Billing Schedule" field="billing_schedule" value={source.billing_schedule} placeholder="Annual" onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Payment Method" field="payment_method" value={source.payment_method} placeholder="Select..." onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Payment Terms" field="payment_terms" value={source.payment_terms} placeholder="Net 30" onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="PO #" field="po_number" value={source.po_number} placeholder="Optional" mono onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="VAT #" field="vat_number" value={source.vat_number} placeholder="Optional" mono onChange={handleFieldChange} onBlur={handleFieldBlur} />
           </div>
         )}
       </div>
