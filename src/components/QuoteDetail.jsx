@@ -839,12 +839,12 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           {items.length === 0 ? (
             <div className="edit-empty-state">
               <div className="nomi-scene">
-                <div className="nomi-water">
-                  <svg className="nomi-wave" viewBox="0 0 200 40" preserveAspectRatio="none">
-                    <path d="M0,20 C30,12 70,28 100,20 C130,12 170,28 200,20 L200,40 L0,40 Z" fill="#e0f2fe" />
-                  </svg>
+                <div className="nomi-clip">
+                  <img src="/Nomi.svg" alt="Nomi" className="nomi-character" />
                 </div>
-                <img src="/Nomi.svg" alt="Nomi" className="nomi-character" />
+                <div className="nomi-ripple nomi-ripple-1" />
+                <div className="nomi-ripple nomi-ripple-2" />
+                <div className="nomi-ripple nomi-ripple-3" />
               </div>
               <div className="edit-empty-title">Start building your quote</div>
               <div className="edit-empty-text">Select products from the catalog to get started</div>

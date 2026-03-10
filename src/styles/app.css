@@ -1843,88 +1843,76 @@ tr.drag-over {
 /* ── Nomi narwhal animation scene ── */
 .nomi-scene {
   position: relative;
-  width: 160px;
-  height: 180px;
-  margin-bottom: 16px;
+  width: 100px;
+  height: 80px;
+  margin-bottom: 8px;
+}
+
+.nomi-clip {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 72px;
+  height: 60px;
   overflow: hidden;
 }
 
 .nomi-character {
   position: absolute;
-  width: 120px;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 30%;
-  z-index: 2;
-  animation: nomi-cycle 5s ease-in-out infinite;
+  width: 72px;
+  left: 0;
+  bottom: 0;
+  animation: nomi-cycle 6s ease-in-out infinite;
 }
 
-.nomi-water {
+/* Concentric ripple rings */
+.nomi-ripple {
   position: absolute;
   bottom: 0;
-  left: 0;
-  right: 0;
-  height: 55%;
-  z-index: 3;
-  background: #e0f2fe;
-  border-radius: 0 0 4px 4px;
+  left: 50%;
+  width: 12px;
+  height: 6px;
+  border: 1px solid #bae6fd;
+  border-radius: 50%;
+  transform: translateX(-50%) scale(1);
+  opacity: 0;
+  pointer-events: none;
+  animation: nomi-ripple 6s ease-out infinite;
 }
 
-.nomi-wave {
-  position: absolute;
-  top: -8px;
-  left: 0;
-  width: 200%;
-  height: 16px;
-  animation: nomi-wave-drift 3s ease-in-out infinite;
-}
+.nomi-ripple-1 { animation-delay: 0s; }
+.nomi-ripple-2 { animation-delay: 0.2s; }
+.nomi-ripple-3 { animation-delay: 0.4s; }
 
-@keyframes nomi-wave-drift {
-  0%, 100% { transform: translateX(-8px); }
-  50% { transform: translateX(8px); }
+@keyframes nomi-ripple {
+  0%, 25% { opacity: 0; transform: translateX(-50%) scale(1); }
+  30% { opacity: 0.3; transform: translateX(-50%) scale(1); }
+  50% { opacity: 0.2; transform: translateX(-50%) scale(4); }
+  65% { opacity: 0; transform: translateX(-50%) scale(6); }
+  100% { opacity: 0; transform: translateX(-50%) scale(6); }
 }
 
 @keyframes nomi-cycle {
-  0%, 100% {
-    bottom: 20%;
-    transform: translateX(-50%) rotate(0deg);
-  }
-  5% {
-    bottom: 21%;
-    transform: translateX(-50%) rotate(0deg);
-  }
-  10% {
-    bottom: 20%;
-    transform: translateX(-50%) rotate(0deg);
-  }
-  /* rise */
-  30% {
-    bottom: 42%;
-    transform: translateX(-50%) rotate(0deg);
-  }
-  /* pause + look around */
-  40% {
-    bottom: 42%;
-    transform: translateX(-50%) rotate(-3deg);
-  }
-  50% {
-    bottom: 42%;
-    transform: translateX(-50%) rotate(3deg);
-  }
-  58% {
-    bottom: 42%;
-    transform: translateX(-50%) rotate(0deg);
-  }
-  /* sink back */
-  80% {
-    bottom: 20%;
-    transform: translateX(-50%) rotate(0deg);
-  }
+  /* submerged */
+  0% { transform: translateY(100%); }
+  /* horn tip rises */
+  10% { transform: translateY(60%); }
+  /* face peeks out */
+  22% { transform: translateY(20%) rotate(0deg); }
+  /* hold + sway */
+  30% { transform: translateY(20%) rotate(-2deg); }
+  38% { transform: translateY(20%) rotate(2deg); }
+  44% { transform: translateY(20%) rotate(0deg); }
+  /* sink to resting — crown + horn visible */
+  58% { transform: translateY(55%) rotate(0deg); }
   /* gentle bob at rest */
-  90% {
-    bottom: 21%;
-    transform: translateX(-50%) rotate(0deg);
-  }
+  65% { transform: translateY(52%) rotate(0deg); }
+  72% { transform: translateY(55%) rotate(0deg); }
+  79% { transform: translateY(52%) rotate(0deg); }
+  86% { transform: translateY(55%) rotate(0deg); }
+  /* pause then loop */
+  100% { transform: translateY(100%); }
 }
 
 .edit-empty-title {
