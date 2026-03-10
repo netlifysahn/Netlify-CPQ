@@ -176,6 +176,7 @@ export default function App() {
       updated_at: new Date().toISOString(),
     };
     setQuotes((prev) => [...prev, newQ]);
+    return newQ;
   };
 
   // Filters
@@ -401,6 +402,7 @@ export default function App() {
             onSave={saveQuoteFromDetail}
             onBack={() => setActiveQuote(null)}
             onDelete={delQuote}
+            onClone={(q) => { const cloned = dupeQuote(q); setActiveQuote(cloned); }}
           />
         )}
 

@@ -159,7 +159,7 @@ export default function QuoteDetail(props) {
   );
 }
 
-function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelete }) {
+function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelete, onClone }) {
   const [q, setQ] = useState(() => normalizeQuote(quote));
   const [mode, setMode] = useState('view'); // 'view' | 'edit'
   const [draft, setDraft] = useState(null); // working copy in edit mode
@@ -1074,6 +1074,9 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 <option key={key} value={key}>{label}</option>
               ))}
             </select>
+            <button onClick={() => onClone(q)} style={{ padding: '8px 16px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a', cursor: 'pointer' }}>
+              <i className="fa-solid fa-clone" style={{ marginRight: '6px' }} />Clone Quote
+            </button>
             <button onClick={() => generateQuotePdf(q)} style={{ padding: '8px 16px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a', cursor: 'pointer' }}>
               Generate Quote PDF
             </button>
