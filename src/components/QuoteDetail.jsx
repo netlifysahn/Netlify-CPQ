@@ -155,6 +155,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   const [collapsedPkgs, setCollapsedPkgs] = useState(new Set());
   const [detailCards, setDetailCards] = useState({ customer: false, term: false, billing: false, overage: false });
   const [addingToPackageId, setAddingToPackageId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState(false);
   const [dropTargetId, setDropTargetId] = useState(null);
   const dragRef = useRef(null); // { type: 'top'|'sub', id, parentId? }
   const moreRef = useRef(null);
@@ -1014,7 +1015,29 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         </button>
         <div className="qd-header-info">
           <div className="qd-quote-number">{q.quote_number}</div>
-          <h1 className="qd-title">{q.name || 'Untitled Quote'}</h1>
+          {editingTitle ? (
+            <input
+              autoFocus
+              type="text"
+              value={q.name}
+              placeholder="Quote name"
+              onChange={(e) => setQ((prev) => ({ ...prev, name: e.target.value }))}
+              onBlur={(e) => {
+                setEditingTitle(false);
+                persistQuote((prev) => ({ ...prev, name: e.target.value }));
+              }}
+              onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setEditingTitle(false); }}
+              style={{
+                fontFamily: "'Poppins', sans-serif", fontSize: '34px', fontWeight: 300, letterSpacing: '-0.01em',
+                color: 'var(--text-strong)', background: 'transparent', border: 'none', borderBottom: '1px solid #FBB13D',
+                outline: 'none', padding: 0, margin: 0, width: '100%', lineHeight: 'inherit',
+              }}
+            />
+          ) : (
+            <h1 className="qd-title" onClick={() => setEditingTitle(true)} style={{ cursor: 'pointer' }}>
+              {q.name || 'Untitled Quote'}
+            </h1>
+          )}
         </div>
       </div>
 
