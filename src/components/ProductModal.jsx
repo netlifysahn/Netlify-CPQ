@@ -44,6 +44,7 @@ const COLLAPSIBLE_SECTION_KEYS = {
   SERVICE: 'service',
   ENTITLEMENTS: 'entitlements',
   CONFIGURATION: 'configuration',
+  TERMS: 'terms',
 };
 
 export default function ProductModal({ product, products, onSave, onClose }) {
@@ -57,6 +58,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
     [COLLAPSIBLE_SECTION_KEYS.SERVICE]: true,
     [COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS]: false,
     [COLLAPSIBLE_SECTION_KEYS.CONFIGURATION]: false,
+    [COLLAPSIBLE_SECTION_KEYS.TERMS]: false,
   });
 
   const s = (k, v) => setF((p) => ({ ...p, [k]: v }));
@@ -516,6 +518,32 @@ export default function ProductModal({ product, products, onSave, onClose }) {
             <div className="field">
               <label className="field-label">Default Description</label>
               <textarea className="field-textarea" value={f.config.default_description} onChange={(e) => sc('default_description', e.target.value)} placeholder="Default line item description..." />
+            </div>
+          </div>
+        </div>
+
+        {/* ── Terms & Conditions ── */}
+        <div className="modal-section">
+          <button
+            type="button"
+            className="modal-section-label modal-section-toggle"
+            onClick={() => toggleSection(COLLAPSIBLE_SECTION_KEYS.TERMS)}
+            aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.TERMS]}
+          >
+            <span>Terms &amp; Conditions</span>
+            <i className={`fa-solid ${openSections[COLLAPSIBLE_SECTION_KEYS.TERMS] ? 'fa-chevron-down' : 'fa-chevron-right'}`} />
+          </button>
+
+          <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.TERMS] ? 'is-open' : ''}`}>
+            <div className="field">
+              <label className="field-label">Product Terms</label>
+              <textarea
+                className="field-textarea"
+                value={f.terms || ''}
+                onChange={(e) => s('terms', e.target.value)}
+                placeholder="Enter any product-specific terms and conditions that will appear on the quote PDF for this line item..."
+                style={{ minHeight: 120 }}
+              />
             </div>
           </div>
         </div>

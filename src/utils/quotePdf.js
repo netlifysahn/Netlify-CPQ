@@ -227,6 +227,37 @@ export function generateQuotePdf(quote) {
     doc.setTextColor(60, 60, 60);
     const tcLines = doc.splitTextToSize(quote.terms_conditions, pageWidth - margin * 2);
     doc.text(tcLines, margin, y);
+    y += tcLines.length * 5 + 8;
+  }
+
+  // Product-specific terms
+  if (quote.line_items) {
+    const productTerms = quote.line_items
+      .filter((line) => line.terms && line.terms.trim())
+      .map((line) => ({ name: line.product_name, terms: line.terms.trim() }));
+
+    if (productTerms.length > 0) {
+      if (y > 250) { doc.addPage(); y = margin; }
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(80, 80, 80);
+      doc.text('Product-Specific Terms', margin, y);
+      y += 8;
+
+      productTerms.forEach((pt) => {
+        if (y > 260) { doc.addPage(); y = margin; }
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(50, 50, 50);
+        doc.text(`${pt.name}`, margin, y);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60, 60, 60);
+        const termLines = doc.splitTextToSize(pt.terms, pageWidth - margin * 2);
+        doc.text(termLines, margin, y);
+        y += termLines.length * 5 + 6;
+      });
+    }
   }
 
   // Footer on each page
