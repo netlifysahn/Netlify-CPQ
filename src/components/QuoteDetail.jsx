@@ -75,33 +75,26 @@ const handleDcFocus = (e) => { e.target.style.borderColor = '#FBB13D'; };
 const handleDcBlurStyle = (e) => { e.target.style.borderColor = '#e5e7eb'; };
 
 // Top-level component to avoid remount on parent state change
-function DetailInput({ label, field, value, placeholder, span2, type, mono, textarea, onChange, onBlur }) {
+function DetailInput({ label, field, value, placeholder, span2, type, mono, textarea, options, onChange, onBlur }) {
   const style = mono ? { ...DC_INPUT_STYLE, fontFamily: "'Roboto Mono', monospace" } : DC_INPUT_STYLE;
   const handleChange = (e) => onChange(field, e.target.value);
   const handleBlur = (e) => { handleDcBlurStyle(e); onBlur(field, e.target.value); };
+  let input;
+  if (textarea) {
+    input = <textarea style={{ ...style, resize: 'vertical', minHeight: '60px' }} value={value || ''} placeholder={placeholder} onChange={handleChange} onFocus={handleDcFocus} onBlur={handleBlur} />;
+  } else if (options) {
+    input = (
+      <select style={{ ...style, appearance: 'auto', cursor: 'pointer' }} value={value || ''} onChange={(e) => { handleChange(e); onBlur(field, e.target.value); }} onFocus={handleDcFocus} onBlur={(e) => handleDcBlurStyle(e)}>
+        {options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+      </select>
+    );
+  } else {
+    input = <input type={type || 'text'} style={style} value={value || ''} placeholder={placeholder} onChange={handleChange} onFocus={handleDcFocus} onBlur={handleBlur} />;
+  }
   return (
     <div style={span2 ? { gridColumn: '1 / -1' } : undefined}>
       <div style={DC_LABEL_STYLE}>{label}</div>
-      {textarea ? (
-        <textarea
-          style={{ ...style, resize: 'vertical', minHeight: '60px' }}
-          value={value || ''}
-          placeholder={placeholder}
-          onChange={handleChange}
-          onFocus={handleDcFocus}
-          onBlur={handleBlur}
-        />
-      ) : (
-        <input
-          type={type || 'text'}
-          style={style}
-          value={value || ''}
-          placeholder={placeholder}
-          onChange={handleChange}
-          onFocus={handleDcFocus}
-          onBlur={handleBlur}
-        />
-      )}
+      {input}
     </div>
   );
 }
@@ -580,7 +573,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         </div>
         {detailCards.billing && (
           <div style={cardBodyStyle}>
-            <DetailInput label="Billing Schedule" field="billing_schedule" value={source.billing_schedule} placeholder="Annual" onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Billing Schedule" field="billing_schedule" value={source.billing_schedule} options={['Annual', 'Semi-Annual', 'Quarterly', 'Monthly']} onChange={handleFieldChange} onBlur={handleFieldBlur} />
             <DetailInput label="Payment Method" field="payment_method" value={source.payment_method} placeholder="Select..." onChange={handleFieldChange} onBlur={handleFieldBlur} />
             <DetailInput label="Payment Terms" field="payment_terms" value={source.payment_terms} placeholder="Net 30" onChange={handleFieldChange} onBlur={handleFieldBlur} />
             <DetailInput label="PO #" field="po_number" value={source.po_number} placeholder="Optional" mono onChange={handleFieldChange} onBlur={handleFieldBlur} />
