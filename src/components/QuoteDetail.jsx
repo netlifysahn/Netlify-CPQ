@@ -482,52 +482,53 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   // ════════════════════════════════════════
   //  DETAIL CARDS (view mode)
   // ════════════════════════════════════════
-  const cardStyle = { background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: '0', marginBottom: '12px' };
   const cardHeaderStyle = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', cursor: 'pointer', userSelect: 'none' };
   const eyebrowStyle = { fontFamily: "'Roboto Mono', monospace", fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9ca3af' };
   const cardBodyStyle = { padding: '4px 24px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' };
-  const fieldLabelStyle = { fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '2px' };
-  const fieldValueStyle = { fontSize: '14px', color: '#0a0a0a', fontWeight: 500 };
+  const dcLabelStyle = { fontSize: '14px', color: '#0f172a', fontWeight: 500, fontFamily: "'Mulish', sans-serif", marginBottom: '6px' };
+  const dcInputStyle = { fontSize: '14px', color: '#0a0a0a', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 14px', width: '100%', outline: 'none', boxSizing: 'border-box', background: '#fff', transition: 'border-color 0.15s, box-shadow 0.15s' };
+  const dcFocusHandlers = {
+    onFocus: (e) => { e.target.style.borderColor = '#FBB13D'; e.target.style.boxShadow = '0 0 0 3px rgba(251,177,61,0.15)'; },
+    onBlur: (e) => { e.target.style.borderColor = '#e5e7eb'; e.target.style.boxShadow = 'none'; },
+  };
   const chevronStyle = { fontSize: '12px', color: '#9ca3af' };
+  const sectionDivider = { height: '1px', background: 'rgba(0,0,0,0.06)', margin: 0 };
 
   const toggleCard = (key) => setDetailCards((p) => ({ ...p, [key]: !p[key] }));
 
-  const [editingField, setEditingField] = useState(null);
-  const monoFields = new Set(['account_id', 'po_number', 'vat_number']);
-  const editInputStyle = { fontSize: '14px', fontWeight: 500, color: '#0a0a0a', border: '1px solid #d1d5db', borderRadius: '6px', padding: '4px 8px', width: '100%', outline: 'none', boxSizing: 'border-box' };
-
-  const updateField = (field, value) => {
-    persistQuote((prev) => ({ ...prev, [field]: value }));
-    setEditingField(null);
+  const handleFieldBlur = (field, e) => {
+    dcFocusHandlers.onBlur(e);
+    persistQuote((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
-  const DetailField = ({ label, field, value, displayValue, span2, type, mono }) => {
-    const isEditing = editingField === field;
-    const valStyle = { ...fieldValueStyle, cursor: 'pointer', ...(mono ? { fontFamily: "'Roboto Mono', monospace" } : {}) };
-    const inputMono = mono ? { ...editInputStyle, fontFamily: "'Roboto Mono', monospace" } : editInputStyle;
-
+  const DetailInput = ({ label, field, value, placeholder, span2, type, mono, textarea }) => {
+    const style = mono ? { ...dcInputStyle, fontFamily: "'Roboto Mono', monospace" } : dcInputStyle;
     return (
       <div style={span2 ? { gridColumn: '1 / -1' } : undefined}>
-        <div style={fieldLabelStyle}>{label}</div>
-        {isEditing ? (
-          <input
-            type={type || 'text'}
-            style={inputMono}
-            defaultValue={value || ''}
-            autoFocus
-            onBlur={(e) => updateField(field, e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+        <div style={dcLabelStyle}>{label}</div>
+        {textarea ? (
+          <textarea
+            style={{ ...style, resize: 'vertical', minHeight: '60px' }}
+            value={value || ''}
+            placeholder={placeholder}
+            onChange={(e) => setQ((p) => ({ ...p, [field]: e.target.value }))}
+            onFocus={dcFocusHandlers.onFocus}
+            onBlur={(e) => handleFieldBlur(field, e)}
           />
         ) : (
-          <div style={valStyle} onClick={() => setEditingField(field)}>
-            {displayValue || value || '—'}
-          </div>
+          <input
+            type={type || 'text'}
+            style={style}
+            value={value || ''}
+            placeholder={placeholder}
+            onChange={(e) => setQ((p) => ({ ...p, [field]: e.target.value }))}
+            onFocus={dcFocusHandlers.onFocus}
+            onBlur={(e) => handleFieldBlur(field, e)}
+          />
         )}
       </div>
     );
   };
-
-  const sectionDivider = { height: '1px', background: 'rgba(0,0,0,0.06)', margin: 0 };
 
   const renderDetailCards = (source) => (
     <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: 0, marginBottom: '12px' }}>
@@ -539,14 +540,14 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         </div>
         {detailCards.customer && (
           <div style={cardBodyStyle}>
-            <DetailField label="Customer Name" field="customer_name" value={source.customer_name} span2 />
-            <DetailField label="Primary Contact Name" field="contact_name" value={source.contact_name} />
-            <DetailField label="Primary Contact Email" field="contact_email" value={source.contact_email} />
-            <DetailField label="Address" field="address" value={source.address} span2 />
-            <DetailField label="Billing Contact Name" field="billing_contact_name" value={source.billing_contact_name} />
-            <DetailField label="Billing Contact Email" field="billing_contact_email" value={source.billing_contact_email} />
-            <DetailField label="Invoice Email" field="invoice_email" value={source.invoice_email} />
-            <DetailField label="Netlify Account ID" field="account_id" value={source.account_id} mono />
+            <DetailInput label="Customer Name" field="customer_name" value={source.customer_name} placeholder="Company name" span2 />
+            <DetailInput label="Primary Contact Name" field="contact_name" value={source.contact_name} placeholder="Full name" />
+            <DetailInput label="Primary Contact Email" field="contact_email" value={source.contact_email} placeholder="contact@company.com" type="email" />
+            <DetailInput label="Address" field="address" value={source.address} placeholder="Street, City, State, ZIP, Country" span2 textarea />
+            <DetailInput label="Billing Contact Name" field="billing_contact_name" value={source.billing_contact_name} placeholder="Full name" />
+            <DetailInput label="Billing Contact Email" field="billing_contact_email" value={source.billing_contact_email} placeholder="billing@company.com" type="email" />
+            <DetailInput label="Invoice Email" field="invoice_email" value={source.invoice_email} placeholder="invoices@company.com" type="email" />
+            <DetailInput label="Netlify Account ID" field="account_id" value={source.account_id} placeholder="e.g. acct_abc123" mono />
           </div>
         )}
       </div>
@@ -561,8 +562,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         </div>
         {detailCards.term && (
           <div style={cardBodyStyle}>
-            <DetailField label="Subscription Start Date" field="start_date" value={source.start_date} displayValue={source.start_date ? fmtDate(source.start_date) : null} type="date" />
-            <DetailField label="Subscription Term" field="term_months" value={source.term_months} displayValue={source.term_months ? `${source.term_months} months` : null} />
+            <DetailInput label="Subscription Start Date" field="start_date" value={source.start_date} type="date" />
+            <DetailInput label="Subscription Term (Months)" field="term_months" value={source.term_months} placeholder="12" />
           </div>
         )}
       </div>
@@ -577,11 +578,11 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         </div>
         {detailCards.billing && (
           <div style={cardBodyStyle}>
-            <DetailField label="Billing Schedule" field="billing_schedule" value={source.billing_schedule} />
-            <DetailField label="Payment Method" field="payment_method" value={source.payment_method} />
-            <DetailField label="Payment Terms" field="payment_terms" value={source.payment_terms} />
-            <DetailField label="PO #" field="po_number" value={source.po_number} mono />
-            <DetailField label="VAT #" field="vat_number" value={source.vat_number} mono />
+            <DetailInput label="Billing Schedule" field="billing_schedule" value={source.billing_schedule} placeholder="Annual" />
+            <DetailInput label="Payment Method" field="payment_method" value={source.payment_method} placeholder="Select..." />
+            <DetailInput label="Payment Terms" field="payment_terms" value={source.payment_terms} placeholder="Net 30" />
+            <DetailInput label="PO #" field="po_number" value={source.po_number} placeholder="Optional" mono />
+            <DetailInput label="VAT #" field="vat_number" value={source.vat_number} placeholder="Optional" mono />
           </div>
         )}
       </div>
