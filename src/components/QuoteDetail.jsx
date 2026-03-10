@@ -663,35 +663,38 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           <button className="back-btn" onClick={onBack}>
             <i className="fa-solid fa-arrow-left" /> Back to Quotes
           </button>
-          <div className="qd-header-row">
-            <div className="qd-header-info">
-              <div className="qd-quote-number">{q.quote_number}</div>
-              <h1 className="qd-title">{q.name || 'Untitled Quote'}</h1>
-            </div>
-            <div className="qd-actions">
-              <button className="qd-status-btn qd-edit-lines-btn" onClick={enterEditMode} style={{ background: '#FBB13D', color: '#fff', fontWeight: 600, border: 'none', borderRadius: '6px', padding: '8px 16px', height: '36px', cursor: 'pointer' }}>
-                {q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
-              </button>
-              {statusOptions().map((s) => (
-                <button key={s} className="qd-status-btn" onClick={() => changeStatus(s)}>
-                  {STATUS_META[s]?.label || s}
-                </button>
+          <div className="qd-header-info">
+            <div className="qd-quote-number">{q.quote_number}</div>
+            <h1 className="qd-title">{q.name || 'Untitled Quote'}</h1>
+          </div>
+          <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', margin: '16px 0 0', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px' }}>
+            <select
+              className="qd-status-btn"
+              value={q.status}
+              onChange={(e) => changeStatus(e.target.value)}
+              style={{ appearance: 'auto', cursor: 'pointer', padding: '8px 12px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a' }}
+            >
+              {Object.entries(STATUS_META).map(([key, { label }]) => (
+                <option key={key} value={key}>{label}</option>
               ))}
-              <button className="qd-status-btn" onClick={() => generateQuotePdf(q)}>
-                PDF
+            </select>
+            <button className="qd-status-btn" onClick={() => generateQuotePdf(q)} style={{ padding: '8px 16px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a', cursor: 'pointer' }}>
+              Generate Quote PDF
+            </button>
+            <button onClick={enterEditMode} style={{ background: '#FBB13D', color: '#fff', fontWeight: 600, border: 'none', borderRadius: '6px', padding: '8px 16px', height: '36px', cursor: 'pointer', fontSize: '13px' }}>
+              {q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
+            </button>
+            <div className="qd-more-wrap" ref={moreRef}>
+              <button className="qd-more-btn" onClick={() => setShowMoreMenu(!showMoreMenu)}>
+                <i className="fa-solid fa-ellipsis" />
               </button>
-              <div className="qd-more-wrap" ref={moreRef}>
-                <button className="qd-more-btn" onClick={() => setShowMoreMenu(!showMoreMenu)}>
-                  <i className="fa-solid fa-ellipsis" />
-                </button>
-                {showMoreMenu && (
-                  <div className="qd-more-menu">
-                    <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(q.id); }}>
-                      <i className="fa-solid fa-trash-can" /> Delete Quote
-                    </button>
-                  </div>
-                )}
-              </div>
+              {showMoreMenu && (
+                <div className="qd-more-menu">
+                  <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(q.id); }}>
+                    <i className="fa-solid fa-trash-can" /> Delete Quote
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
