@@ -4,8 +4,8 @@
 export const PRODUCT_TYPES = ['bundle', 'platform', 'entitlements', 'addon', 'support'];
 export const TYPE_SORT_ORDER = PRODUCT_TYPES.reduce((acc, type, index) => ({ ...acc, [type]: index }), {});
 export const TYPE_LABELS = {
-  bundle: 'Package',
-  platform: 'Platform',
+  bundle: 'Packages',
+  platform: 'Infrastructure',
   entitlements: 'Entitlements',
   addon: 'Add-ons',
   support: 'Support',
