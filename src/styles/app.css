@@ -2970,7 +2970,7 @@ tr.drag-over {
 .picker-v2-title {
   font-family: 'Poppins', sans-serif;
   font-size: 28px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text-strong);
   letter-spacing: -0.02em;
   margin-bottom: 14px;
@@ -3075,7 +3075,7 @@ tr.drag-over {
 }
 
 .picker-v2-card.selected {
-  border: 2px solid #FBB13D;
+  border: 1.5px solid #FBB13D;
   padding: 15px;
   background: rgba(251, 177, 61, 0.06);
 }
@@ -3190,7 +3190,7 @@ tr.drag-over {
 }
 [data-theme="light"] .picker-v2-card.selected {
   border-color: #FBB13D;
-  border-width: 2px;
+  border-width: 1.5px;
   background: rgba(251, 177, 61, 0.04);
 }
 [data-theme="light"] .picker-v2-card .type-pill {
