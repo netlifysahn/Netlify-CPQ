@@ -667,22 +667,6 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             <div className="qd-header-info">
               <div className="qd-quote-number">{q.quote_number}</div>
               <h1 className="qd-title">{q.name || 'Untitled Quote'}</h1>
-              <div className="qd-meta">
-                {q.customer_name && <span>{q.customer_name}</span>}
-                <span className={`status-badge status-${meta.color}`}>{meta.label}</span>
-                <span>{q.term_months} month term</span>
-                {q.header_discount > 0 && <span>{q.header_discount}% quote discount</span>}
-              </div>
-              <div className="qd-dates">
-                <div className="qd-dates-line">
-                  Quoted {q.quote_date ? fmtDate(q.quote_date) : '—'}
-                  {' · '}
-                  Expires {q.expiration_date ? fmtDate(q.expiration_date) : '—'}
-                </div>
-                <div className="qd-dates-line">
-                  Subscription Start: {q.start_date ? fmtDate(q.start_date) : '—'}
-                </div>
-              </div>
             </div>
             <div className="qd-actions">
               <button className="qd-status-btn qd-edit-lines-btn" onClick={enterEditMode} style={{ background: '#FBB13D', color: '#fff', fontWeight: 600, border: 'none', borderRadius: '6px', padding: '8px 16px', height: '36px', cursor: 'pointer' }}>
