@@ -10,7 +10,7 @@ export const TYPE_LABELS = {
   addon: 'Add-ons',
   support: 'Support',
 };
-export const PRICE_UNITS = ['flat', 'per_member', 'per_credit', 'per_build', 'included'];
+export const PRICE_UNITS = ['flat', 'per_member', 'per_credit', 'per_build'];
 export const PRICING_METHODS = ['list', 'cost'];
 export const TERM_BEHAVIORS = ['included', 'excluded'];
 export const CONFIGURATION_METHODS = ['none', 'bundle'];
