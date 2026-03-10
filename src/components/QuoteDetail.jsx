@@ -67,6 +67,12 @@ const displayCurrency = (v) => {
   return n === 0 ? '—' : fmtCurrency(n);
 };
 
+// Format quantity with comma separators — 1000000 → "1,000,000"
+const fmtQty = (v) => {
+  const n = typeof v === 'number' && !isNaN(v) ? v : 0;
+  return n.toLocaleString('en-US');
+};
+
 // ── Detail card styles (shared constants) ──
 const DC_LABEL_STYLE = { fontSize: '14px', color: '#0f172a', fontWeight: 500, fontFamily: "'Mulish', sans-serif", marginBottom: '6px' };
 const DC_INPUT_STYLE = { fontSize: '14px', color: '#0a0a0a', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 14px', width: '100%', outline: 'none', boxSizing: 'border-box', background: '#fff', transition: 'border-color 0.15s' };
@@ -469,7 +475,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
 
     if (disabled) {
       const dval = typeof line[field] === 'number' ? line[field] : 0;
-      return <span className="cell-locked">{dval}</span>;
+      return <span className="cell-locked">{field === 'quantity' ? fmtQty(dval) : dval}</span>;
     }
 
     if (isEditing) {
@@ -504,6 +510,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     let display;
     if (field === 'discount_percent') display = val > 0 ? `${val}%` : '—';
     else if (field === 'discount_amount' || field === 'list_price' || field === 'net_price') display = displayCurrency(val);
+    else if (field === 'quantity') display = fmtQty(val);
     else display = val;
 
     return (
@@ -601,7 +608,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       return (
         <React.Fragment key={line.id}>
           <tr className="line-row-package">
-            <td className="line-td-product" style={{ width: '25%', minWidth: '200px' }}>
+            <td className="line-td-product" style={{ width: '23%', minWidth: '200px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
                 <span className="pkg-badge">PKG</span>
@@ -621,11 +628,11 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             const ext = calcLineExtended(sub);
             return (
               <tr key={sub.id} className="line-row-sub">
-                <td className="line-td-product qd-view-sub-product pkg-sub-product" style={{ width: '25%', minWidth: '200px' }}>
+                <td className="line-td-product qd-view-sub-product pkg-sub-product" style={{ width: '23%', minWidth: '200px' }}>
                   <div className="cell-name">{sub.product_name}</div>
                 </td>
                 <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(sub.unit_type || 'flat')}</span></td>
-                <td style={{ width: '10%' }}>{sub.quantity}</td>
+                <td style={{ width: '12%' }}>{fmtQty(sub.quantity)}</td>
                 <td style={{ width: '10%' }}>{displayCurrency(sub.list_price ?? 0)}</td>
                 <td style={{ width: '10%' }}>{(sub.discount_percent ?? 0) > 0 ? `${sub.discount_percent}%` : '—'}</td>
                 <td style={{ width: '10%' }}>{displayCurrency(sub.net_price ?? sub.list_price ?? 0)}</td>
@@ -641,11 +648,11 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     const extended = calcLineExtended(line);
     return (
       <tr key={line.id}>
-        <td className="line-td-product" style={{ width: '25%', minWidth: '200px' }}>
+        <td className="line-td-product" style={{ width: '23%', minWidth: '200px' }}>
           <div className="cell-name">{line.product_name}</div>
         </td>
         <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
-        <td style={{ width: '10%' }}>{line.quantity}</td>
+        <td style={{ width: '12%' }}>{fmtQty(line.quantity)}</td>
         <td style={{ width: '10%' }}>{isIncluded(unitType) ? '—' : displayCurrency(line.list_price ?? 0)}</td>
         <td style={{ width: '10%' }}>{isIncluded(unitType) ? '—' : ((line.discount_percent ?? 0) > 0 ? `${line.discount_percent}%` : '—')}</td>
         <td style={{ width: '10%' }}>{isIncluded(unitType) ? '—' : displayCurrency(line.net_price ?? line.list_price ?? 0)}</td>
@@ -673,9 +680,9 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     const editTableHead = (
       <thead>
         <tr>
-          <th style={{ width: '25%', minWidth: '200px' }}>Product</th>
+          <th style={{ width: '23%', minWidth: '200px' }}>Product</th>
           <th style={{ width: '10%' }}>Unit</th>
-          <th style={{ width: '10%' }}>Qty</th>
+          <th style={{ width: '12%' }}>Qty</th>
           <th style={{ width: '10%' }}>List Price</th>
           <th style={{ width: '10%' }}>Disc %</th>
           <th style={{ width: '10%' }}>Net Price</th>
@@ -699,9 +706,9 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           onDragOver={(e) => handleDragOver(e, line.id, 'top')}
           onDrop={(e) => handleDrop(e, line.id, 'top')}
         >
-          <td className="line-td-product" style={{ width: '25%', minWidth: '200px' }}><div className="cell-name">{line.product_name}</div></td>
+          <td className="line-td-product" style={{ width: '23%', minWidth: '200px' }}><div className="cell-name">{line.product_name}</div></td>
           <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
-          <td style={{ width: '10%' }}>{included ? <span className="cell-locked">1</span> : renderEditableCell(line, 'quantity', { step: '1', min: '1' })}</td>
+          <td style={{ width: '12%' }}>{included ? <span className="cell-locked">1</span> : renderEditableCell(line, 'quantity', { step: '1', min: '1' })}</td>
           <td style={{ width: '10%' }}>{included ? <span className="price-annual">—</span> : renderEditableCell(line, 'list_price', { step: '0.01', min: '0' })}</td>
           <td style={{ width: '10%' }}>{included ? <span className="price-annual">—</span> : renderEditableCell(line, 'discount_percent', { step: '0.1', min: '0', max: '100' })}</td>
           <td style={{ width: '10%' }}>{included ? <span className="price-annual">—</span> : <span className="price-monthly">{displayCurrency(line.net_price ?? line.list_price ?? 0)}</span>}</td>
@@ -730,7 +737,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             onDragOver={(e) => handleDragOver(e, line.id, 'top')}
             onDrop={(e) => handleDrop(e, line.id, 'top')}
           >
-            <td className="line-td-product" style={{ width: '25%', minWidth: '200px' }}>
+            <td className="line-td-product" style={{ width: '23%', minWidth: '200px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
                 <span className="pkg-badge">PKG</span>
@@ -756,9 +763,9 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 onDragStart={(e) => handleDragStart(e, sub.id, 'sub', line.id)} onDragEnd={handleDragEnd}
                 onDragOver={(e) => handleDragOver(e, sub.id, 'sub', line.id)} onDrop={(e) => handleDrop(e, sub.id, 'sub', line.id)}
               >
-                <td className="line-td-product pkg-sub-product" style={{ width: '25%', minWidth: '200px' }}><div className="cell-name">{sub.product_name}</div></td>
+                <td className="line-td-product pkg-sub-product" style={{ width: '23%', minWidth: '200px' }}><div className="cell-name">{sub.product_name}</div></td>
                 <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
-                <td style={{ width: '10%' }}>{renderEditableCell(sub, 'quantity', { step: '1', min: '1' })}</td>
+                <td style={{ width: '12%' }}>{renderEditableCell(sub, 'quantity', { step: '1', min: '1' })}</td>
                 <td style={{ width: '10%' }}>{renderEditableCell(sub, 'list_price', { step: '0.01', min: '0' })}</td>
                 <td style={{ width: '10%' }}>{renderEditableCell(sub, 'discount_percent', { step: '0.1', min: '0', max: '100' })}</td>
                 <td style={{ width: '10%' }}><span className="price-monthly">{displayCurrency(sub.net_price ?? sub.list_price ?? 0)}</span></td>
@@ -1048,9 +1055,9 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 <table className="data-table line-table">
                   <thead>
                     <tr>
-                      <th style={{ width: '25%', minWidth: '200px' }}>Product</th>
+                      <th style={{ width: '23%', minWidth: '200px' }}>Product</th>
                       <th style={{ width: '10%' }}>Unit</th>
-                      <th style={{ width: '10%' }}>Qty</th>
+                      <th style={{ width: '12%' }}>Qty</th>
                       <th style={{ width: '10%' }}>List Price</th>
                       <th style={{ width: '10%' }}>Disc %</th>
                       <th style={{ width: '10%' }}>Net Price</th>
