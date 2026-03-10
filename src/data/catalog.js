@@ -1,14 +1,13 @@
 // Netlify Deal Studio — Product Catalog Data Model (Phase 1)
 // Empty catalog. No seed data. No SFDC dependencies.
 
-export const PRODUCT_TYPES = ['bundle', 'platform', 'seats', 'credits', 'addon', 'support'];
+export const PRODUCT_TYPES = ['bundle', 'platform', 'entitlements', 'addon', 'support'];
 export const TYPE_SORT_ORDER = PRODUCT_TYPES.reduce((acc, type, index) => ({ ...acc, [type]: index }), {});
 export const TYPE_LABELS = {
   bundle: 'Package',
   platform: 'Platform',
-  seats: 'Seats',
+  entitlements: 'Entitlements',
   addon: 'Add-ons',
-  credits: 'Credits',
   support: 'Support',
 };
 export const PRICE_UNITS = ['flat', 'per_member', 'per_credit', 'included'];
@@ -20,8 +19,7 @@ export const MEMBER_PRICE_BEHAVIORS = ['included', 'discounted', 'related'];
 
 export const TYPE_COLORS = {
   platform: '#5cbbf6',
-  seats: '#34d399',
-  credits: '#f5a623',
+  entitlements: '#34d399',
   addon: '#a78bfa',
   bundle: '#32e6e2',
   support: '#f472b6',
@@ -29,8 +27,7 @@ export const TYPE_COLORS = {
 
 export const TYPE_ICONS = {
   platform: 'fa-bolt',
-  seats: 'fa-headset',
-  credits: 'fa-coins',
+  entitlements: 'fa-tag',
   addon: 'fa-server',
   bundle: 'fa-boxes-stacked',
   support: 'fa-life-ring',
@@ -39,7 +36,9 @@ export const TYPE_ICONS = {
 export const getProductCategory = (product) => {
   const raw = product?.category ?? product?.type;
   if (typeof raw !== 'string' || !raw.trim()) return 'platform';
-  return raw.trim().toLowerCase();
+  const cat = raw.trim().toLowerCase();
+  if (cat === 'seats' || cat === 'credits') return 'entitlements';
+  return cat;
 };
 
 export const UNIT_LABELS = {
