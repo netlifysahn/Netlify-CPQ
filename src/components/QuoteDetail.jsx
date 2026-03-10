@@ -763,12 +763,10 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         <col style={{ width: '25%' }} />
         <col style={{ width: '10%' }} />
         <col style={{ width: '8%' }} />
-        <col style={{ width: '6%' }} />
+        <col style={{ width: '12%' }} />
         <col style={{ width: '10%' }} />
-        <col style={{ width: '8%' }} />
-        <col style={{ width: '8%' }} />
-        <col style={{ width: '10%' }} />
-        <col style={{ width: '10%' }} />
+        <col style={{ width: '12%' }} />
+        <col style={{ width: '12%' }} />
         <col style={{ width: '5%' }} />
       </colgroup>
     );
@@ -778,12 +776,10 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         <tr>
           <th className="col-drag" />
           <th>Product</th>
-          <th>SKU</th>
           <th>Unit</th>
           <th>Qty</th>
           <th>List Price</th>
           <th>Disc %</th>
-          <th>Disc $</th>
           <th>Net Price</th>
           <th>Extended</th>
           <th className="col-actions" />
@@ -808,7 +804,6 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         >
           <td className="col-drag"><i className="fa-solid fa-grip-vertical drag-handle" /></td>
           <td className="line-td-product"><div className="cell-name">{line.product_name}</div></td>
-          <td><span className="cell-sku">{line.product_sku}</span></td>
           <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
           <td>
             {included
@@ -824,11 +819,6 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             {included
               ? <span className="price-annual">—</span>
               : renderEditableCell(line, 'discount_percent', { step: '0.1', min: '0', max: '100' })}
-          </td>
-          <td>
-            {included
-              ? <span className="price-annual">—</span>
-              : renderEditableCell(line, 'discount_amount', { step: '0.01', min: '0' })}
           </td>
           <td>
             {included
@@ -879,21 +869,19 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           >
             <td className="col-drag"><i className="fa-solid fa-grip-vertical drag-handle" /></td>
             <td className="line-td-product">
-              <button className="pkg-chevron" onClick={() => togglePackage(line.id)}>
-                <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
-              </button>
-              <div style={{ display: 'inline-block', verticalAlign: 'middle' }}>
-                <div className="cell-name">{line.product_name}<span className="pkg-badge">PKG</span></div>
-                <div><span className="pkg-count-pill">{subs.length} component{subs.length !== 1 ? 's' : ''}</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
+                <span className="pkg-badge">PKG</span>
+                <button className="pkg-chevron" onClick={() => togglePackage(line.id)} style={{ marginLeft: 0 }}>
+                  <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
+                </button>
               </div>
             </td>
-            <td><span className="cell-sku">{line.product_sku}</span></td>
-            <td><span className="cell-sku">Package</span></td>
-            <td><span className="cell-locked">—</span></td>
-            <td><span className="cell-locked">—</span></td>
-            <td><span className="cell-locked">—</span></td>
-            <td><span className="cell-locked">—</span></td>
-            <td><span className="cell-locked">—</span></td>
+            <td />
+            <td />
+            <td />
+            <td />
+            <td />
             <td><span className="price-monthly">{displayCurrency(pkgTotal)}</span></td>
             <td className="col-actions">
               <div className="actions-group">
@@ -919,14 +907,11 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 <td className="col-drag" style={{ paddingLeft: 20 }}><i className="fa-solid fa-grip-vertical drag-handle" /></td>
                 <td className="line-td-product pkg-sub-product">
                   <div className="cell-name">{sub.product_name}</div>
-                  <div className="cell-sku">{sub.product_sku}</div>
                 </td>
-                <td><span className="cell-sku">{sub.product_sku}</span></td>
                 <td><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
                 <td>{renderEditableCell(sub, 'quantity', { step: '1', min: '1' })}</td>
                 <td>{renderEditableCell(sub, 'list_price', { step: '0.01', min: '0' })}</td>
                 <td>{renderEditableCell(sub, 'discount_percent', { step: '0.1', min: '0', max: '100' })}</td>
-                <td>{renderEditableCell(sub, 'discount_amount', { step: '0.01', min: '0' })}</td>
                 <td><span className="price-monthly">{displayCurrency(sub.net_price ?? sub.list_price ?? 0)}</span></td>
                 <td><span className="price-monthly">{displayCurrency(ext)}</span></td>
                 <td className="col-actions">
@@ -941,7 +926,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           })}
           {expanded && (
             <tr className="line-row-sub">
-              <td colSpan={11} style={{ paddingLeft: 36 }}>
+              <td colSpan={9} style={{ paddingLeft: 36 }}>
                 <button
                   type="button"
                   className="pkg-add-component-link"
@@ -966,20 +951,28 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       <div className="quote-detail qd-edit-mode">
         {/* Edit mode header */}
         <div className="qd-edit-header">
-          <div className="qd-edit-header-info">
-            <div className="qd-edit-title">
-              Editing Lines — <span className="qd-edit-quote-name">{q.name || 'Untitled Quote'}</span>
-            </div>
-            <div className="qd-edit-subtitle">{q.quote_number}</div>
+          <button className="back-btn" onClick={cancelEdit}>
+            <i className="fa-solid fa-arrow-left" /> Back to Quote Detail
+          </button>
+          <div className="qd-header-info">
+            <div className="qd-quote-number">{q.quote_number}</div>
+            <h1 className="qd-title">{q.name || 'Untitled Quote'}</h1>
           </div>
-          <div className="qd-edit-header-actions">
-            <button className="btn-secondary" onClick={cancelEdit}>Cancel</button>
-            <button className="btn-save" onClick={saveEdit}>Save</button>
+          <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', margin: '16px 0 0', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px' }}>
+            <button onClick={cancelEdit} style={{ padding: '8px 16px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a', cursor: 'pointer' }}>
+              Cancel
+            </button>
+            <button onClick={saveEdit} style={{ background: '#FBB13D', color: '#fff', fontWeight: 600, border: 'none', borderRadius: '6px', padding: '8px 16px', height: '36px', cursor: 'pointer', fontSize: '13px' }}>
+              Save
+            </button>
           </div>
         </div>
 
         {/* Edit line items table */}
         <div className="qd-lines-section">
+          <div className="line-editor-header">
+            <div className="line-editor-title">Edit Line Items</div>
+          </div>
           <div className="qd-lines-card">
             {items.length === 0 ? (
               <div className="edit-empty-state">
