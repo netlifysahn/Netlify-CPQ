@@ -97,7 +97,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
       <div className="modal picker-modal-v2 modal-theme-quotes" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="picker-v2-header">
-          <div className="picker-v2-title">Add Products</div>
+          <div className="picker-v2-title">Quote — Add Products</div>
           <div className="search-wrap picker-v2-search">
             <i className="fa-solid fa-magnifying-glass" />
             <input
@@ -186,7 +186,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
             className="btn-primary"
             disabled={selected.size === 0}
             onClick={handleConfirm}
-            style={{ backgroundColor: '#00AD9F', color: '#ffffff', borderColor: '#00AD9F' }}
+            style={{ backgroundColor: '#FBB13D', color: '#ffffff', borderColor: '#FBB13D' }}
           >
             Add{selected.size > 0 ? ` ${selected.size} ` : ' '}Product{selected.size !== 1 ? 's' : ''}
           </button>

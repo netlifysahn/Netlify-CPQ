@@ -3072,9 +3072,9 @@ tr.drag-over {
 }
 
 .picker-v2-card.selected {
-  border: 2px solid var(--teal);
+  border: 2px solid #FBB13D;
   padding: 15px;
-  background: var(--teal-muted);
+  background: rgba(251, 177, 61, 0.06);
 }
 
 .picker-v2-card.existing {
@@ -3102,8 +3102,8 @@ tr.drag-over {
 }
 
 .picker-v2-checkbox.checked {
-  background: var(--teal);
-  border-color: var(--teal);
+  background: #FBB13D;
+  border-color: #FBB13D;
 }
 
 .picker-v2-card-name {
@@ -3134,7 +3134,7 @@ tr.drag-over {
   font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--teal);
+  color: #FBB13D;
 }
 
 .picker-v2-card-existing {
@@ -3186,9 +3186,9 @@ tr.drag-over {
   border-color: rgba(0, 0, 0, 0.15);
 }
 [data-theme="light"] .picker-v2-card.selected {
-  border-color: #05BDBA;
+  border-color: #FBB13D;
   border-width: 2px;
-  background: rgba(5, 189, 186, 0.04);
+  background: rgba(251, 177, 61, 0.04);
 }
 [data-theme="light"] .picker-v2-card .type-pill {
   background: #f3f4f6;
@@ -3202,8 +3202,8 @@ tr.drag-over {
   border-color: rgba(0, 0, 0, 0.15);
 }
 [data-theme="light"] .picker-v2-checkbox.checked {
-  background: #05BDBA;
-  border-color: #05BDBA;
+  background: #FBB13D;
+  border-color: #FBB13D;
 }
 [data-theme="light"] .picker-v2-card-name {
   color: #0a0a0a;
@@ -3218,14 +3218,14 @@ tr.drag-over {
   border-top-color: rgba(0, 0, 0, 0.06);
 }
 .picker-v2-footer .btn-primary {
-  background: #00AD9F !important;
-  border-color: #00AD9F !important;
+  background: #FBB13D !important;
+  border-color: #FBB13D !important;
   color: #ffffff !important;
   border-radius: 8px;
 }
 .picker-v2-footer .btn-primary:hover {
-  background: #009990 !important;
-  border-color: #009990 !important;
+  background: #e9a235 !important;
+  border-color: #e9a235 !important;
   color: #ffffff !important;
 }
 .picker-v2-footer .btn-primary:disabled {
