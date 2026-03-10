@@ -1897,10 +1897,10 @@ tr.drag-over {
 }
 
 .edit-empty-title {
-  font-family: var(--font-body);
+  font-family: 'Poppins', sans-serif;
   font-size: 18px;
   font-weight: 700;
-  color: var(--text-strong);
+  color: #FBB13D;
   margin-top: 12px;
   margin-bottom: 16px;
 }
