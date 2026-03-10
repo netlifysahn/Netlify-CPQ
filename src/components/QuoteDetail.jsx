@@ -123,6 +123,8 @@ const normalizeQuote = (q) => {
       parent_line_id: l.parent_line_id || null,
     })),
     groups: q.groups || [],
+    overage_rate_credits: q.overage_rate_credits || '',
+    overage_rate_seats: q.overage_rate_seats || '',
   };
 };
 
@@ -145,7 +147,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   const [groupName, setGroupName] = useState('');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [collapsedPkgs, setCollapsedPkgs] = useState(new Set());
-  const [detailCards, setDetailCards] = useState({ customer: false, term: false, billing: false });
+  const [detailCards, setDetailCards] = useState({ customer: false, term: false, billing: false, overage: false });
   const [addingToPackageId, setAddingToPackageId] = useState(null);
   const [dropTargetId, setDropTargetId] = useState(null);
   const dragRef = useRef(null); // { type: 'top'|'sub', id, parentId? }
@@ -1083,6 +1085,22 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             )}
           </>
         )}
+      </div>
+
+      {/* Overage Rates */}
+      <div style={{ ...(!isEditing ? {} : blurStyle), marginTop: '24px', marginBottom: '24px' }}>
+        <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', cursor: 'pointer', userSelect: 'none' }} onClick={() => toggleCard('overage')}>
+            <span style={{ fontFamily: "'Roboto Mono', monospace", fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9ca3af' }}>Overage Rates</span>
+            <i className={`fa-solid ${detailCards.overage ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={{ fontSize: '12px', color: '#9ca3af' }} />
+          </div>
+          {detailCards.overage && (
+            <div style={{ padding: '4px 24px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' }}>
+              <DetailInput label="Overage Rate per 1,500 Credits" field="overage_rate_credits" value={q.overage_rate_credits} placeholder="$0.00" onChange={handleFieldChange} onBlur={handleFieldBlur} />
+              <DetailInput label="Overage Rate per User / Seat" field="overage_rate_seats" value={q.overage_rate_seats} placeholder="$0.00" onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Summary (blurred in edit mode — edit table has its own summary) */}
