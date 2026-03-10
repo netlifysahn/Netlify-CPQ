@@ -2208,12 +2208,11 @@ tr.drag-over {
 /* Edit mode header */
 .qd-edit-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
+  flex-direction: column;
+  margin-bottom: 24px;
   padding-top: 24px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0;
+  border-bottom: none;
 }
 .qd-edit-title {
   font-family: var(--font-heading);
@@ -4270,7 +4269,7 @@ tr.drag-over {
 /* ─── Edit mode header ─────────────────────────────────────── */
 
 [data-theme="light"] .qd-edit-header {
-  border-bottom-color: var(--border);
+  border-bottom: none;
 }
 
 [data-theme="light"] .qd-edit-title {
