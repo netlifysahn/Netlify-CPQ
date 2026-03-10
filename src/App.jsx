@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import './styles/app.css';
 import { PRODUCT_TYPES, TYPE_LABELS, genId, getProductCategory, sortProductsByType } from './data/catalog';
 import { genQuoteNumber } from './data/quotes';
@@ -12,6 +12,9 @@ import QuoteList from './components/QuoteList';
 import QuoteModal from './components/QuoteModal';
 import QuoteDetail from './components/QuoteDetail';
 import Confirm from './components/Confirm';
+import seedProducts from './data/products.json';
+import seedQuotes from './data/quotes.json';
+import seedPricebooks from './data/pricebooks.json';
 
 const NAV_ITEMS = [
   { key: 'products', label: 'Products', icon: 'fa-box' },
@@ -36,9 +39,10 @@ function useTheme() {
 export default function App() {
   useTheme();
   const [page, setPage] = useState('products');
-  const [products, setProducts] = useState([]);
-  const [pricebooks, setPricebooks] = useState([]);
-  const [quotes, setQuotes] = useState([]);
+  // Static JSON seed data — loaded once at startup
+  const [products, setProducts] = useState(() => Array.isArray(seedProducts) ? seedProducts : []);
+  const [pricebooks, setPricebooks] = useState(() => Array.isArray(seedPricebooks) ? seedPricebooks : []);
+  const [quotes, setQuotes] = useState(() => Array.isArray(seedQuotes) ? seedQuotes : []);
   const [search, setSearch] = useState('');
   const [pricebookSearch, setPricebookSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
@@ -47,58 +51,6 @@ export default function App() {
   const [modal, setModal] = useState(null);
   const [confirm, setConfirm] = useState(null);
   const [activeQuote, setActiveQuote] = useState(null);
-  const hasLoadedCatalog = useRef(false);
-  const hasLoadedQuotes = useRef(false);
-  const skipNextPersist = useRef(false);
-  const skipNextPersistQuotes = useRef(false);
-
-  // Catalog persistence (products + pricebooks) via localStorage
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('deal-studio-catalog');
-      if (raw) {
-        const loaded = JSON.parse(raw);
-        if (Array.isArray(loaded)) {
-          skipNextPersist.current = true;
-          setProducts(loaded);
-        } else {
-          skipNextPersist.current = true;
-          setProducts(Array.isArray(loaded?.products) ? loaded.products : []);
-          setPricebooks(Array.isArray(loaded?.pricebooks) ? loaded.pricebooks : []);
-        }
-      }
-    } catch { /* ignore corrupt data */ }
-    hasLoadedCatalog.current = true;
-  }, []);
-
-  useEffect(() => {
-    if (!hasLoadedCatalog.current) return;
-    if (skipNextPersist.current) { skipNextPersist.current = false; return; }
-    try {
-      localStorage.setItem('deal-studio-catalog', JSON.stringify({ products, pricebooks }));
-    } catch { /* ignore quota errors */ }
-  }, [products, pricebooks]);
-
-  // Quotes persistence via localStorage
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('deal-studio-quotes');
-      if (raw) {
-        const loaded = JSON.parse(raw);
-        skipNextPersistQuotes.current = true;
-        setQuotes(Array.isArray(loaded) ? loaded : []);
-      }
-    } catch { /* ignore corrupt data */ }
-    hasLoadedQuotes.current = true;
-  }, []);
-
-  useEffect(() => {
-    if (!hasLoadedQuotes.current) return;
-    if (skipNextPersistQuotes.current) { skipNextPersistQuotes.current = false; return; }
-    try {
-      localStorage.setItem('deal-studio-quotes', JSON.stringify(quotes));
-    } catch { /* ignore quota errors */ }
-  }, [quotes]);
 
   // Product CRUD
   const saveProd = (p) => {
