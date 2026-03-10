@@ -687,7 +687,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           <th style={{ width: '10%' }}>List Price</th>
           <th style={{ width: '10%' }}>Disc %</th>
           <th style={{ width: '10%' }}>Net Price</th>
-          <th style={{ width: '10%' }}>Extended</th>
+          <th style={{ width: '10%' }}>Amount</th>
           <th style={{ width: '60px' }} />
         </tr>
       </thead>
@@ -1100,7 +1100,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                       <th style={{ width: '10%' }}>List Price</th>
                       <th style={{ width: '10%' }}>Disc %</th>
                       <th style={{ width: '10%' }}>Net Price</th>
-                      <th style={{ width: '10%' }}>Extended</th>
+                      <th style={{ width: '10%' }}>Amount</th>
                     </tr>
                   </thead>
                   <tbody>{viewItems.map(renderViewRow)}</tbody>

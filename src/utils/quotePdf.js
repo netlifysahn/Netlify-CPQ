@@ -122,7 +122,7 @@ export function generateQuotePdf(quote) {
   // Line items table
   if (quote.line_items && quote.line_items.length > 0) {
     const hd = quote.header_discount || 0;
-    const tableHead = [['Product', 'Qty', 'List Price', 'Disc %', 'Net Price', 'Extended', 'After Quote Disc']];
+    const tableHead = [['Product', 'Qty', 'List Price', 'Disc %', 'Net Price', 'Amount', 'After Quote Disc']];
     const tableBody = quote.line_items
       .filter((line) => !line.is_package) // Skip package parent rows (sub-items carry the prices)
       .map((line) => {
