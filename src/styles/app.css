@@ -4005,11 +4005,11 @@ tr.drag-over {
   padding: 8px 16px;
   height: 36px;
   border-radius: 6px;
-  border: 1px solid rgba(0,0,0,0.12);
+  border: 1px solid #FBB13D;
   background: #fff;
   font-size: 13px;
   font-weight: 500;
-  color: #0a0a0a;
+  color: #FBB13D;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -4018,7 +4018,7 @@ tr.drag-over {
 }
 
 .qd-action-btn:hover {
-  background: #f9fafb;
+  background: #fffbf0;
 }
 
 .qd-action-btn-primary {
