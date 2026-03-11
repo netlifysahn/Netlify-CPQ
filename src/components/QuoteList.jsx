@@ -20,10 +20,14 @@ export default function QuoteList({ quotes, onNew, onOpen, onDupe, onDelete }) {
 
   const QUOTE_STATUS_COLORS = {
     draft: '#6b7280',
-    submitted: '#2E51ED',
-    won: '#059669',
-    lost: '#ef4444',
-    cancelled: '#6b7280',
+    sent: '#2E51ED',
+    draft_revision: '#FBB13D',
+    ready_to_submit: '#00AD9F',
+    pending_approval: '#7C3AED',
+    approved: '#059669',
+    rejected: '#ef4444',
+    converted: '#065f46',
+    archived: '#9ca3af',
   };
 
   return (

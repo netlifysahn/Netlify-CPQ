@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, Component } from 'react';
+import React, { useState, useRef, useEffect, useMemo, Component } from 'react';
 import {
   calcQuoteTotals, calcLineExtended, calcLineMonthly,
   fmtCurrency, STATUS_META, emptyLineItem, emptyGroup,
@@ -174,6 +174,11 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   const [addingToPackageId, setAddingToPackageId] = useState(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [dropTargetId, setDropTargetId] = useState(null);
+  const [feedbackModal, setFeedbackModal] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [ddNotesModal, setDdNotesModal] = useState(false);
+  const [validationErrors, setValidationErrors] = useState(null);
+  const [toast, setToast] = useState(null);
   const dragRef = useRef(null); // { type: 'top'|'sub', id, parentId? }
   const moreRef = useRef(null);
   const prevTotalsRef = useRef(null);
@@ -438,15 +443,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
 
   // ── Status changes (view mode) ──
   const changeStatus = (newStatus) => {
-    const labels = { submitted: 'Submit', won: 'Mark as Won', lost: 'Mark as Lost', cancelled: 'Cancel' };
-    setConfirm({
-      msg: `${labels[newStatus] || 'Change status of'} this quote?`,
-      label: labels[newStatus] || 'Confirm',
-      fn: () => {
-        persistQuote((prev) => ({ ...prev, status: newStatus }));
-        setConfirm(null);
-      },
-    });
+    persistQuote((prev) => ({ ...prev, status: newStatus }));
   };
 
   // ── Derived data ──
@@ -465,12 +462,21 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     prevTotalsRef.current = totalsFingerprint;
   }, [totalsFingerprint]);
 
-  const statusOptions = () => {
-    const opts = [];
-    if (q.status === 'draft') opts.push('submitted');
-    if (q.status === 'draft' || q.status === 'submitted') opts.push('won', 'lost');
-    if (q.status !== 'cancelled' && q.status !== 'won' && q.status !== 'lost') opts.push('cancelled');
-    return opts;
+  // Status picklist: editable for draft/sent/draft_revision/ready_to_submit, read-only otherwise
+  const isStatusEditable = ['draft', 'sent', 'draft_revision', 'ready_to_submit'].includes(q.status);
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const validateForSubmission = () => {
+    const errors = [];
+    if (!q.line_items || q.line_items.length === 0) errors.push('Quote must have at least 1 line item');
+    if (!q.customer_name?.trim()) errors.push('Customer name is required');
+    if (!q.start_date) errors.push('Start date is required');
+    if (!q.end_date) errors.push('End date is required');
+    return errors;
   };
 
   // ── Package helpers ──
@@ -996,6 +1002,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   );
 
   const isEditing = mode === 'edit';
+  const isArchived = q.status === 'archived';
+  const canEditLines = ['draft', 'draft_revision'].includes(q.status);
   const viewItems = q.line_items.filter((l) => !l.parent_line_id);
 
   // Group line items by category for card display
@@ -1052,49 +1060,233 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         </div>
       </div>
 
+      {/* Archived banner */}
+      {q.status === 'archived' && (
+        <div className="qd-archived-banner">
+          <i className="fa-solid fa-box-archive" />
+          This quote is archived
+        </div>
+      )}
+
+      {/* Validation errors */}
+      {validationErrors && (
+        <div className="qd-validation-errors">
+          <div className="qd-validation-errors-title">Cannot submit — missing required fields:</div>
+          <ul>
+            {validationErrors.map((err, i) => <li key={i}>{err}</li>)}
+          </ul>
+        </div>
+      )}
+
       {/* Action bar */}
-      <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', margin: '0 0 24px', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px', ...(isEditing ? {} : {}) }}>
+      <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', margin: '0 0 24px', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px' }}>
         {isEditing ? (
           <>
-            <button onClick={cancelEdit} style={{ padding: '8px 16px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a', cursor: 'pointer' }}>
-              Cancel
-            </button>
-            <button onClick={saveEdit} style={{ background: '#FBB13D', color: '#fff', fontWeight: 600, border: 'none', borderRadius: '6px', padding: '8px 16px', height: '36px', cursor: 'pointer', fontSize: '13px' }}>
-              Save
-            </button>
+            <button className="qd-action-btn" onClick={cancelEdit}>Cancel</button>
+            <button className="qd-action-btn qd-action-btn-primary" onClick={saveEdit}>Save</button>
           </>
         ) : (
           <>
-            <select
-              value={q.status}
-              onChange={(e) => changeStatus(e.target.value)}
-              style={{ appearance: 'auto', cursor: 'pointer', padding: '8px 12px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a' }}
-            >
-              {Object.entries(STATUS_META).map(([key, { label }]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </select>
-            <button onClick={() => onClone(q)} style={{ padding: '8px 16px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a', cursor: 'pointer' }}>
-              <i className="fa-solid fa-clone" style={{ marginRight: '6px' }} />Clone Quote
-            </button>
-            <button onClick={() => generateQuotePdf(q)} style={{ padding: '8px 16px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a', cursor: 'pointer' }}>
-              Generate Quote PDF
-            </button>
-            <button onClick={enterEditMode} style={{ background: '#FBB13D', color: '#fff', fontWeight: 600, border: 'none', borderRadius: '6px', padding: '8px 16px', height: '36px', cursor: 'pointer', fontSize: '13px' }}>
-              {q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
-            </button>
-            <div className="qd-more-wrap" ref={moreRef}>
-              <button className="qd-more-btn" onClick={() => setShowMoreMenu(!showMoreMenu)}>
-                <i className="fa-solid fa-ellipsis" />
-              </button>
-              {showMoreMenu && (
-                <div className="qd-more-menu">
-                  <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(q.id); }}>
-                    <i className="fa-solid fa-trash-can" /> Delete Quote
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* Status picklist */}
+            {isStatusEditable ? (
+              <select
+                value={q.status}
+                onChange={(e) => changeStatus(e.target.value)}
+                style={{ appearance: 'auto', cursor: 'pointer', padding: '8px 12px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a' }}
+              >
+                {Object.entries(STATUS_META).map(([key, { label }]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            ) : (
+              <span className={`status-badge status-${(STATUS_META[q.status] || STATUS_META.draft).color}`} style={{ height: '36px', display: 'inline-flex', alignItems: 'center', padding: '0 12px', fontSize: '13px' }}>
+                {(STATUS_META[q.status] || STATUS_META.draft).label}
+              </span>
+            )}
+
+            {/* ── DRAFT actions ── */}
+            {q.status === 'draft' && (
+              <>
+                <button className="qd-action-btn" onClick={enterEditMode}>
+                  <i className="fa-solid fa-pen" />{q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
+                </button>
+                <button className="qd-action-btn" onClick={() => generateQuotePdf(q)}>
+                  <i className="fa-solid fa-file-pdf" />Preview PDF
+                </button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('sent')}>
+                  Send to Customer <i className="fa-solid fa-arrow-right" />
+                </button>
+              </>
+            )}
+
+            {/* ── SENT actions ── */}
+            {q.status === 'sent' && (
+              <>
+                <button className="qd-action-btn" onClick={() => { setFeedbackText(q.comments || ''); setFeedbackModal(true); }}>
+                  <i className="fa-solid fa-comment-dots" />Record Feedback
+                </button>
+                <button className="qd-action-btn" onClick={() => {
+                  const cloned = onClone(q);
+                  if (cloned) {
+                    persistQuote(() => ({ ...cloned, name: (q.name || 'Quote') + ' — Scenario', status: 'draft' }));
+                  }
+                }}>
+                  <i className="fa-solid fa-clone" />Clone as Scenario
+                </button>
+                <button className="qd-action-btn" onClick={() => changeStatus('draft')}>
+                  <i className="fa-solid fa-rotate-left" />Revise Quote
+                </button>
+              </>
+            )}
+
+            {/* ── DRAFT REVISION actions ── */}
+            {q.status === 'draft_revision' && (
+              <>
+                <button className="qd-action-btn" onClick={enterEditMode}>
+                  <i className="fa-solid fa-pen" />{q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
+                </button>
+                <button className="qd-action-btn" onClick={() => generateQuotePdf(q)}>
+                  <i className="fa-solid fa-file-pdf" />Preview PDF
+                </button>
+                <button className="qd-action-btn" onClick={() => {
+                  persistQuote((prev) => ({ ...prev, is_primary: true }));
+                  showToast('Marked as primary quote');
+                }}>
+                  <i className="fa-solid fa-star" />Mark as Primary
+                </button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('sent')}>
+                  Send to Customer <i className="fa-solid fa-arrow-right" />
+                </button>
+              </>
+            )}
+
+            {/* ── READY TO SUBMIT actions ── */}
+            {q.status === 'ready_to_submit' && (
+              <>
+                <button className="qd-action-btn qd-action-btn-teal" onClick={() => {
+                  const errors = validateForSubmission();
+                  if (errors.length > 0) {
+                    setValidationErrors(errors);
+                    return;
+                  }
+                  setValidationErrors(null);
+                  changeStatus('pending_approval');
+                }}>
+                  Submit to Deal Desk <i className="fa-solid fa-arrow-right" />
+                </button>
+              </>
+            )}
+
+            {/* ── PENDING APPROVAL actions ── */}
+            {q.status === 'pending_approval' && (
+              <>
+                <button className="qd-action-btn" onClick={() => showToast('Submission details coming soon')}>
+                  <i className="fa-solid fa-eye" />View Submission
+                </button>
+                <button className="qd-action-btn" onClick={() => setConfirm({
+                  msg: 'Are you sure? This will pull the quote back to Draft.',
+                  label: 'Withdraw',
+                  fn: () => { changeStatus('draft'); setConfirm(null); },
+                })}>
+                  <i className="fa-solid fa-rotate-left" />Withdraw Submission
+                </button>
+              </>
+            )}
+
+            {/* ── APPROVED actions ── */}
+            {q.status === 'approved' && (
+              <>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('converted')}>
+                  Convert to Order <i className="fa-solid fa-arrow-right" />
+                </button>
+                <button className="qd-action-btn" onClick={() => showToast('PDF generation coming soon')}>
+                  <i className="fa-solid fa-download" />Download Final PDF
+                </button>
+              </>
+            )}
+
+            {/* ── REJECTED actions ── */}
+            {q.status === 'rejected' && (
+              <>
+                <button className="qd-action-btn" onClick={() => setDdNotesModal(true)}>
+                  <i className="fa-solid fa-clipboard-list" />View DD Notes
+                </button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('draft')}>
+                  Revise Quote <i className="fa-solid fa-arrow-right" />
+                </button>
+              </>
+            )}
+
+            {/* ── CONVERTED actions ── */}
+            {q.status === 'converted' && (
+              <>
+                <button className="qd-action-btn" onClick={() => showToast('Order view coming soon')}>
+                  <i className="fa-solid fa-cart-shopping" />View Order
+                </button>
+                <button className="qd-action-btn" onClick={() => showToast('PDF generation coming soon')}>
+                  <i className="fa-solid fa-download" />Download Executed Quote PDF
+                </button>
+              </>
+            )}
+
+            {/* ── ARCHIVED actions ── */}
+            {q.status === 'archived' && (
+              <>
+                <button className="qd-action-btn" onClick={() => setConfirm({
+                  msg: 'Restore this quote as a Draft? It will become editable again.',
+                  label: 'Restore',
+                  fn: () => { changeStatus('draft'); setConfirm(null); },
+                })}>
+                  <i className="fa-solid fa-rotate-left" />Restore as Draft
+                </button>
+              </>
+            )}
+
+            {/* Overflow menu (...) */}
+            {['draft', 'sent', 'draft_revision', 'ready_to_submit', 'rejected'].includes(q.status) && (
+              <div className="qd-more-wrap" ref={moreRef}>
+                <button className="qd-more-btn" onClick={() => setShowMoreMenu(!showMoreMenu)}>
+                  <i className="fa-solid fa-ellipsis" />
+                </button>
+                {showMoreMenu && (
+                  <div className="qd-more-menu">
+                    {q.status === 'draft' && (
+                      <>
+                        <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); onClone(q); }}>
+                          <i className="fa-solid fa-clone" /> Clone Quote
+                        </button>
+                        <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>
+                          <i className="fa-solid fa-box-archive" /> Archive
+                        </button>
+                      </>
+                    )}
+                    {q.status === 'sent' && (
+                      <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>
+                        <i className="fa-solid fa-box-archive" /> Archive
+                      </button>
+                    )}
+                    {q.status === 'draft_revision' && (
+                      <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this scenario? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>
+                        <i className="fa-solid fa-box-archive" /> Archive Scenario
+                      </button>
+                    )}
+                    {q.status === 'ready_to_submit' && (
+                      <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); changeStatus('draft'); }}>
+                        <i className="fa-solid fa-rotate-left" /> Revise Quote
+                      </button>
+                    )}
+                    {q.status === 'rejected' && (
+                      <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>
+                        <i className="fa-solid fa-box-archive" /> Archive
+                      </button>
+                    )}
+                    <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(q.id); }}>
+                      <i className="fa-solid fa-trash-can" /> Delete Quote
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>
@@ -1247,6 +1439,55 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       <div>
         {renderFooterInfo(q)}
       </div>
+
+      {/* Feedback modal */}
+      {feedbackModal && (
+        <div className="modal-overlay" onClick={() => setFeedbackModal(false)}>
+          <div className="modal modal-theme-quotes" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-title">Customer Feedback</div>
+            <div className="modal-section">
+              <div className="field">
+                <label className="field-label">Revision Notes</label>
+                <textarea
+                  className="field-textarea"
+                  value={feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  placeholder="Enter customer feedback and revision notes..."
+                  style={{ minHeight: 120 }}
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={() => setFeedbackModal(false)}>Cancel</button>
+              <button className="btn-save" onClick={() => {
+                persistQuote((prev) => ({ ...prev, comments: feedbackText, status: 'draft_revision' }));
+                setFeedbackModal(false);
+              }}>Save Feedback</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deal Desk Notes modal (read-only) */}
+      {ddNotesModal && (
+        <div className="modal-overlay" onClick={() => setDdNotesModal(false)}>
+          <div className="modal modal-theme-quotes" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-title">Deal Desk Notes</div>
+            <div className="modal-section">
+              <div style={{ fontSize: '14px', color: '#374151', lineHeight: 1.6, whiteSpace: 'pre-wrap', minHeight: 60 }}>
+                {q.comments || 'No notes recorded.'}
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={() => setDdNotesModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && <div className="qd-toast">{toast}</div>}
 
       {/* Confirm modal */}
       {confirm && renderConfirmModal()}

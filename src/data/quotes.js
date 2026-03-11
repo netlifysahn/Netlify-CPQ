@@ -2,7 +2,7 @@
 
 import { genId, getProductCategory, UNIT_LABELS, isBundleProduct } from './catalog';
 
-export const QUOTE_STATUSES = ['draft', 'submitted', 'won', 'lost', 'cancelled'];
+export const QUOTE_STATUSES = ['draft', 'sent', 'draft_revision', 'ready_to_submit', 'pending_approval', 'approved', 'rejected', 'converted', 'archived'];
 export const TERM_OPTIONS = [12, 24, 36];
 
 let _quoteCounter = 0;
@@ -237,8 +237,12 @@ export const fmtCurrency = (v) => {
 
 export const STATUS_META = {
   draft: { label: 'Draft', color: 'grey' },
-  submitted: { label: 'Submitted', color: 'blue' },
-  won: { label: 'Won', color: 'green' },
-  lost: { label: 'Lost', color: 'red' },
-  cancelled: { label: 'Cancelled', color: 'muted' },
+  sent: { label: 'Sent', color: 'blue' },
+  draft_revision: { label: 'Draft — Revision', color: 'gold' },
+  ready_to_submit: { label: 'Ready to Submit', color: 'teal' },
+  pending_approval: { label: 'Pending Approval', color: 'purple' },
+  approved: { label: 'Approved', color: 'green' },
+  rejected: { label: 'Rejected', color: 'red' },
+  converted: { label: 'Converted', color: 'darkgreen' },
+  archived: { label: 'Archived', color: 'muted' },
 };
