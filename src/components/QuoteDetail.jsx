@@ -53,6 +53,32 @@ function AnimatedValue({ value, pulseKey }) {
   return <div className="qd-summary-value" ref={ref}>{value}</div>;
 }
 
+// Relative time — "2 days ago", "just now", etc.
+const relativeTime = (timestamp) => {
+  if (!timestamp) return '';
+  const now = Date.now();
+  const then = new Date(timestamp).getTime();
+  const diffSec = Math.floor((now - then) / 1000);
+  if (diffSec < 60) return 'just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 30) return `${diffDay}d ago`;
+  const diffMo = Math.floor(diffDay / 30);
+  if (diffMo < 12) return `${diffMo}mo ago`;
+  return `${Math.floor(diffMo / 12)}y ago`;
+};
+
+// Status dot colors for activity timeline
+const ACTIVITY_DOT_COLORS = {
+  draft: '#6b7280', sent: '#2E51ED', draft_revision: '#FBB13D',
+  ready_to_submit: '#00AD9F', pending_approval: '#7C3AED',
+  approved: '#059669', rejected: '#ef4444', converted: '#065f46',
+  archived: '#9ca3af',
+};
+
 // Format date — "2026-03-08" → "Mar 8, 2026"
 const fmtDate = (dateStr) => {
   if (!dateStr) return '';
@@ -149,6 +175,7 @@ const normalizeQuote = (q) => {
     groups: q.groups || [],
     overage_rate_credits: q.overage_rate_credits || '',
     overage_rate_seats: q.overage_rate_seats || '',
+    activity_log: q.activity_log || [{ type: 'created', timestamp: q.created_at || new Date().toISOString(), note: 'Quote created', actor: q.prepared_by || '' }],
   };
 };
 
@@ -171,7 +198,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   const [groupName, setGroupName] = useState('');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [collapsedPkgs, setCollapsedPkgs] = useState(new Set());
-  const [detailCards, setDetailCards] = useState({ customer: false, term: false, billing: false, overage: false });
+  const [detailCards, setDetailCards] = useState({ customer: false, term: false, billing: false, overage: false, activity: false });
   const [addingToPackageId, setAddingToPackageId] = useState(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [dropTargetId, setDropTargetId] = useState(null);
@@ -444,7 +471,17 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
 
   // ── Status changes (view mode) ──
   const changeStatus = (newStatus) => {
-    persistQuote((prev) => ({ ...prev, status: newStatus }));
+    persistQuote((prev) => ({
+      ...prev,
+      status: newStatus,
+      activity_log: [...(prev.activity_log || []), {
+        type: 'status_change',
+        from_status: prev.status,
+        to_status: newStatus,
+        timestamp: new Date().toISOString(),
+        actor: prev.prepared_by || '',
+      }],
+    }));
   };
 
   // ── Derived data ──
@@ -612,6 +649,55 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             <DetailInput label="Payment Terms" field="payment_terms" value={source.payment_terms} options={['Net 30', 'Net 45', 'Net 60', 'Due on Receipt']} onChange={handleFieldChange} onBlur={handleFieldBlur} />
             <DetailInput label="PO #" field="po_number" value={source.po_number} placeholder="Optional" mono onChange={handleFieldChange} onBlur={handleFieldBlur} />
             <DetailInput label="VAT #" field="vat_number" value={source.vat_number} placeholder="Optional" mono onChange={handleFieldChange} onBlur={handleFieldBlur} />
+          </div>
+        )}
+      </div>
+
+      <div style={sectionDivider} />
+
+      {/* Activity Log */}
+      <div>
+        <div style={cardHeaderStyle} onClick={() => toggleCard('activity')}>
+          <span style={eyebrowStyle}>Activity</span>
+          <i className={`fa-solid ${detailCards.activity ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={chevronStyle} />
+        </div>
+        {detailCards.activity && (
+          <div style={{ padding: '4px 24px 20px' }}>
+            <div className="qd-activity-timeline">
+              {[...(source.activity_log || [])].reverse().map((entry, i, arr) => {
+                let dotColor = '#00AD9F';
+                let text = '';
+                if (entry.type === 'status_change') {
+                  dotColor = ACTIVITY_DOT_COLORS[entry.to_status] || '#6b7280';
+                  const fromLabel = (STATUS_META[entry.from_status] || {}).label || entry.from_status;
+                  const toLabel = (STATUS_META[entry.to_status] || {}).label || entry.to_status;
+                  text = `${entry.actor || 'System'} moved quote from ${fromLabel} → ${toLabel}`;
+                } else if (entry.type === 'created') {
+                  dotColor = '#00AD9F';
+                  text = `Quote created${entry.actor ? ` by ${entry.actor}` : ''}`;
+                } else if (entry.type === 'note') {
+                  dotColor = '#FBB13D';
+                  const noteText = entry.note || '';
+                  text = `Feedback recorded: ${noteText.length > 80 ? noteText.slice(0, 80) + '…' : noteText}`;
+                }
+                const isLast = i === arr.length - 1;
+                return (
+                  <div key={i} className="qd-activity-entry">
+                    <div className="qd-activity-dot-col">
+                      <div className="qd-activity-dot" style={{ background: dotColor }} />
+                      {!isLast && <div className="qd-activity-line" />}
+                    </div>
+                    <div className="qd-activity-content">
+                      <span className="qd-activity-text">{text}</span>
+                      <span className="qd-activity-time">{relativeTime(entry.timestamp)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+              {(!source.activity_log || source.activity_log.length === 0) && (
+                <div style={{ fontSize: '13px', color: '#9ca3af' }}>No activity recorded.</div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -1462,7 +1548,16 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setFeedbackModal(false)}>Cancel</button>
               <button className="btn-save" onClick={() => {
-                persistQuote((prev) => ({ ...prev, comments: feedbackText, status: 'draft_revision' }));
+                const now = new Date().toISOString();
+                persistQuote((prev) => ({
+                  ...prev,
+                  comments: feedbackText,
+                  status: 'draft_revision',
+                  activity_log: [...(prev.activity_log || []),
+                    { type: 'note', timestamp: now, note: feedbackText, actor: prev.prepared_by || '' },
+                    { type: 'status_change', from_status: prev.status, to_status: 'draft_revision', timestamp: now, actor: prev.prepared_by || '' },
+                  ],
+                }));
                 setFeedbackModal(false);
               }}>Save Feedback</button>
             </div>
