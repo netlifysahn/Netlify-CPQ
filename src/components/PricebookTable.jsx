@@ -62,10 +62,10 @@ export default function PricebookTable({ pricebooks, onOpen, onEdit, onDelete, o
               <td className="col-actions">
                 <div className="actions-group">
                   <button className="action-btn edit" title="Edit" onClick={() => onEdit(pricebook)}>
-                    <i className="fa-solid fa-pen-to-square" />
+                    Edit
                   </button>
                   <button className="action-btn delete" title="Delete" onClick={() => onDelete(pricebook.id)}>
-                    <i className="fa-solid fa-trash-can" />
+                    Delete
                   </button>
                 </div>
               </td>

@@ -79,7 +79,7 @@ export default function ProductTable({ products, allProducts, onEdit, onDupe, on
                   <td className="col-expand">
                     {hasExpandable && (
                       <button className="expand-btn" onClick={() => toggleExpand(p.id)}>
-                        <i className={`fa-solid fa-chevron-${isExpanded ? 'down' : 'right'}`} />
+                        {isExpanded ? '▾' : '▸'}
                       </button>
                     )}
                   </td>
@@ -104,13 +104,13 @@ export default function ProductTable({ products, allProducts, onEdit, onDupe, on
                   <td className="col-actions">
                     <div className="actions-group">
                       <button className="action-btn edit" title="Edit" onClick={() => onEdit(p)}>
-                        <i className="fa-solid fa-pen-to-square" />
+                        Edit
                       </button>
                       <button className="action-btn duplicate" title="Duplicate" onClick={() => onDupe(p)}>
-                        <i className="fa-solid fa-copy" />
+                        Clone
                       </button>
                       <button className="action-btn delete" title="Delete" onClick={() => onDelete(p.id)}>
-                        <i className="fa-solid fa-trash-can" />
+                        Delete
                       </button>
                     </div>
                   </td>

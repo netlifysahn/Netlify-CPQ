@@ -47,7 +47,6 @@ export default function PricebookDetail({ pricebook, products, onBack, onUpdate 
   return (
     <div className="pricebook-detail">
       <button className="btn-secondary back-btn" onClick={onBack}>
-        <i className="fa-solid fa-chevron-left" />
         Back to Pricebooks
       </button>
 
@@ -121,7 +120,7 @@ export default function PricebookDetail({ pricebook, products, onBack, onUpdate 
                       <td className="col-actions">
                         <div className="actions-group">
                           <button className="action-btn delete" title="Remove" onClick={() => removeEntry(entry.product_id)}>
-                            <i className="fa-solid fa-trash-can" />
+                            Remove
                           </button>
                         </div>
                       </td>

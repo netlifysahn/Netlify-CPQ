@@ -253,7 +253,6 @@ export default function App() {
               className={`sidebar-item section-${item.key}${page === item.key ? ' active' : ''}`}
               onClick={() => handleNavClick(item.key)}
             >
-              <i className={`fa-solid ${item.icon}`} />
               {item.label}
             </button>
           ))}
@@ -271,7 +270,7 @@ export default function App() {
 
             <div className="toolbar">
               <div className="search-wrap">
-                <i className="fa-solid fa-magnifying-glass" />
+                <span style={{ color: '#9ca3af', fontSize: '13px' }}>Search</span>
                 <input
                   className="search-input"
                   value={search}
@@ -286,7 +285,7 @@ export default function App() {
                   ))}
                 </select>
                 <span className="toolbar-select-icon" aria-hidden="true">
-                  <i className="fa-solid fa-chevron-down" />
+                  <span>▾</span>
                 </span>
               </div>
               <button className="btn-primary btn-product-add" onClick={() => setModal({ type: 'product' })}>
@@ -317,7 +316,7 @@ export default function App() {
 
                 <div className="toolbar">
                   <div className="search-wrap">
-                    <i className="fa-solid fa-magnifying-glass" />
+                    <span style={{ color: '#9ca3af', fontSize: '13px' }}>Search</span>
                     <input
                       className="search-input"
                       value={pricebookSearch}
@@ -361,7 +360,7 @@ export default function App() {
 
             <div className="toolbar">
               <div className="search-wrap">
-                <i className="fa-solid fa-magnifying-glass" />
+                <span style={{ color: '#9ca3af', fontSize: '13px' }}>Search</span>
                 <input
                   className="search-input"
                   value={search}
@@ -376,7 +375,7 @@ export default function App() {
                   ))}
                 </select>
                 <span className="toolbar-select-icon" aria-hidden="true">
-                  <i className="fa-solid fa-chevron-down" />
+                  <span>▾</span>
                 </span>
               </div>
               <button className="btn-primary btn-quote-add" onClick={() => setModal({ type: 'quote' })}>
@@ -418,7 +417,7 @@ export default function App() {
             </div>
             <div className="coming-soon">
               <div className="coming-soon-icon">
-                <i className={`fa-solid ${COMING_SOON_META[page].icon}`} />
+                {COMING_SOON_META[page].title}
               </div>
               <div className="coming-soon-title">{COMING_SOON_META[page].title}</div>
               <div className="coming-soon-text">Coming soon</div>

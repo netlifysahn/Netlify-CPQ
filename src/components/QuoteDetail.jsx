@@ -27,7 +27,7 @@ class QuoteDetailErrorBoundary extends Component {
       return (
         <div style={{ padding: 40 }}>
           <button className="back-btn" onClick={this.props.onBack}>
-            <i className="fa-solid fa-arrow-left" /> Back to Quotes
+            Back to Quotes
           </button>
           <h2 style={{ marginTop: 20, color: '#ef4444' }}>Something went wrong</h2>
           <pre style={{ marginTop: 12, padding: 16, background: 'rgba(0,0,0,0.05)', borderRadius: 8, whiteSpace: 'pre-wrap', fontSize: 13 }}>
@@ -607,7 +607,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       <div>
         <div style={cardHeaderStyle} onClick={() => toggleCard('customer')}>
           <span style={eyebrowStyle}>Customer Information</span>
-          <i className={`fa-solid ${detailCards.customer ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={chevronStyle} />
+          <span style={chevronStyle}>{detailCards.customer ? '▾' : '▸'}</span>
         </div>
         {detailCards.customer && (
           <div style={cardBodyStyle}>
@@ -629,7 +629,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       <div>
         <div style={cardHeaderStyle} onClick={() => toggleCard('term')}>
           <span style={eyebrowStyle}>Subscription Term</span>
-          <i className={`fa-solid ${detailCards.term ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={chevronStyle} />
+          <span style={chevronStyle}>{detailCards.term ? '▾' : '▸'}</span>
         </div>
         {detailCards.term && (
           <div style={cardBodyStyle}>
@@ -645,7 +645,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       <div>
         <div style={cardHeaderStyle} onClick={() => toggleCard('billing')}>
           <span style={eyebrowStyle}>Billing & Payment</span>
-          <i className={`fa-solid ${detailCards.billing ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={chevronStyle} />
+          <span style={chevronStyle}>{detailCards.billing ? '▾' : '▸'}</span>
         </div>
         {detailCards.billing && (
           <div style={cardBodyStyle}>
@@ -679,7 +679,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
                 <span className="pkg-badge">PKG</span>
                 <button className="pkg-chevron" onClick={() => togglePackage(line.id)} style={{ marginLeft: 0 }}>
-                  <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
+                  {expanded ? '▾' : '▸'}
                 </button>
               </div>
             </td>
@@ -793,8 +793,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           <td style={{ width: '10%' }}>{included ? <span className="price-annual">—</span> : <span className="price-monthly">{displayCurrency(extended)}</span>}</td>
           <td style={{ width: '60px' }}>
             <div className="actions-group">
-              <i className="fa-solid fa-grip-vertical drag-handle edit-drag-handle" />
-              <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(line.id)}><i className="fa-solid fa-trash-can" /></button>
+              <span className="drag-handle edit-drag-handle" style={{ cursor: 'grab', color: '#9ca3af', fontSize: '12px' }}>⋮⋮</span>
+              <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(line.id)}>Remove</button>
             </div>
           </td>
         </tr>
@@ -830,7 +830,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 )}
                 <span className="pkg-badge">PKG</span>
                 <button className="pkg-chevron" onClick={() => togglePackage(line.id)} style={{ marginLeft: 0 }}>
-                  <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} />
+                  {expanded ? '▾' : '▸'}
                 </button>
               </div>
             </td>
@@ -838,8 +838,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             <td style={{ width: '10%' }}><span className="price-monthly">{displayCurrency(pkgTotal)}</span></td>
             <td style={{ width: '60px' }}>
               <div className="actions-group">
-                <i className="fa-solid fa-grip-vertical drag-handle edit-drag-handle" />
-                <button className="action-btn delete line-remove-btn" title="Remove package" onClick={() => removeDraftLine(line.id)}><i className="fa-solid fa-trash-can" /></button>
+                <span className="drag-handle edit-drag-handle" style={{ cursor: 'grab', color: '#9ca3af', fontSize: '12px' }}>⋮⋮</span>
+                <button className="action-btn delete line-remove-btn" title="Remove package" onClick={() => removeDraftLine(line.id)}>Remove</button>
               </div>
             </td>
           </tr>
@@ -872,8 +872,8 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 <td style={{ width: '10%' }}><span className="price-monthly">{displayCurrency(ext)}</span></td>
                 <td style={{ width: '60px' }}>
                   <div className="actions-group">
-                    <i className="fa-solid fa-grip-vertical drag-handle edit-drag-handle" />
-                    <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(sub.id)}><i className="fa-solid fa-trash-can" /></button>
+                    <span className="drag-handle edit-drag-handle" style={{ cursor: 'grab', color: '#9ca3af', fontSize: '12px' }}>⋮⋮</span>
+                    <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(sub.id)}>Remove</button>
                   </div>
                 </td>
               </tr>
@@ -1074,7 +1074,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       {/* Header */}
       <div className="qd-header">
         <button className="back-btn" onClick={onBack}>
-          <i className="fa-solid fa-arrow-left" /> Back to Quotes
+          Back to Quotes
         </button>
         <div className="qd-header-info" style={{ flex: 1 }}>
           <div className="qd-quote-number">{q.quote_number}</div>
@@ -1123,7 +1123,6 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       {/* Archived banner */}
       {q.status === 'archived' && (
         <div className="qd-archived-banner">
-          <i className="fa-solid fa-box-archive" />
           This quote is archived
         </div>
       )}
@@ -1152,13 +1151,13 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             {q.status === 'draft' && (
               <>
                 <button className="qd-action-btn" onClick={enterEditMode}>
-                  <i className="fa-solid fa-pen" />{q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
+                  {q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
                 </button>
                 <button className="qd-action-btn" onClick={() => generateQuotePdf(q)}>
-                  <i className="fa-solid fa-file-pdf" />Preview PDF
+                  Preview PDF
                 </button>
                 <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('sent')}>
-                  Send to Customer <i className="fa-solid fa-arrow-right" />
+                  Send to Customer
                 </button>
               </>
             )}
@@ -1167,7 +1166,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             {q.status === 'sent' && (
               <>
                 <button className="qd-action-btn" onClick={() => { setFeedbackText(q.comments || ''); setFeedbackModal(true); }}>
-                  <i className="fa-solid fa-comment-dots" />Record Feedback
+                  Record Feedback
                 </button>
                 <button className="qd-action-btn" onClick={() => {
                   const cloned = onClone(q);
@@ -1175,10 +1174,10 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                     persistQuote(() => ({ ...cloned, name: (q.name || 'Quote') + ' — Scenario', status: 'draft' }));
                   }
                 }}>
-                  <i className="fa-solid fa-clone" />Clone as Scenario
+                  Clone as Scenario
                 </button>
                 <button className="qd-action-btn" onClick={() => changeStatus('draft')}>
-                  <i className="fa-solid fa-rotate-left" />Revise Quote
+                  Revise Quote
                 </button>
               </>
             )}
@@ -1187,19 +1186,19 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             {q.status === 'draft_revision' && (
               <>
                 <button className="qd-action-btn" onClick={enterEditMode}>
-                  <i className="fa-solid fa-pen" />{q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
+                  {q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
                 </button>
                 <button className="qd-action-btn" onClick={() => generateQuotePdf(q)}>
-                  <i className="fa-solid fa-file-pdf" />Preview PDF
+                  Preview PDF
                 </button>
                 <button className="qd-action-btn" onClick={() => {
                   persistQuote((prev) => ({ ...prev, is_primary: true }));
                   showToast('Marked as primary quote');
                 }}>
-                  <i className="fa-solid fa-star" />Mark as Primary
+                  Mark as Primary
                 </button>
                 <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('sent')}>
-                  Send to Customer <i className="fa-solid fa-arrow-right" />
+                  Send to Customer
                 </button>
               </>
             )}
@@ -1216,7 +1215,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                   setValidationErrors(null);
                   changeStatus('pending_approval');
                 }}>
-                  Submit to Deal Desk <i className="fa-solid fa-arrow-right" />
+                  Submit to Deal Desk
                 </button>
               </>
             )}
@@ -1225,14 +1224,14 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             {q.status === 'pending_approval' && (
               <>
                 <button className="qd-action-btn" onClick={() => showToast('Submission details coming soon')}>
-                  <i className="fa-solid fa-eye" />View Submission
+                  View Submission
                 </button>
                 <button className="qd-action-btn" onClick={() => setConfirm({
                   msg: 'Are you sure? This will pull the quote back to Draft.',
                   label: 'Withdraw',
                   fn: () => { changeStatus('draft'); setConfirm(null); },
                 })}>
-                  <i className="fa-solid fa-rotate-left" />Withdraw Submission
+                  Withdraw Submission
                 </button>
               </>
             )}
@@ -1241,10 +1240,10 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             {q.status === 'approved' && (
               <>
                 <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('converted')}>
-                  Convert to Order <i className="fa-solid fa-arrow-right" />
+                  Convert to Order
                 </button>
                 <button className="qd-action-btn" onClick={() => showToast('PDF generation coming soon')}>
-                  <i className="fa-solid fa-download" />Download Final PDF
+                  Download Final PDF
                 </button>
               </>
             )}
@@ -1253,10 +1252,10 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             {q.status === 'rejected' && (
               <>
                 <button className="qd-action-btn" onClick={() => setDdNotesModal(true)}>
-                  <i className="fa-solid fa-clipboard-list" />View DD Notes
+                  View DD Notes
                 </button>
                 <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('draft')}>
-                  Revise Quote <i className="fa-solid fa-arrow-right" />
+                  Revise Quote
                 </button>
               </>
             )}
@@ -1265,10 +1264,10 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             {q.status === 'converted' && (
               <>
                 <button className="qd-action-btn" onClick={() => showToast('Order view coming soon')}>
-                  <i className="fa-solid fa-cart-shopping" />View Order
+                  View Order
                 </button>
                 <button className="qd-action-btn" onClick={() => showToast('PDF generation coming soon')}>
-                  <i className="fa-solid fa-download" />Download Executed Quote PDF
+                  Download Executed Quote PDF
                 </button>
               </>
             )}
@@ -1281,7 +1280,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                   label: 'Restore',
                   fn: () => { changeStatus('draft'); setConfirm(null); },
                 })}>
-                  <i className="fa-solid fa-rotate-left" />Restore as Draft
+                  Restore as Draft
                 </button>
               </>
             )}
@@ -1290,42 +1289,42 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             {['draft', 'sent', 'draft_revision', 'ready_to_submit', 'rejected'].includes(q.status) && (
               <div className="qd-more-wrap" ref={moreRef}>
                 <button className="qd-more-btn" style={{ border: 'none', background: 'transparent', boxShadow: 'none', outline: 'none', color: '#FBB13D', cursor: 'pointer', padding: '0 8px' }} onClick={() => setShowMoreMenu(!showMoreMenu)}>
-                  <i className="fa-solid fa-ellipsis" />
+                  ···
                 </button>
                 {showMoreMenu && (
                   <div className="qd-more-menu">
                     {q.status === 'draft' && (
                       <>
                         <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); onClone(q); }}>
-                          <i className="fa-solid fa-clone" /> Clone Quote
+                          Clone Quote
                         </button>
                         <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>
-                          <i className="fa-solid fa-box-archive" /> Archive
+                          Archive
                         </button>
                       </>
                     )}
                     {q.status === 'sent' && (
                       <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>
-                        <i className="fa-solid fa-box-archive" /> Archive
+                        Archive
                       </button>
                     )}
                     {q.status === 'draft_revision' && (
                       <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this scenario? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>
-                        <i className="fa-solid fa-box-archive" /> Archive Scenario
+                        Archive Scenario
                       </button>
                     )}
                     {q.status === 'ready_to_submit' && (
                       <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); changeStatus('draft'); }}>
-                        <i className="fa-solid fa-rotate-left" /> Revise Quote
+                        Revise Quote
                       </button>
                     )}
                     {q.status === 'rejected' && (
                       <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>
-                        <i className="fa-solid fa-box-archive" /> Archive
+                        Archive
                       </button>
                     )}
                     <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(q.id); }}>
-                      <i className="fa-solid fa-trash-can" /> Delete Quote
+                      Delete Quote
                     </button>
                   </div>
                 )}
@@ -1373,7 +1372,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                           <div key={line.id} className="qd-pkg-block">
                             <div className="qd-pkg-header" onClick={() => togglePackage(line.id)}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <i className={`fa-solid fa-chevron-${expanded ? 'down' : 'right'}`} style={{ fontSize: '11px', color: '#9ca3af' }} />
+                                <span style={{ fontSize: '11px', color: '#9ca3af' }}>{expanded ? '▾' : '▸'}</span>
                                 <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
                                 <span className="pkg-badge">PKG</span>
                               </div>
@@ -1437,7 +1436,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', cursor: 'pointer', userSelect: 'none' }} onClick={() => toggleCard('overage')}>
             <span style={{ fontFamily: "'Roboto Mono', monospace", fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9ca3af' }}>Overage Rates</span>
-            <i className={`fa-solid ${detailCards.overage ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={{ fontSize: '12px', color: '#9ca3af' }} />
+            <span style={{ fontSize: '12px', color: '#9ca3af' }}>{detailCards.overage ? '▾' : '▸'}</span>
           </div>
           {detailCards.overage && (
             <div style={{ padding: '4px 24px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' }}>

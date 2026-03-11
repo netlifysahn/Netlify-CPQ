@@ -76,13 +76,13 @@ export default function QuoteList({ quotes, onNew, onOpen, onDupe, onDelete }) {
                 <td className="col-actions" onClick={(e) => e.stopPropagation()}>
                   <div className="actions-group">
                     <button className="action-btn edit" title="Edit" onClick={() => onOpen(q)}>
-                      <i className="fa-solid fa-pen-to-square" />
+                      Edit
                     </button>
                     <button className="action-btn duplicate" title="Clone" onClick={() => onDupe(q)}>
-                      <i className="fa-solid fa-copy" />
+                      Clone
                     </button>
                     <button className="action-btn delete" title="Delete" onClick={() => onDelete(q.id)}>
-                      <i className="fa-solid fa-trash-can" />
+                      Delete
                     </button>
                   </div>
                 </td>

@@ -57,7 +57,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
         <div className="modal picker-modal modal-theme-products" onClick={(e) => e.stopPropagation()}>
           <div className="modal-title">Add Product</div>
           <div className="search-wrap" style={{ marginBottom: 16 }}>
-            <i className="fa-solid fa-magnifying-glass" />
+            <span style={{ color: '#9ca3af', fontSize: '13px' }}>Search</span>
             <input
               className="search-input"
               value={search}
@@ -99,7 +99,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
         <div className="picker-v2-header">
           <div className="picker-v2-title">Quote — Add Products</div>
           <div className="search-wrap picker-v2-search">
-            <i className="fa-solid fa-magnifying-glass" />
+            <span style={{ color: '#9ca3af', fontSize: '13px' }}>Search</span>
             <input
               className="search-input"
               value={search}
@@ -152,10 +152,10 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
                     >
                       <div className="picker-v2-card-check">
                         {isExisting ? (
-                          <i className="fa-solid fa-check" style={{ color: 'var(--text-faint)', fontSize: 12 }} />
+                          <span style={{ color: 'var(--text-faint)', fontSize: 12 }}>Added</span>
                         ) : (
                           <div className={`picker-v2-checkbox${isSelected ? ' checked' : ''}`}>
-                            {isSelected && <i className="fa-solid fa-check" />}
+                            {isSelected && <span style={{ fontSize: '11px' }}>✓</span>}
                           </div>
                         )}
                       </div>
