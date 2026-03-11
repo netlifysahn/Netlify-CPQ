@@ -123,7 +123,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
         qty: 1,
         default_quantity: 1,
         unit_type: prod.default_price?.unit || 'flat',
-        price_behavior: 'related',
+        price_behavior: 'included',
         list_price: parseFloat(prod.default_price?.amount) || 0,
         sort_order: (prev.members || []).length + 1,
       }],
@@ -346,8 +346,8 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                       <tr>
                         <th>Product</th>
                         <th>SKU</th>
-                        <th style={{ width: 120, minWidth: 120 }}>Qty</th>
-                        <th>Unit</th>
+                        <th style={{ width: 100, minWidth: 100 }}>Qty</th>
+                        <th style={{ width: 130, minWidth: 130 }}>Behavior</th>
                         <th style={{ width: 36 }} />
                       </tr>
                     </thead>
@@ -367,7 +367,17 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                               style={{ width: '100%', padding: '4px 6px', textAlign: 'center' }}
                             />
                           </td>
-                          <td>{UNIT_LABELS[member.unit_type || member.price_behavior] || member.unit_type || 'Flat'}</td>
+                          <td>
+                            <select
+                              className="field-select"
+                              value={member.price_behavior || 'included'}
+                              onChange={(e) => updateMember(index, 'price_behavior', e.target.value)}
+                              style={{ padding: '4px 6px', fontSize: '13px' }}
+                            >
+                              <option value="included">Included</option>
+                              <option value="related">Related</option>
+                            </select>
+                          </td>
                           <td>
                             <button type="button" className="action-btn delete" onClick={() => removeMember(index)} title="Remove">
                               <i className="fa-solid fa-xmark" />
