@@ -2387,19 +2387,24 @@ tr.drag-over {
 }
 
 .qd-more-btn {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.25);
+  background: #fff;
+  border: 1px solid #FBB13D;
+  color: #FBB13D;
   font-size: 14px;
   padding: 6px 8px;
-  border-radius: 4px;
+  height: 36px;
+  width: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
   cursor: pointer;
   transition: all var(--transition);
 }
 
 .qd-more-btn:hover {
-  color: rgba(255, 255, 255, 0.60);
-  background: rgba(255, 255, 255, 0.04);
+  color: #FBB13D;
+  background: #fffbf0;
 }
 
 .qd-more-menu {
@@ -4509,12 +4514,14 @@ tr.drag-over {
 }
 
 .qd-more-btn {
-  color: var(--text-faint);
+  color: #FBB13D;
+  border: 1px solid #FBB13D;
+  background: #fff;
 }
 
 .qd-more-btn:hover {
-  color: var(--text-secondary, #374151);
-  background: rgba(0, 0, 0, 0.04);
+  color: #FBB13D;
+  background: #fffbf0;
 }
 
 .qd-more-menu {
