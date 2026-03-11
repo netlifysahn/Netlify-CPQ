@@ -1,0 +1,26 @@
+{
+  "terms": {
+    "sections": [
+      {
+        "id": "term_termination",
+        "title": "Term and Termination",
+        "body": "The term of this Order Form will commence on the Order Form Effective Date. Upon expiration of the Subscription Term, this Order Form will renew as set forth in the Master Agreement. Netlify shall increase the fees for the Netlify Services during any Renewal Term by 5% each year."
+      },
+      {
+        "id": "invoices_payment",
+        "title": "Invoices and Payment",
+        "body": "Netlify will invoice, and the Customer will pay the Total Minimum Commitment Fees shown in the Fees table above and pursuant to the Billing Schedule in this Order Form. All payments due under this Section will be made in accordance with this Order Form and the terms set forth in the Master Agreement. If Customer elects monthly or quarterly payment terms, Customer authorizes Netlify to automatically charge the applicable fees to Customer's designated credit card or to initiate ACH or other electronic debit transactions from Customer's designated bank account, in accordance with the invoicing schedule set forth in this Order Form. Customer agrees to maintain a valid and current payment method on file for the duration of the applicable term."
+      },
+      {
+        "id": "usage_fees",
+        "title": "Usage Fees",
+        "body": "Netlify will calculate the usage-based fees (\"Usage Fees\"), based on the pricing set forth in the Overage Rates table above. Usage Fees are invoiced by Netlify monthly in arrears and will be payable in accordance with this Order Form and the terms set forth in the Master Agreement."
+      },
+      {
+        "id": "credits",
+        "title": "Credits",
+        "body": "\"Credits\" are the unit of measurement used to access and consume Netlify services under a Credit-Based Plan. Each service or feature consumes a specific number of Credits based on usage (for example, compute time, bandwidth, deploys, or form submissions). Customer's plan includes a monthly Credit allotment, and additional Credits may be purchased or automatically recharged as described in Netlify's pricing and billing documentation. Unused Credits do not roll over to future annual terms."
+      }
+    ]
+  }
+}

@@ -263,6 +263,18 @@
   background: var(--section-orders);
 }
 
+.sidebar-item.section-settings:hover {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.sidebar-item.section-settings.active {
+  background: color-mix(in srgb, #6b7280 8%, transparent);
+}
+
+.sidebar-item.section-settings.active::before {
+  background: #6b7280;
+}
+
 /* ─── Main Content ────────────────────────────────────────── */
 
 .main-content {
@@ -3532,6 +3544,15 @@ tr.drag-over {
 .sidebar-item.section-orders.active {
   background: color-mix(in srgb, var(--section-orders) 12%, transparent);
   color: var(--section-orders);
+}
+
+.sidebar-item.section-settings:hover {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.sidebar-item.section-settings.active {
+  background: color-mix(in srgb, #6b7280 12%, transparent);
+  color: #6b7280;
 }
 
 .sidebar-item.section-products.active i,

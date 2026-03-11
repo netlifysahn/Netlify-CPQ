@@ -12,16 +12,19 @@ import QuoteList from './components/QuoteList';
 import QuoteModal from './components/QuoteModal';
 import QuoteDetail from './components/QuoteDetail';
 import Confirm from './components/Confirm';
+import Settings from './components/Settings';
 import seedProducts from './data/products.json';
 import seedQuotes from './data/quotes.json';
 import seedPricebooks from './data/pricebooks.json';
+import seedSettings from './data/settings.json';
 
 const NAV_ITEMS = [
-  { key: 'products', label: 'Products', icon: 'fa-box' },
-  { key: 'pricebooks', label: 'Pricebooks', icon: 'fa-book' },
-  { key: 'scope', label: 'Scope', icon: 'fa-bullseye' },
-  { key: 'quotes', label: 'Quotes', icon: 'fa-file-invoice-dollar' },
-  { key: 'orders', label: 'Orders', icon: 'fa-cart-shopping' },
+  { key: 'products', label: 'Products' },
+  { key: 'pricebooks', label: 'Pricebooks' },
+  { key: 'scope', label: 'Scope' },
+  { key: 'quotes', label: 'Quotes' },
+  { key: 'orders', label: 'Orders' },
+  { key: 'settings', label: 'Settings' },
 ];
 
 const COMING_SOON_META = {
@@ -44,6 +47,7 @@ export default function App() {
   const [products, setProducts] = useState(() => [...seedProducts]);
   const [pricebooks, setPricebooks] = useState(() => [...seedPricebooks]);
   const [quotes, setQuotes] = useState(() => [...seedQuotes]);
+  const [settings, setSettings] = useState(() => ({ ...seedSettings }));
 
   const [search, setSearch] = useState('');
   const [pricebookSearch, setPricebookSearch] = useState('');
@@ -400,11 +404,17 @@ export default function App() {
             quote={activeQuote}
             products={products}
             pricebooks={pricebooks}
+            settings={settings}
             onSave={saveQuoteFromDetail}
             onBack={() => setActiveQuote(null)}
             onDelete={delQuote}
             onClone={(q) => { const cloned = dupeQuote(q); setActiveQuote(cloned); }}
           />
+        )}
+
+        {/* Settings Page */}
+        {page === 'settings' && (
+          <Settings settings={settings} onSave={setSettings} />
         )}
 
         {/* Coming Soon */}

@@ -7,7 +7,7 @@ import {
   isQuantityEditable, isIncluded, getUnitLabel,
 } from '../data/quotes';
 import { isBundleProduct, TYPE_LABELS, getProductCategory } from '../data/catalog';
-import { generateQuotePdf } from '../utils/quotePdf';
+import { generateQuotePDF } from '../utils/generateQuotePDF';
 import ProductPicker from './ProductPicker';
 
 // Error boundary to catch render crashes and show them instead of blank screen
@@ -187,7 +187,7 @@ export default function QuoteDetail(props) {
   );
 }
 
-function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelete, onClone }) {
+function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBack, onDelete, onClone }) {
   const [q, setQ] = useState(() => normalizeQuote(quote));
   const [mode, setMode] = useState('view'); // 'view' | 'edit'
   const [draft, setDraft] = useState(null); // working copy in edit mode
@@ -198,7 +198,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   const [groupName, setGroupName] = useState('');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [collapsedPkgs, setCollapsedPkgs] = useState(new Set());
-  const [detailCards, setDetailCards] = useState({ customer: false, term: false, billing: false, overage: false, activity: false });
+  const [detailCards, setDetailCards] = useState({ customer: false, term: false, billing: false, terms_conditions: false, overage: false, activity: false });
   const [addingToPackageId, setAddingToPackageId] = useState(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [dropTargetId, setDropTargetId] = useState(null);
@@ -658,6 +658,33 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         )}
       </div>
 
+      <div style={sectionDivider} />
+
+      {/* Terms & Conditions */}
+      <div>
+        <div style={cardHeaderStyle} onClick={() => toggleCard('terms_conditions')}>
+          <span style={eyebrowStyle}>Terms & Conditions</span>
+          <span style={chevronStyle}>{detailCards.terms_conditions ? '▾' : '▸'}</span>
+        </div>
+        {detailCards.terms_conditions && (
+          <div style={{ padding: '4px 24px 20px' }}>
+            <textarea
+              value={source.terms_conditions || ''}
+              onChange={(e) => handleFieldChange('terms_conditions', e.target.value)}
+              onBlur={(e) => handleFieldBlur('terms_conditions', e.target.value)}
+              placeholder="Add any quote-specific terms or negotiated language here..."
+              rows={4}
+              style={{
+                width: '100%', fontFamily: "'Mulish', sans-serif", fontSize: '13px', lineHeight: '1.6',
+                border: '1px solid rgba(0,0,0,0.1)', borderRadius: '6px', padding: '10px 12px',
+                outline: 'none', resize: 'vertical', background: '#fff', boxSizing: 'border-box',
+                color: '#1a1a1a',
+              }}
+            />
+          </div>
+        )}
+      </div>
+
     </div>
   );
 
@@ -1007,7 +1034,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
   );
 
   const renderFooterInfo = (source) => {
-    if (!source.comments && !source.terms_conditions && !source.prepared_by) return null;
+    if (!source.comments && !source.prepared_by) return null;
     return (
       <div className="qd-footer-info">
         {source.prepared_by && (
@@ -1020,12 +1047,6 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
           <div className="qd-footer-row">
             <span className="qd-footer-label">Comments</span>
             <span className="qd-footer-value">{source.comments}</span>
-          </div>
-        )}
-        {source.terms_conditions && (
-          <div className="qd-footer-row">
-            <span className="qd-footer-label">Terms & Conditions</span>
-            <span className="qd-footer-value">{source.terms_conditions}</span>
           </div>
         )}
       </div>
@@ -1153,7 +1174,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 <button className="qd-action-btn" onClick={enterEditMode}>
                   {q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
                 </button>
-                <button className="qd-action-btn" onClick={() => generateQuotePdf(q)}>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings, { preview: true })}>
                   Preview PDF
                 </button>
                 <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('sent')}>
@@ -1188,7 +1209,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 <button className="qd-action-btn" onClick={enterEditMode}>
                   {q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
                 </button>
-                <button className="qd-action-btn" onClick={() => generateQuotePdf(q)}>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings, { preview: true })}>
                   Preview PDF
                 </button>
                 <button className="qd-action-btn" onClick={() => {
@@ -1242,7 +1263,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('converted')}>
                   Convert to Order
                 </button>
-                <button className="qd-action-btn" onClick={() => showToast('PDF generation coming soon')}>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings)}>
                   Download Final PDF
                 </button>
               </>
@@ -1266,7 +1287,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 <button className="qd-action-btn" onClick={() => showToast('Order view coming soon')}>
                   View Order
                 </button>
-                <button className="qd-action-btn" onClick={() => showToast('PDF generation coming soon')}>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings)}>
                   Download Executed Quote PDF
                 </button>
               </>
