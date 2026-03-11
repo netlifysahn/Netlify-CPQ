@@ -1396,7 +1396,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                         <thead>
                           <tr>
                             <th style={{ width: '25%', minWidth: '200px' }}>Product</th>
-                            <th style={{ width: '12%' }}>Qty</th>
+                            {group.category !== 'support' && <th style={{ width: '12%' }}>Qty</th>}
                             <th style={{ width: '13%' }}>List Price</th>
                             <th style={{ width: '12%' }}>Disc %</th>
                             <th style={{ width: '13%' }}>Net Price</th>
@@ -1412,7 +1412,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                                 <td className="line-td-product" style={{ width: '25%', minWidth: '200px' }}>
                                   <div className="cell-name">{line.product_name}</div>
                                 </td>
-                                <td style={{ width: '12%' }}>{fmtQty(line.quantity)}</td>
+                                {group.category !== 'support' && <td style={{ width: '12%' }}>{line.quantity > 1 ? fmtQty(line.quantity) : ''}</td>}
                                 <td style={{ width: '13%' }}>{isIncluded(unitType) ? '—' : displayCurrency(line.list_price ?? 0)}</td>
                                 <td style={{ width: '12%' }}>{isIncluded(unitType) ? '—' : ((line.discount_percent ?? 0) > 0 ? `${line.discount_percent}%` : '—')}</td>
                                 <td style={{ width: '13%' }}>{isIncluded(unitType) ? '—' : displayCurrency(line.net_price ?? line.list_price ?? 0)}</td>
