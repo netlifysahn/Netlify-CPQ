@@ -1289,7 +1289,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             {/* Overflow menu (...) */}
             {['draft', 'sent', 'draft_revision', 'ready_to_submit', 'rejected'].includes(q.status) && (
               <div className="qd-more-wrap" ref={moreRef}>
-                <button className="qd-more-btn" onClick={() => setShowMoreMenu(!showMoreMenu)}>
+                <button className="qd-more-btn" style={{ border: 'none', background: 'transparent', boxShadow: 'none', outline: 'none', color: '#FBB13D', cursor: 'pointer', padding: '0 8px' }} onClick={() => setShowMoreMenu(!showMoreMenu)}>
                   <i className="fa-solid fa-ellipsis" />
                 </button>
                 {showMoreMenu && (

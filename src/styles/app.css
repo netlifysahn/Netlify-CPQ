@@ -2387,10 +2387,10 @@ tr.drag-over {
 }
 
 .qd-more-btn {
-  background: #fff;
-  border: 1px solid #FBB13D;
+  background: none;
+  border: none;
   color: #FBB13D;
-  font-size: 14px;
+  font-size: 16px;
   padding: 6px 8px;
   height: 36px;
   width: 36px;
@@ -2399,12 +2399,13 @@ tr.drag-over {
   justify-content: center;
   border-radius: 6px;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: opacity 0.15s;
 }
 
 .qd-more-btn:hover {
   color: #FBB13D;
-  background: #fffbf0;
+  opacity: 0.7;
+  background: none;
 }
 
 .qd-more-menu {
@@ -3194,9 +3195,10 @@ tr.drag-over {
 }
 
 .picker-v2-card.selected {
-  border: 1.5px solid #FBB13D;
-  padding: 15px;
-  background: rgba(251, 177, 61, 0.06);
+  border: 2px solid #FBB13D;
+  padding: 14px;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(251, 177, 61, 0.18);
 }
 
 .picker-v2-card.existing {
@@ -3309,8 +3311,9 @@ tr.drag-over {
 }
 .picker-v2-card.selected {
   border-color: #FBB13D;
-  border-width: 1.5px;
-  background: rgba(251, 177, 61, 0.04);
+  border-width: 2px;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(251, 177, 61, 0.18);
 }
 .picker-v2-card .type-pill {
   background: #f3f4f6;
@@ -4023,7 +4026,14 @@ tr.drag-over {
 }
 
 .qd-action-btn:hover {
-  background: #fffbf0;
+  border-color: #e09e2a;
+  color: #e09e2a;
+  background: transparent;
+  box-shadow: 0 1px 4px rgba(251, 177, 61, 0.2);
+}
+
+.qd-action-btn:active {
+  transform: scale(0.98);
 }
 
 .qd-action-btn-primary {
@@ -4034,7 +4044,12 @@ tr.drag-over {
 }
 
 .qd-action-btn-primary:hover {
-  background: #f0a832;
+  background: #e09e2a;
+  box-shadow: 0 1px 4px rgba(251, 177, 61, 0.25);
+}
+
+.qd-action-btn-primary:active {
+  transform: scale(0.97);
 }
 
 .qd-action-btn-teal {
@@ -4515,13 +4530,14 @@ tr.drag-over {
 
 .qd-more-btn {
   color: #FBB13D;
-  border: 1px solid #FBB13D;
-  background: #fff;
+  border: none;
+  background: none;
 }
 
 .qd-more-btn:hover {
   color: #FBB13D;
-  background: #fffbf0;
+  opacity: 0.7;
+  background: none;
 }
 
 .qd-more-menu {
