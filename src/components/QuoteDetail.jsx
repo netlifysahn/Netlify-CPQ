@@ -144,6 +144,7 @@ const normalizeQuote = (q) => {
       product_sku: l.product_sku || l.sku || '',
       is_package: l.is_package || false,
       parent_line_id: l.parent_line_id || null,
+      price_behavior: l.price_behavior || (l.parent_line_id ? 'included' : undefined),
     })),
     groups: q.groups || [],
     overage_rate_credits: q.overage_rate_credits || '',

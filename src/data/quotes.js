@@ -129,6 +129,7 @@ export const emptySubLineItem = (memberProduct, member, parentLineId, listPrice)
     unit_type: unitType,
     group_id: null,
     parent_line_id: parentLineId,
+    price_behavior: member.price_behavior || 'included',
     name_editable: !!memberProduct.config?.edit_name,
     terms: memberProduct.terms || '',
     quantity: qty,
@@ -206,8 +207,16 @@ export const calcLineTotal = (line, headerDiscount = 0) => {
 
 export const calcQuoteTotals = (quote) => {
   const allLines = quote.line_items || [];
-  // Only sum priceable lines: standalone lines + sub-components (skip package parents)
-  const lines = allLines.filter((l) => !l.is_package);
+  // Priceable lines:
+  //   - Package headers (is_package: true) → priced at their header list_price
+  //   - Standalone lines (no parent_line_id, not a package)
+  //   - "related" sub-components (parent_line_id set, price_behavior = "related")
+  // Excluded:
+  //   - "included" sub-components (parent_line_id set, price_behavior != "related")
+  const lines = allLines.filter((l) => {
+    if (l.parent_line_id) return l.price_behavior === 'related';
+    return true; // package headers + standalone lines
+  });
   const hd = quote.header_discount || 0;
   const term = quote.term_months || 12;
 
