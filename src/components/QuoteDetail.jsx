@@ -658,54 +658,6 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         )}
       </div>
 
-      <div style={sectionDivider} />
-
-      {/* Activity Log */}
-      <div>
-        <div style={cardHeaderStyle} onClick={() => toggleCard('activity')}>
-          <span style={eyebrowStyle}>Activity</span>
-          <i className={`fa-solid ${detailCards.activity ? 'fa-chevron-down' : 'fa-chevron-right'}`} style={chevronStyle} />
-        </div>
-        {detailCards.activity && (
-          <div style={{ padding: '4px 24px 20px' }}>
-            <div className="qd-activity-timeline">
-              {[...(source.activity_log || [])].reverse().map((entry, i, arr) => {
-                let dotColor = '#00AD9F';
-                let text = '';
-                if (entry.type === 'status_change') {
-                  dotColor = ACTIVITY_DOT_COLORS[entry.to_status] || '#6b7280';
-                  const fromLabel = (STATUS_META[entry.from_status] || {}).label || entry.from_status;
-                  const toLabel = (STATUS_META[entry.to_status] || {}).label || entry.to_status;
-                  text = `${entry.actor || 'System'} moved quote from ${fromLabel} → ${toLabel}`;
-                } else if (entry.type === 'created') {
-                  dotColor = '#00AD9F';
-                  text = `Quote created${entry.actor ? ` by ${entry.actor}` : ''}`;
-                } else if (entry.type === 'note') {
-                  dotColor = '#FBB13D';
-                  const noteText = entry.note || '';
-                  text = `Feedback recorded: ${noteText.length > 80 ? noteText.slice(0, 80) + '…' : noteText}`;
-                }
-                const isLast = i === arr.length - 1;
-                return (
-                  <div key={i} className="qd-activity-entry">
-                    <div className="qd-activity-dot-col">
-                      <div className="qd-activity-dot" style={{ background: dotColor }} />
-                      {!isLast && <div className="qd-activity-line" />}
-                    </div>
-                    <div className="qd-activity-content">
-                      <span className="qd-activity-text">{text}</span>
-                      <span className="qd-activity-time">{relativeTime(entry.timestamp)}</span>
-                    </div>
-                  </div>
-                );
-              })}
-              {(!source.activity_log || source.activity_log.length === 0) && (
-                <div style={{ fontSize: '13px', color: '#9ca3af' }}>No activity recorded.</div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 
@@ -1531,6 +1483,46 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       {/* Footer info */}
       <div>
         {renderFooterInfo(q)}
+      </div>
+
+      {/* Activity Log */}
+      <div style={{ marginTop: '28px' }}>
+        <div className="qd-footer-label" style={{ marginBottom: '12px' }}>Activity</div>
+        <div className="qd-activity-timeline">
+          {[...(q.activity_log || [])].reverse().map((entry, i, arr) => {
+            let dotColor = '#00AD9F';
+            let text = '';
+            if (entry.type === 'status_change') {
+              dotColor = ACTIVITY_DOT_COLORS[entry.to_status] || '#6b7280';
+              const fromLabel = (STATUS_META[entry.from_status] || {}).label || entry.from_status;
+              const toLabel = (STATUS_META[entry.to_status] || {}).label || entry.to_status;
+              text = `${entry.actor || 'System'} moved quote from ${fromLabel} → ${toLabel}`;
+            } else if (entry.type === 'created') {
+              dotColor = '#00AD9F';
+              text = `Quote created${entry.actor ? ` by ${entry.actor}` : ''}`;
+            } else if (entry.type === 'note') {
+              dotColor = '#FBB13D';
+              const noteText = entry.note || '';
+              text = `Feedback recorded: ${noteText.length > 80 ? noteText.slice(0, 80) + '…' : noteText}`;
+            }
+            const isLast = i === arr.length - 1;
+            return (
+              <div key={i} className="qd-activity-entry">
+                <div className="qd-activity-dot-col">
+                  <div className="qd-activity-dot" style={{ background: dotColor }} />
+                  {!isLast && <div className="qd-activity-line" />}
+                </div>
+                <div className="qd-activity-content">
+                  <span className="qd-activity-text">{text}</span>
+                  <span className="qd-activity-time">{relativeTime(entry.timestamp)}</span>
+                </div>
+              </div>
+            );
+          })}
+          {(!q.activity_log || q.activity_log.length === 0) && (
+            <div style={{ fontSize: '13px', color: '#9ca3af' }}>No activity recorded.</div>
+          )}
+        </div>
       </div>
 
       {/* Feedback modal */}
