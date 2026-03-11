@@ -1124,31 +1124,47 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
         <button className="back-btn" onClick={onBack}>
           <i className="fa-solid fa-arrow-left" /> Back to Quotes
         </button>
-        <div className="qd-header-info">
+        <div className="qd-header-info" style={{ flex: 1 }}>
           <div className="qd-quote-number">{q.quote_number}</div>
-          {editingTitle ? (
-            <input
-              autoFocus
-              type="text"
-              value={q.name}
-              placeholder="Quote name"
-              onChange={(e) => setQ((prev) => ({ ...prev, name: e.target.value }))}
-              onBlur={(e) => {
-                setEditingTitle(false);
-                persistQuote((prev) => ({ ...prev, name: e.target.value }));
-              }}
-              onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setEditingTitle(false); }}
-              style={{
-                fontFamily: "'Poppins', sans-serif", fontSize: '34px', fontWeight: 300, letterSpacing: '-0.01em',
-                color: 'var(--text-strong)', background: 'transparent', border: 'none', borderBottom: '1px solid #FBB13D',
-                outline: 'none', padding: 0, margin: 0, width: '100%', lineHeight: 'inherit',
-              }}
-            />
-          ) : (
-            <h1 className="qd-title" onClick={() => setEditingTitle(true)} style={{ cursor: 'pointer' }}>
-              {q.name || 'Untitled Quote'}
-            </h1>
-          )}
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '24px' }}>
+            {editingTitle ? (
+              <input
+                autoFocus
+                type="text"
+                value={q.name}
+                placeholder="Quote name"
+                onChange={(e) => setQ((prev) => ({ ...prev, name: e.target.value }))}
+                onBlur={(e) => {
+                  setEditingTitle(false);
+                  persistQuote((prev) => ({ ...prev, name: e.target.value }));
+                }}
+                onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setEditingTitle(false); }}
+                style={{
+                  fontFamily: "'Poppins', sans-serif", fontSize: '34px', fontWeight: 300, letterSpacing: '-0.01em',
+                  color: 'var(--text-strong)', background: 'transparent', border: 'none', borderBottom: '1px solid #FBB13D',
+                  outline: 'none', padding: 0, margin: 0, flex: 1, lineHeight: 'inherit',
+                }}
+              />
+            ) : (
+              <h1 className="qd-title" onClick={() => setEditingTitle(true)} style={{ cursor: 'pointer', flex: 1 }}>
+                {q.name || 'Untitled Quote'}
+              </h1>
+            )}
+            {!isEditing && (
+              <div style={{
+                fontFamily: "'Roboto Mono', monospace",
+                fontSize: '11px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                color: STATUS_EYEBROW_COLORS[q.status] || '#6b7280',
+                whiteSpace: 'nowrap',
+                paddingRight: '8px',
+              }}>
+                {(STATUS_META[q.status] || STATUS_META.draft).label}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1178,21 +1194,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
             <button className="qd-action-btn qd-action-btn-primary" onClick={saveEdit}>Save</button>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-            {/* Status eyebrow */}
-            <div style={{
-              fontFamily: "'Roboto Mono', monospace",
-              fontSize: '11px',
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color: STATUS_EYEBROW_COLORS[q.status] || '#6b7280',
-            }}>
-              {(STATUS_META[q.status] || STATUS_META.draft).label}
-            </div>
-
-            {/* Action buttons row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
 
             {/* ── DRAFT actions ── */}
             {q.status === 'draft' && (
@@ -1378,7 +1380,6 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
               </div>
             )}
 
-            </div>
           </div>
         )}
       </div>
