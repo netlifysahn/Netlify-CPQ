@@ -1340,7 +1340,7 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                                 {subs.map((sub) => (
                                   <div key={sub.id} className="qd-pkg-member-row">
                                     <span className="qd-pkg-member-name">{sub.product_name}</span>
-                                    <span className="qd-pkg-member-qty">qty {sub.quantity}</span>
+                                    {sub.quantity > 1 && <span className="qd-pkg-member-qty">qty {sub.quantity}</span>}
                                   </div>
                                 ))}
                               </div>
