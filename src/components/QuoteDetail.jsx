@@ -500,8 +500,13 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
     prevTotalsRef.current = totalsFingerprint;
   }, [totalsFingerprint]);
 
-  // Status picklist: editable for draft/sent/draft_revision/ready_to_submit, read-only otherwise
-  const isStatusEditable = ['draft', 'sent', 'draft_revision', 'ready_to_submit'].includes(q.status);
+  // Status eyebrow colors
+  const STATUS_EYEBROW_COLORS = {
+    draft: '#6b7280', sent: '#2E51ED', draft_revision: '#FBB13D',
+    ready_to_submit: '#00AD9F', pending_approval: '#7C3AED',
+    approved: '#16A34A', rejected: '#ef4444', converted: '#15803d',
+    archived: '#9ca3af',
+  };
 
   const showToast = (msg) => {
     setToast(msg);
@@ -1166,30 +1171,28 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
       )}
 
       {/* Action bar */}
-      <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', margin: '0 0 24px', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px' }}>
+      <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', margin: '0 0 24px', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
         {isEditing ? (
-          <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button className="qd-action-btn" onClick={cancelEdit}>Cancel</button>
             <button className="qd-action-btn qd-action-btn-primary" onClick={saveEdit}>Save</button>
-          </>
+          </div>
         ) : (
-          <>
-            {/* Status picklist */}
-            {isStatusEditable ? (
-              <select
-                value={q.status}
-                onChange={(e) => changeStatus(e.target.value)}
-                style={{ appearance: 'auto', cursor: 'pointer', padding: '8px 12px', height: '36px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', fontSize: '13px', fontWeight: 500, color: '#0a0a0a' }}
-              >
-                {Object.entries(STATUS_META).map(([key, { label }]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
-              </select>
-            ) : (
-              <span className={`status-badge status-${(STATUS_META[q.status] || STATUS_META.draft).color}`} style={{ height: '36px', display: 'inline-flex', alignItems: 'center', padding: '0 12px', fontSize: '13px' }}>
-                {(STATUS_META[q.status] || STATUS_META.draft).label}
-              </span>
-            )}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+            {/* Status eyebrow */}
+            <div style={{
+              fontFamily: "'Roboto Mono', monospace",
+              fontSize: '11px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: STATUS_EYEBROW_COLORS[q.status] || '#6b7280',
+            }}>
+              {(STATUS_META[q.status] || STATUS_META.draft).label}
+            </div>
+
+            {/* Action buttons row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
 
             {/* ── DRAFT actions ── */}
             {q.status === 'draft' && (
@@ -1374,7 +1377,9 @@ function QuoteDetailInner({ quote, products, pricebooks, onSave, onBack, onDelet
                 )}
               </div>
             )}
-          </>
+
+            </div>
+          </div>
         )}
       </div>
 
