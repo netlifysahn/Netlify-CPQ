@@ -3,7 +3,7 @@ import autoTable from 'jspdf-autotable';
 import { calcLineExtended, calcQuoteTotals, fmtCurrency } from '../data/quotes';
 
 const FONT = 'helvetica';
-const FONT_MONO = 'courier';
+const FONT_MONO = 'helvetica';
 const C_BLACK = [26, 26, 26];
 const C_MUTED = [120, 120, 120];
 const C_DIVIDER = [220, 220, 220];
@@ -212,10 +212,6 @@ export function generateQuotePDF(quote, products, settings, { preview = false } 
       const subs = allLines.filter((l) => l.parent_line_id === pkg.id);
       const pkgTotal = subs.reduce((s, l) => s + calcLineExtended(l), 0);
 
-      const cardStart = y;
-      doc.setDrawColor(...C_DIVIDER);
-      doc.setLineWidth(0.4);
-
       // Package name + monthly price
       doc.setFont(FONT, 'bold');
       doc.setFontSize(12);
@@ -259,7 +255,6 @@ export function generateQuotePDF(quote, products, settings, { preview = false } 
         y += 2;
       });
 
-      doc.roundedRect(MARGIN, cardStart, contentWidth, y - cardStart + 2, 2, 2, 'S');
       y += 8;
     });
   }
@@ -271,7 +266,6 @@ export function generateQuotePDF(quote, products, settings, { preview = false } 
     y = eyebrow(doc, 'Support', y);
     standaloneSupport.forEach((line) => {
       y = checkPage(doc, y, 16);
-      const cardStart = y;
       doc.setFont(FONT, 'bold');
       doc.setFontSize(12);
       doc.setTextColor(...C_BLACK);
@@ -281,8 +275,6 @@ export function generateQuotePDF(quote, products, settings, { preview = false } 
       doc.setTextColor(...C_MUTED);
       doc.text(`${fmtCurrency(line.net_price || line.list_price || 0)} / mo`, pageWidth - MARGIN - 6, y + 5, { align: 'right' });
       y += 11;
-      doc.setDrawColor(...C_DIVIDER);
-      doc.roundedRect(MARGIN, cardStart, contentWidth, y - cardStart + 2, 2, 2, 'S');
       y += 8;
     });
   }
