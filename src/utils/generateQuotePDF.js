@@ -573,8 +573,8 @@ export function generateQuotePDF(quote, products, settings, { preview = false } 
 
   // Output
   if (preview) {
-    const url = doc.output('bloburl');
-    window.open(url, '_blank');
+const customerSlug = (quote.customer_name || 'quote').replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+doc.save(`${quote.quote_number}-${customerSlug}-preview.pdf`);
   } else {
     const customerSlug = (quote.customer_name || 'quote').replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
     doc.save(`${quote.quote_number}-${customerSlug}.pdf`);
