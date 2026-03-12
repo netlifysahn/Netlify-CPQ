@@ -71,18 +71,27 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
           <input className="field-input" value={f.name} onChange={(e) => s('name', e.target.value)} placeholder="e.g. Riot Games — Enterprise Renewal" />
         </div>
 
+        <div className="grid-2">
+          <div className="field">
+            <label className="field-label">Quote Type</label>
+            <select className="field-select" value={f.quote_type || 'net_new'} onChange={(e) => s('quote_type', e.target.value)}>
+              <option value="net_new">Net New</option>
+              <option value="renewal">Renewal</option>
+              <option value="expansion">Expansion</option>
+            </select>
+          </div>
+          <div className="field">
+            <label className="field-label">Prepared By</label>
+            <input className="field-input" value={f.prepared_by} onChange={(e) => s('prepared_by', e.target.value)} placeholder="Your name" />
+          </div>
+        </div>
+
         {/* ── Customer Information ── */}
         <div className="modal-section">
-          <button
-            type="button"
-            className="modal-section-label modal-section-toggle"
-            onClick={() => toggleSection(SECTIONS.CUSTOMER)}
-            aria-expanded={openSections[SECTIONS.CUSTOMER]}
-          >
+          <button type="button" className="modal-section-label modal-section-toggle" onClick={() => toggleSection(SECTIONS.CUSTOMER)} aria-expanded={openSections[SECTIONS.CUSTOMER]}>
             <span>Customer Information</span>
             <span>{openSections[SECTIONS.CUSTOMER] ? '▾' : '▸'}</span>
           </button>
-
           <div className={`modal-section-content ${openSections[SECTIONS.CUSTOMER] ? 'is-open' : ''}`}>
             <div className="field">
               <label className="field-label">Customer Name</label>
@@ -112,31 +121,19 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
                 <input className="field-input" type="email" value={f.billing_contact_email} onChange={(e) => s('billing_contact_email', e.target.value)} placeholder="billing@company.com" />
               </div>
             </div>
-            <div className="grid-2">
-              <div className="field">
-                <label className="field-label">Invoice Email</label>
-                <input className="field-input" type="email" value={f.invoice_email} onChange={(e) => s('invoice_email', e.target.value)} placeholder="invoices@company.com" />
-              </div>
-              <div className="field">
-                <label className="field-label">Netlify Account ID</label>
-                <input className="field-input" value={f.account_id} onChange={(e) => s('account_id', e.target.value)} placeholder="e.g. acct_abc123" style={{ fontFamily: "'Menlo', monospace" }} />
-              </div>
+            <div className="field">
+              <label className="field-label">Invoice Email</label>
+              <input className="field-input" type="email" value={f.invoice_email} onChange={(e) => s('invoice_email', e.target.value)} placeholder="invoices@company.com" />
             </div>
           </div>
         </div>
 
         {/* ── Subscription Term ── */}
         <div className="modal-section">
-          <button
-            type="button"
-            className="modal-section-label modal-section-toggle"
-            onClick={() => toggleSection(SECTIONS.TERM)}
-            aria-expanded={openSections[SECTIONS.TERM]}
-          >
+          <button type="button" className="modal-section-label modal-section-toggle" onClick={() => toggleSection(SECTIONS.TERM)} aria-expanded={openSections[SECTIONS.TERM]}>
             <span>Subscription Term</span>
             <span>{openSections[SECTIONS.TERM] ? '▾' : '▸'}</span>
           </button>
-
           <div className={`modal-section-content ${openSections[SECTIONS.TERM] ? 'is-open' : ''}`}>
             <div className="grid-2">
               <div className="field">
@@ -171,16 +168,10 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
 
         {/* ── Billing & Payment ── */}
         <div className="modal-section">
-          <button
-            type="button"
-            className="modal-section-label modal-section-toggle"
-            onClick={() => toggleSection(SECTIONS.BILLING)}
-            aria-expanded={openSections[SECTIONS.BILLING]}
-          >
+          <button type="button" className="modal-section-label modal-section-toggle" onClick={() => toggleSection(SECTIONS.BILLING)} aria-expanded={openSections[SECTIONS.BILLING]}>
             <span>Billing &amp; Payment</span>
             <span>{openSections[SECTIONS.BILLING] ? '▾' : '▸'}</span>
           </button>
-
           <div className={`modal-section-content ${openSections[SECTIONS.BILLING] ? 'is-open' : ''}`}>
             <div className="grid-3">
               <div className="field">
@@ -224,20 +215,20 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
 
         {/* ── Internal (collapsed by default) ── */}
         <div className="modal-section">
-          <button
-            type="button"
-            className="modal-section-label modal-section-toggle"
-            onClick={() => toggleSection(SECTIONS.INTERNAL)}
-            aria-expanded={openSections[SECTIONS.INTERNAL]}
-          >
+          <button type="button" className="modal-section-label modal-section-toggle" onClick={() => toggleSection(SECTIONS.INTERNAL)} aria-expanded={openSections[SECTIONS.INTERNAL]}>
             <span>Internal</span>
             <span>{openSections[SECTIONS.INTERNAL] ? '▾' : '▸'}</span>
           </button>
-
           <div className={`modal-section-content ${openSections[SECTIONS.INTERNAL] ? 'is-open' : ''}`}>
-            <div className="field">
-              <label className="field-label">Prepared By</label>
-              <input className="field-input" value={f.prepared_by} onChange={(e) => s('prepared_by', e.target.value)} placeholder="Your name" />
+            <div className="grid-2">
+              <div className="field">
+                <label className="field-label">Partner Name</label>
+                <input className="field-input" value={f.partner_name || ''} onChange={(e) => s('partner_name', e.target.value)} placeholder="e.g. Sitecore, Storyblok (leave blank if direct)" />
+              </div>
+              <div className="field">
+                <label className="field-label">Netlify Account ID</label>
+                <input className="field-input" value={f.account_id} onChange={(e) => s('account_id', e.target.value)} placeholder="e.g. acct_abc123" style={{ fontFamily: "'Menlo', monospace" }} />
+              </div>
             </div>
             {activePricebooks.length > 0 && (
               <div className="field">

@@ -10,25 +10,15 @@ import { isBundleProduct, TYPE_LABELS, getProductCategory } from '../data/catalo
 import { generateQuotePDF } from '../utils/generateQuotePDF';
 import ProductPicker from './ProductPicker';
 
-// Error boundary to catch render crashes and show them instead of blank screen
 class QuoteDetailErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { error: null };
-  }
-  static getDerivedStateFromError(error) {
-    return { error };
-  }
-  componentDidCatch(error, info) {
-    console.error('[QuoteDetail] Render crash:', error, info?.componentStack);
-  }
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error }; }
+  componentDidCatch(error, info) { console.error('[QuoteDetail] Render crash:', error, info?.componentStack); }
   render() {
     if (this.state.error) {
       return (
         <div style={{ padding: 40 }}>
-          <button className="back-btn" onClick={this.props.onBack}>
-            Back to Quotes
-          </button>
+          <button className="back-btn" onClick={this.props.onBack}>Back to Quotes</button>
           <h2 style={{ marginTop: 20, color: '#ef4444' }}>Something went wrong</h2>
           <pre style={{ marginTop: 12, padding: 16, background: 'rgba(0,0,0,0.05)', borderRadius: 8, whiteSpace: 'pre-wrap', fontSize: 13 }}>
             {this.state.error?.message || String(this.state.error)}
@@ -40,7 +30,6 @@ class QuoteDetailErrorBoundary extends Component {
   }
 }
 
-// Animated summary value — pulses on change
 function AnimatedValue({ value, pulseKey }) {
   const ref = useRef(null);
   useEffect(() => {
@@ -53,7 +42,6 @@ function AnimatedValue({ value, pulseKey }) {
   return <div className="qd-summary-value" ref={ref}>{value}</div>;
 }
 
-// Relative time — "2 days ago", "just now", etc.
 const relativeTime = (timestamp) => {
   if (!timestamp) return '';
   const now = Date.now();
@@ -71,7 +59,6 @@ const relativeTime = (timestamp) => {
   return `${Math.floor(diffMo / 12)}y ago`;
 };
 
-// Status dot colors for activity timeline
 const ACTIVITY_DOT_COLORS = {
   draft: '#6b7280', sent: '#2E51ED', draft_revision: '#FBB13D',
   ready_to_submit: '#00AD9F', pending_approval: '#7C3AED',
@@ -79,7 +66,6 @@ const ACTIVITY_DOT_COLORS = {
   archived: '#9ca3af',
 };
 
-// Format date — "2026-03-08" → "Mar 8, 2026"
 const fmtDate = (dateStr) => {
   if (!dateStr) return '';
   const d = new Date(dateStr + 'T00:00:00');
@@ -87,19 +73,16 @@ const fmtDate = (dateStr) => {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-// Display currency — show dash for zero values in line tables
 const displayCurrency = (v) => {
   const n = typeof v === 'number' && !isNaN(v) ? v : 0;
   return n === 0 ? '—' : fmtCurrency(n);
 };
 
-// Format quantity with comma separators — 1000000 → "1,000,000"
 const fmtQty = (v) => {
   const n = typeof v === 'number' && !isNaN(v) ? v : 0;
   return n.toLocaleString('en-US');
 };
 
-// ── Category badge styles for grouped line item cards ──
 const CATEGORY_BADGE_STYLES = {
   bundle: { background: 'transparent', color: '#0a0a0a', border: '1px solid #0a0a0a' },
   support: { background: '#EFF6FF', color: '#2E51ED', border: '1px solid #BFDBFE' },
@@ -116,14 +99,12 @@ const getCategoryCardLabel = (category, hasPackage) => {
   return TYPE_LABELS[category] || category;
 };
 
-// ── Detail card styles (shared constants) ──
 const DC_LABEL_STYLE = { fontSize: '14px', color: '#0f172a', fontWeight: 500, fontFamily: "'Mulish', sans-serif", marginBottom: '6px' };
 const DC_INPUT_STYLE = { fontSize: '14px', color: '#0a0a0a', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 14px', width: '100%', outline: 'none', boxSizing: 'border-box', background: '#fff', transition: 'border-color 0.15s' };
 
 const handleDcFocus = (e) => { e.target.style.borderColor = '#FBB13D'; };
 const handleDcBlurStyle = (e) => { e.target.style.borderColor = '#e5e7eb'; };
 
-// Top-level component to avoid remount on parent state change
 function DetailInput({ label, field, value, placeholder, span2, type, mono, textarea, options, onChange, onBlur }) {
   const style = mono ? { ...DC_INPUT_STYLE, fontFamily: "'Roboto Mono', monospace" } : DC_INPUT_STYLE;
   const handleChange = (e) => onChange(field, e.target.value);
@@ -148,7 +129,6 @@ function DetailInput({ label, field, value, placeholder, span2, type, mono, text
   );
 }
 
-// Backfill missing fields on older quotes
 const normalizeQuote = (q) => {
   if (!q || typeof q !== 'object') {
     return { id: 'error', quote_number: 'ERR', name: 'Invalid Quote', status: 'draft', term_months: 12, header_discount: 0, line_items: [], groups: [], start_date: '', end_date: '', customer_name: '', customer_address: '', customer_contact: '', billing_contact_name: '', billing_contact_email: '', billing_contact_phone: '', prepared_by: '', comments: '', terms_conditions: '', pricebook_id: null, created_at: '', updated_at: '' };
@@ -189,8 +169,8 @@ export default function QuoteDetail(props) {
 
 function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBack, onDelete, onClone }) {
   const [q, setQ] = useState(() => normalizeQuote(quote));
-  const [mode, setMode] = useState('view'); // 'view' | 'edit'
-  const [draft, setDraft] = useState(null); // working copy in edit mode
+  const [mode, setMode] = useState('view');
+  const [draft, setDraft] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
   const [editingCell, setEditingCell] = useState(null);
   const [confirm, setConfirm] = useState(null);
@@ -207,7 +187,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const [ddNotesModal, setDdNotesModal] = useState(false);
   const [validationErrors, setValidationErrors] = useState(null);
   const [toast, setToast] = useState(null);
-  const dragRef = useRef(null); // { type: 'top'|'sub', id, parentId? }
+  const dragRef = useRef(null);
   const moreRef = useRef(null);
   const prevTotalsRef = useRef(null);
   const [pulseKey, setPulseKey] = useState(0);
@@ -220,7 +200,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // ── Persist (view-mode status changes) ──
   const persistQuote = (fn) => {
     setQ((prev) => {
       const next = fn(prev);
@@ -230,7 +209,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     });
   };
 
-  // ── Edit mode: enter / save / cancel ──
   const enterEditMode = () => {
     setDraft({
       line_items: JSON.parse(JSON.stringify(q.line_items)),
@@ -242,13 +220,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   };
 
   const saveEdit = () => {
-    const updated = {
-      ...q,
-      line_items: draft.line_items,
-      groups: draft.groups,
-      header_discount: draft.header_discount,
-      updated_at: new Date().toISOString(),
-    };
+    const updated = { ...q, line_items: draft.line_items, groups: draft.groups, header_discount: draft.header_discount, updated_at: new Date().toISOString() };
     setQ(updated);
     onSave(updated);
     setDraft(null);
@@ -256,16 +228,9 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     setMode('view');
   };
 
-  const cancelEdit = () => {
-    setDraft(null);
-    setEditingCell(null);
-    setMode('view');
-  };
+  const cancelEdit = () => { setDraft(null); setEditingCell(null); setMode('view'); };
 
-  // ── Draft mutation helpers (edit mode only) ──
-  const updateDraft = (fn) => {
-    setDraft((prev) => fn({ ...prev }));
-  };
+  const updateDraft = (fn) => { setDraft((prev) => fn({ ...prev })); };
 
   const getSelectedPricebook = () => {
     if (!q.pricebook_id) return null;
@@ -285,37 +250,23 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       const entry = pb?.entries?.find((e) => e.product_id === prodId);
       return entry?.price_override != null ? entry.price_override : undefined;
     };
-
     if (isBundleProduct(product) && product.members?.length > 0) {
       const parentLine = emptyPackageLine(product);
       const productMap = new Map((products || []).map((p) => [p.id, p]));
-      const subLines = product.members
-        .filter((m) => productMap.has(m.product_id))
-        .map((m) => emptySubLineItem(productMap.get(m.product_id), m, parentLine.id, getPriceOverride(m.product_id)));
-
+      const subLines = product.members.filter((m) => productMap.has(m.product_id)).map((m) => emptySubLineItem(productMap.get(m.product_id), m, parentLine.id, getPriceOverride(m.product_id)));
       updateDraft((d) => {
         const base = d.line_items.length;
-        d.line_items = [
-          ...d.line_items,
-          { ...parentLine, sort_order: base },
-          ...subLines.map((sl, i) => ({ ...sl, sort_order: base + 1 + i })),
-        ];
+        d.line_items = [...d.line_items, { ...parentLine, sort_order: base }, ...subLines.map((sl, i) => ({ ...sl, sort_order: base + 1 + i }))];
         return d;
       });
     } else {
       const line = emptyLineItem(product, getPriceOverride(product.id));
-      updateDraft((d) => {
-        d.line_items = [...d.line_items, { ...line, sort_order: d.line_items.length }];
-        return d;
-      });
+      updateDraft((d) => { d.line_items = [...d.line_items, { ...line, sort_order: d.line_items.length }]; return d; });
     }
   };
 
   const updateDraftLine = (lineId, updates) => {
-    updateDraft((d) => {
-      d.line_items = d.line_items.map((l) => l.id === lineId ? { ...l, ...updates } : l);
-      return d;
-    });
+    updateDraft((d) => { d.line_items = d.line_items.map((l) => l.id === lineId ? { ...l, ...updates } : l); return d; });
     setEditingCell(null);
   };
 
@@ -335,9 +286,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     const line = draft.line_items.find((l) => l.id === lineId);
     if (!line) return;
     const val = parseFloat(value) || 0;
-    const synced = field === 'discount_percent'
-      ? syncDiscountFromPercent(line.list_price || 0, val)
-      : syncDiscountFromAmount(line.list_price || 0, val);
+    const synced = field === 'discount_percent' ? syncDiscountFromPercent(line.list_price || 0, val) : syncDiscountFromAmount(line.list_price || 0, val);
     updateDraftLine(lineId, synced);
   };
 
@@ -348,12 +297,9 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     const member = { product_id: product.id, qty: 1, unit_type: product.default_price?.unit || 'flat', list_price: product.default_price?.amount ?? 0 };
     const subLine = emptySubLineItem(product, member, parentLineId, listPrice);
     updateDraft((d) => {
-      // Insert after last sub-component of this package
       const parentIdx = d.line_items.findIndex((l) => l.id === parentLineId);
       let insertIdx = parentIdx + 1;
-      while (insertIdx < d.line_items.length && d.line_items[insertIdx].parent_line_id === parentLineId) {
-        insertIdx++;
-      }
+      while (insertIdx < d.line_items.length && d.line_items[insertIdx].parent_line_id === parentLineId) insertIdx++;
       const items = [...d.line_items];
       items.splice(insertIdx, 0, { ...subLine, sort_order: insertIdx });
       d.line_items = items;
@@ -363,18 +309,12 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   };
 
   const removeDraftLine = (lineId) => {
-    updateDraft((d) => {
-      d.line_items = d.line_items.filter((l) => l.id !== lineId && l.parent_line_id !== lineId);
-      return d;
-    });
+    updateDraft((d) => { d.line_items = d.line_items.filter((l) => l.id !== lineId && l.parent_line_id !== lineId); return d; });
   };
 
   const addDraftGroup = () => {
     if (!groupName.trim()) return;
-    updateDraft((d) => {
-      d.groups = [...d.groups, { ...emptyGroup(), name: groupName.trim(), sort_order: d.groups.length }];
-      return d;
-    });
+    updateDraft((d) => { d.groups = [...d.groups, { ...emptyGroup(), name: groupName.trim(), sort_order: d.groups.length }]; return d; });
     setGroupName('');
     setShowGroupModal(false);
   };
@@ -387,15 +327,11 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     });
   };
 
-  // ── Drag and drop reordering (edit mode) ──
   const handleDragStart = (e, lineId, type, parentId) => {
     dragRef.current = { type, id: lineId, parentId };
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', lineId);
-    requestAnimationFrame(() => {
-      const row = e.target.closest('tr');
-      if (row) row.classList.add('drag-active');
-    });
+    requestAnimationFrame(() => { const row = e.target.closest('tr'); if (row) row.classList.add('drag-active'); });
   };
 
   const handleDragEnd = (e) => {
@@ -408,9 +344,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     e.preventDefault();
     const drag = dragRef.current;
     if (!drag || drag.id === targetId) { setDropTargetId(null); return; }
-    // Sub-components can only reorder within their parent
     if (drag.type === 'sub' && (targetType !== 'sub' || targetParentId !== drag.parentId)) { setDropTargetId(null); return; }
-    // Top-level items can only reorder among top-level
     if (drag.type === 'top' && targetType !== 'top') { setDropTargetId(null); return; }
     e.dataTransfer.dropEffect = 'move';
     setDropTargetId(targetId);
@@ -420,12 +354,9 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     e.preventDefault();
     const drag = dragRef.current;
     if (!drag || drag.id === targetId) { handleDragEnd(e); return; }
-
     updateDraft((d) => {
       const items = [...d.line_items];
-
       if (drag.type === 'top' && targetType === 'top') {
-        // Group items into blocks: each top-level + its sub-components
         const blocks = [];
         const used = new Set();
         for (let i = 0; i < items.length; i++) {
@@ -435,10 +366,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
             used.add(items[i].id);
             if (items[i].is_package) {
               for (let j = i + 1; j < items.length; j++) {
-                if (items[j].parent_line_id === items[i].id) {
-                  block.push(items[j]);
-                  used.add(items[j].id);
-                }
+                if (items[j].parent_line_id === items[i].id) { block.push(items[j]); used.add(items[j].id); }
               }
             }
             blocks.push({ id: items[i].id, lines: block });
@@ -451,7 +379,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         blocks.splice(targetIdx, 0, moved);
         d.line_items = blocks.flatMap((b) => b.lines);
       } else if (drag.type === 'sub' && targetType === 'sub' && drag.parentId === targetParentId) {
-        // Reorder sub-components within a package
         const subIndices = [];
         items.forEach((l, i) => { if (l.parent_line_id === drag.parentId) subIndices.push(i); });
         const subs = subIndices.map((i) => items[i]);
@@ -465,53 +392,34 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       }
       return d;
     });
-
     handleDragEnd(e);
   };
 
-  // ── Status changes (view mode) ──
   const changeStatus = (newStatus) => {
     persistQuote((prev) => ({
       ...prev,
       status: newStatus,
-      activity_log: [...(prev.activity_log || []), {
-        type: 'status_change',
-        from_status: prev.status,
-        to_status: newStatus,
-        timestamp: new Date().toISOString(),
-        actor: prev.prepared_by || '',
-      }],
+      activity_log: [...(prev.activity_log || []), { type: 'status_change', from_status: prev.status, to_status: newStatus, timestamp: new Date().toISOString(), actor: prev.prepared_by || '' }],
     }));
   };
 
-  // ── Derived data ──
-  const liveData = mode === 'edit' && draft
-    ? { line_items: draft.line_items, groups: draft.groups, header_discount: draft.header_discount, term_months: q.term_months }
-    : q;
+  const liveData = mode === 'edit' && draft ? { line_items: draft.line_items, groups: draft.groups, header_discount: draft.header_discount, term_months: q.term_months } : q;
   const totals = calcQuoteTotals(liveData);
   const meta = STATUS_META[q.status] || STATUS_META.draft;
 
-  // Detect summary value changes and trigger pulse animation
   const totalsFingerprint = `${totals.monthly}|${totals.annual}|${totals.tcv}`;
   useEffect(() => {
-    if (prevTotalsRef.current !== null && prevTotalsRef.current !== totalsFingerprint) {
-      setPulseKey((k) => k + 1);
-    }
+    if (prevTotalsRef.current !== null && prevTotalsRef.current !== totalsFingerprint) setPulseKey((k) => k + 1);
     prevTotalsRef.current = totalsFingerprint;
   }, [totalsFingerprint]);
 
-  // Status eyebrow colors
   const STATUS_EYEBROW_COLORS = {
     draft: '#6b7280', sent: '#2E51ED', draft_revision: '#FBB13D',
     ready_to_submit: '#00AD9F', pending_approval: '#7C3AED',
-    approved: '#16A34A', rejected: '#ef4444', converted: '#15803d',
-    archived: '#9ca3af',
+    approved: '#16A34A', rejected: '#ef4444', converted: '#15803d', archived: '#9ca3af',
   };
 
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  };
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
   const validateForSubmission = () => {
     const errors = [];
@@ -522,74 +430,43 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     return errors;
   };
 
-  // ── Package helpers ──
   const togglePackage = (lineId) => {
-    setCollapsedPkgs((prev) => {
-      const next = new Set(prev);
-      next.has(lineId) ? next.delete(lineId) : next.add(lineId);
-      return next;
-    });
+    setCollapsedPkgs((prev) => { const next = new Set(prev); next.has(lineId) ? next.delete(lineId) : next.add(lineId); return next; });
   };
 
   const getSubLines = (items, parentId) => items.filter((l) => l.parent_line_id === parentId);
   const calcPkgExtended = (items, parentId) => getSubLines(items, parentId).reduce((s, l) => s + calcLineExtended(l), 0);
 
-  // ── Editable cell renderer (edit mode) ──
   const renderEditableCell = (line, field, opts = {}) => {
     const { type = 'number', step = '1', min, max, disabled = false } = opts;
     const cellKey = `${line.id}-${field}`;
     const isEditing = editingCell === cellKey;
-
     if (disabled) {
       const dval = typeof line[field] === 'number' ? line[field] : 0;
       return <span className="cell-locked">{field === 'quantity' ? fmtQty(dval) : dval}</span>;
     }
-
     if (isEditing) {
       return (
-        <input
-          className="inline-edit"
-          type={type}
-          defaultValue={line[field] ?? 0}
-          autoFocus
-          step={step}
-          min={min}
-          max={max}
+        <input className="inline-edit" type={type} defaultValue={line[field] ?? 0} autoFocus step={step} min={min} max={max}
           onBlur={(e) => {
             const v = parseFloat(e.target.value) || 0;
-            if (field === 'discount_percent' || field === 'discount_amount') {
-              updateDraftDiscount(line.id, field, v);
-            } else if (field === 'quantity') {
-              updateDraftLineField(line.id, 'quantity', Math.max(1, Math.round(v)));
-            } else {
-              updateDraftLineField(line.id, field, v);
-            }
+            if (field === 'discount_percent' || field === 'discount_amount') updateDraftDiscount(line.id, field, v);
+            else if (field === 'quantity') updateDraftLineField(line.id, 'quantity', Math.max(1, Math.round(v)));
+            else updateDraftLineField(line.id, field, v);
           }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') e.target.blur();
-            if (e.key === 'Escape') setEditingCell(null);
-          }}
+          onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setEditingCell(null); }}
         />
       );
     }
-
     const val = line[field] ?? 0;
     let display;
     if (field === 'discount_percent') display = val > 0 ? `${val}%` : '—';
     else if (field === 'discount_amount' || field === 'list_price' || field === 'net_price') display = displayCurrency(val);
     else if (field === 'quantity') display = fmtQty(val);
     else display = val;
-
-    return (
-      <span className="cell-editable" onClick={() => setEditingCell(cellKey)}>
-        {display}
-      </span>
-    );
+    return <span className="cell-editable" onClick={() => setEditingCell(cellKey)}>{display}</span>;
   };
 
-  // ════════════════════════════════════════
-  //  DETAIL CARDS (view mode)
-  // ════════════════════════════════════════
   const cardHeaderStyle = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', cursor: 'pointer', userSelect: 'none' };
   const eyebrowStyle = { fontFamily: "'Roboto Mono', monospace", fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9ca3af' };
   const cardBodyStyle = { padding: '4px 24px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' };
@@ -597,13 +474,11 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const sectionDivider = { height: '1px', background: 'rgba(0,0,0,0.06)', margin: 0 };
 
   const toggleCard = (key) => setDetailCards((p) => ({ ...p, [key]: !p[key] }));
-
   const handleFieldChange = (field, value) => setQ((p) => ({ ...p, [field]: value }));
   const handleFieldBlur = (field, value) => persistQuote((prev) => ({ ...prev, [field]: value }));
 
   const renderDetailCards = (source) => (
     <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: 0, marginBottom: '12px' }}>
-      {/* Customer Information */}
       <div>
         <div style={cardHeaderStyle} onClick={() => toggleCard('customer')}>
           <span style={eyebrowStyle}>Customer Information</span>
@@ -622,10 +497,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           </div>
         )}
       </div>
-
       <div style={sectionDivider} />
-
-      {/* Subscription Term */}
       <div>
         <div style={cardHeaderStyle} onClick={() => toggleCard('term')}>
           <span style={eyebrowStyle}>Subscription Term</span>
@@ -638,10 +510,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           </div>
         )}
       </div>
-
       <div style={sectionDivider} />
-
-      {/* Billing & Payment */}
       <div>
         <div style={cardHeaderStyle} onClick={() => toggleCard('billing')}>
           <span style={eyebrowStyle}>Billing & Payment</span>
@@ -657,10 +526,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           </div>
         )}
       </div>
-
       <div style={sectionDivider} />
-
-      {/* Terms & Conditions */}
       <div>
         <div style={cardHeaderStyle} onClick={() => toggleCard('terms_conditions')}>
           <span style={eyebrowStyle}>Terms & Conditions</span>
@@ -668,108 +534,17 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         </div>
         {detailCards.terms_conditions && (
           <div style={{ padding: '4px 24px 20px' }}>
-            <textarea
-              value={source.terms_conditions || ''}
-              onChange={(e) => handleFieldChange('terms_conditions', e.target.value)}
-              onBlur={(e) => handleFieldBlur('terms_conditions', e.target.value)}
-              placeholder="Add any quote-specific terms or negotiated language here..."
-              rows={4}
-              style={{
-                width: '100%', fontFamily: "'Mulish', sans-serif", fontSize: '13px', lineHeight: '1.6',
-                border: '1px solid rgba(0,0,0,0.1)', borderRadius: '6px', padding: '10px 12px',
-                outline: 'none', resize: 'vertical', background: '#fff', boxSizing: 'border-box',
-                color: '#1a1a1a',
-              }}
-            />
+            <textarea value={source.terms_conditions || ''} onChange={(e) => handleFieldChange('terms_conditions', e.target.value)} onBlur={(e) => handleFieldBlur('terms_conditions', e.target.value)} placeholder="Add any quote-specific terms or negotiated language here..." rows={4}
+              style={{ width: '100%', fontFamily: "'Mulish', sans-serif", fontSize: '13px', lineHeight: '1.6', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '6px', padding: '10px 12px', outline: 'none', resize: 'vertical', background: '#fff', boxSizing: 'border-box', color: '#1a1a1a' }} />
           </div>
         )}
       </div>
-
     </div>
   );
 
-  // ════════════════════════════════════════
-  //  VIEW MODE
-  // ════════════════════════════════════════
-
-  // ── View mode table rows ──
-  const renderViewRow = (line) => {
-    if (line.is_package) {
-      const subs = getSubLines(q.line_items, line.id);
-      const expanded = !collapsedPkgs.has(line.id);
-      const pkgTotal = calcPkgExtended(q.line_items, line.id);
-      return (
-        <React.Fragment key={line.id}>
-          <tr className="line-row-package">
-            <td className="line-td-product" style={{ width: '23%', minWidth: '200px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
-                <span className="pkg-badge">PKG</span>
-                <button className="pkg-chevron" onClick={() => togglePackage(line.id)} style={{ marginLeft: 0 }}>
-                  {expanded ? '▾' : '▸'}
-                </button>
-              </div>
-            </td>
-            <td style={{ width: '10%' }} />
-            <td style={{ width: '10%' }} />
-            <td style={{ width: '10%' }} />
-            <td style={{ width: '10%' }} />
-            <td style={{ width: '10%' }} />
-            <td style={{ width: '10%' }}><span className="price-monthly">{displayCurrency(pkgTotal)}</span></td>
-          </tr>
-          {expanded && subs.map((sub) => {
-            const ext = calcLineExtended(sub);
-            return (
-              <tr key={sub.id} className="line-row-sub">
-                <td className="line-td-product qd-view-sub-product pkg-sub-product" style={{ width: '23%', minWidth: '200px' }}>
-                  <div className="cell-name">{sub.product_name}</div>
-                </td>
-                <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(sub.unit_type || 'flat')}</span></td>
-                <td style={{ width: '12%' }}>{fmtQty(sub.quantity)}</td>
-                <td style={{ width: '10%' }}>{displayCurrency(sub.list_price ?? 0)}</td>
-                <td style={{ width: '10%' }}>{(sub.discount_percent ?? 0) > 0 ? `${sub.discount_percent}%` : '—'}</td>
-                <td style={{ width: '10%' }}>{displayCurrency(sub.net_price ?? sub.list_price ?? 0)}</td>
-                <td style={{ width: '10%' }}><span className="price-monthly">{displayCurrency(ext)}</span></td>
-              </tr>
-            );
-          })}
-        </React.Fragment>
-      );
-    }
-
-    const unitType = line.unit_type || 'flat';
-    const extended = calcLineExtended(line);
-    return (
-      <tr key={line.id}>
-        <td className="line-td-product" style={{ width: '23%', minWidth: '200px' }}>
-          <div className="cell-name">{line.product_name}</div>
-        </td>
-        <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
-        <td style={{ width: '12%' }}>{fmtQty(line.quantity)}</td>
-        <td style={{ width: '10%' }}>{isIncluded(unitType) ? '—' : displayCurrency(line.list_price ?? 0)}</td>
-        <td style={{ width: '10%' }}>{isIncluded(unitType) ? '—' : ((line.discount_percent ?? 0) > 0 ? `${line.discount_percent}%` : '—')}</td>
-        <td style={{ width: '10%' }}>{isIncluded(unitType) ? '—' : displayCurrency(line.net_price ?? line.list_price ?? 0)}</td>
-        <td style={{ width: '10%' }}><span className="price-monthly">{isIncluded(unitType) ? '—' : displayCurrency(extended)}</span></td>
-      </tr>
-    );
-  };
-
-  // ════════════════════════════════════════
-  //  EDIT MODE TABLE (inline)
-  // ════════════════════════════════════════
   const renderEditTable = () => {
     if (!draft) return null;
     const items = draft.line_items;
-    const groups = draft.groups;
-    const hd = draft.header_discount;
-    const topLevel = items.filter((l) => !l.group_id && !l.parent_line_id);
-    const groupedItems = (gid) => items.filter((l) => l.group_id === gid && !l.parent_line_id);
-    const groupSubtotal = (gid) => groupedItems(gid)
-      .reduce((s, l) => {
-        if (l.is_package) return s + calcPkgExtended(items, l.id);
-        return s + calcLineExtended(l);
-      }, 0);
-
     const editTableHead = (
       <thead>
         <tr>
@@ -790,27 +565,11 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       const included = isIncluded(unitType);
       const extended = calcLineExtended(line);
       return (
-        <tr
-          key={line.id}
-          className={dropTargetId === line.id ? 'drag-over' : ''}
-          draggable
-          onDragStart={(e) => handleDragStart(e, line.id, 'top')}
-          onDragEnd={handleDragEnd}
-          onDragOver={(e) => handleDragOver(e, line.id, 'top')}
-          onDrop={(e) => handleDrop(e, line.id, 'top')}
-        >
+        <tr key={line.id} className={dropTargetId === line.id ? 'drag-over' : ''} draggable
+          onDragStart={(e) => handleDragStart(e, line.id, 'top')} onDragEnd={handleDragEnd}
+          onDragOver={(e) => handleDragOver(e, line.id, 'top')} onDrop={(e) => handleDrop(e, line.id, 'top')}>
           <td className="line-td-product" style={{ width: '23%', minWidth: '200px' }}>
-            {line.name_editable ? (
-              <input
-                className="inline-edit"
-                type="text"
-                value={line.product_name}
-                onChange={(e) => updateDraftLineField(line.id, 'product_name', e.target.value)}
-                style={{ width: '100%', fontWeight: 500 }}
-              />
-            ) : (
-              <div className="cell-name">{line.product_name}</div>
-            )}
+            {line.name_editable ? <input className="inline-edit" type="text" value={line.product_name} onChange={(e) => updateDraftLineField(line.id, 'product_name', e.target.value)} style={{ width: '100%', fontWeight: 500 }} /> : <div className="cell-name">{line.product_name}</div>}
           </td>
           <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
           <td style={{ width: '12%' }}>{included ? <span className="cell-locked">1</span> : renderEditableCell(line, 'quantity', { step: '1', min: '1' })}</td>
@@ -821,7 +580,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           <td style={{ width: '60px' }}>
             <div className="actions-group">
               <span className="drag-handle edit-drag-handle" style={{ cursor: 'grab', color: '#9ca3af', fontSize: '12px' }}>⋮⋮</span>
-              <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(line.id)}>Remove</button>
+              <button className="action-btn delete line-remove-btn" onClick={() => removeDraftLine(line.id)}>Remove</button>
             </div>
           </td>
         </tr>
@@ -834,31 +593,14 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       const pkgTotal = calcPkgExtended(items, line.id);
       return (
         <React.Fragment key={line.id}>
-          <tr
-            className={`line-row-package${dropTargetId === line.id ? ' drag-over' : ''}`}
-            draggable
-            onDragStart={(e) => handleDragStart(e, line.id, 'top')}
-            onDragEnd={handleDragEnd}
-            onDragOver={(e) => handleDragOver(e, line.id, 'top')}
-            onDrop={(e) => handleDrop(e, line.id, 'top')}
-          >
+          <tr className={`line-row-package${dropTargetId === line.id ? ' drag-over' : ''}`} draggable
+            onDragStart={(e) => handleDragStart(e, line.id, 'top')} onDragEnd={handleDragEnd}
+            onDragOver={(e) => handleDragOver(e, line.id, 'top')} onDrop={(e) => handleDrop(e, line.id, 'top')}>
             <td className="line-td-product" style={{ width: '23%', minWidth: '200px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {line.name_editable ? (
-                  <input
-                    className="inline-edit"
-                    type="text"
-                    value={line.product_name}
-                    onChange={(e) => updateDraftLineField(line.id, 'product_name', e.target.value)}
-                    style={{ flex: 1, fontWeight: 500 }}
-                  />
-                ) : (
-                  <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>
-                )}
+                {line.name_editable ? <input className="inline-edit" type="text" value={line.product_name} onChange={(e) => updateDraftLineField(line.id, 'product_name', e.target.value)} style={{ flex: 1, fontWeight: 500 }} /> : <span className="cell-name" style={{ margin: 0 }}>{line.product_name}</span>}
                 <span className="pkg-badge">PKG</span>
-                <button className="pkg-chevron" onClick={() => togglePackage(line.id)} style={{ marginLeft: 0 }}>
-                  {expanded ? '▾' : '▸'}
-                </button>
+                <button className="pkg-chevron" onClick={() => togglePackage(line.id)} style={{ marginLeft: 0 }}>{expanded ? '▾' : '▸'}</button>
               </div>
             </td>
             <td style={{ width: '10%' }} /><td style={{ width: '10%' }} /><td style={{ width: '10%' }} /><td style={{ width: '10%' }} /><td style={{ width: '10%' }} />
@@ -866,7 +608,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
             <td style={{ width: '60px' }}>
               <div className="actions-group">
                 <span className="drag-handle edit-drag-handle" style={{ cursor: 'grab', color: '#9ca3af', fontSize: '12px' }}>⋮⋮</span>
-                <button className="action-btn delete line-remove-btn" title="Remove package" onClick={() => removeDraftLine(line.id)}>Remove</button>
+                <button className="action-btn delete line-remove-btn" onClick={() => removeDraftLine(line.id)}>Remove</button>
               </div>
             </td>
           </tr>
@@ -876,20 +618,9 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
             return (
               <tr key={sub.id} className={`line-row-sub${dropTargetId === sub.id ? ' drag-over' : ''}`} draggable
                 onDragStart={(e) => handleDragStart(e, sub.id, 'sub', line.id)} onDragEnd={handleDragEnd}
-                onDragOver={(e) => handleDragOver(e, sub.id, 'sub', line.id)} onDrop={(e) => handleDrop(e, sub.id, 'sub', line.id)}
-              >
+                onDragOver={(e) => handleDragOver(e, sub.id, 'sub', line.id)} onDrop={(e) => handleDrop(e, sub.id, 'sub', line.id)}>
                 <td className="line-td-product pkg-sub-product" style={{ width: '23%', minWidth: '200px' }}>
-                  {sub.name_editable ? (
-                    <input
-                      className="inline-edit"
-                      type="text"
-                      value={sub.product_name}
-                      onChange={(e) => updateDraftLineField(sub.id, 'product_name', e.target.value)}
-                      style={{ width: '100%', fontWeight: 500 }}
-                    />
-                  ) : (
-                    <div className="cell-name">{sub.product_name}</div>
-                  )}
+                  {sub.name_editable ? <input className="inline-edit" type="text" value={sub.product_name} onChange={(e) => updateDraftLineField(sub.id, 'product_name', e.target.value)} style={{ width: '100%', fontWeight: 500 }} /> : <div className="cell-name">{sub.product_name}</div>}
                 </td>
                 <td style={{ width: '10%' }}><span className="cell-sku">{getUnitLabel(unitType)}</span></td>
                 <td style={{ width: '12%' }}>{renderEditableCell(sub, 'quantity', { step: '1', min: '1' })}</td>
@@ -900,7 +631,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                 <td style={{ width: '60px' }}>
                   <div className="actions-group">
                     <span className="drag-handle edit-drag-handle" style={{ cursor: 'grab', color: '#9ca3af', fontSize: '12px' }}>⋮⋮</span>
-                    <button className="action-btn delete line-remove-btn" title="Remove" onClick={() => removeDraftLine(sub.id)}>Remove</button>
+                    <button className="action-btn delete line-remove-btn" onClick={() => removeDraftLine(sub.id)}>Remove</button>
                   </div>
                 </td>
               </tr>
@@ -909,20 +640,12 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           {expanded && (
             <tr className="line-row-sub">
               <td colSpan={8} style={{ paddingLeft: 36 }}>
-                <button type="button" className="pkg-add-component-link" onClick={() => setAddingToPackageId(addingToPackageId === line.id ? null : line.id)}>
-                  Add Component
-                </button>
+                <button type="button" className="pkg-add-component-link" onClick={() => setAddingToPackageId(addingToPackageId === line.id ? null : line.id)}>Add Component</button>
               </td>
             </tr>
           )}
         </React.Fragment>
       );
-    };
-
-    const renderEditRow = (line) => {
-      if (line.parent_line_id) return null;
-      if (line.is_package) return renderEditPackage(line);
-      return renderEditStandalone(line);
     };
 
     const editCategoryGroups = groupLinesByCategory(items);
@@ -932,20 +655,9 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         <div className="qd-lines-card">
           {items.length === 0 ? (
             <div className="edit-empty-state">
-              <div className="nomi-scene">
-                <div className="nomi-clip">
-                  <img
-                    src="/Nomi.svg"
-                    alt="Nomi"
-                    className="nomi-character"
-                    onAnimationEnd={(e) => { e.target.classList.add('nomi-resting'); }}
-                  />
-                </div>
-              </div>
+              <div className="nomi-scene"><div className="nomi-clip"><img src="/Nomi.svg" alt="Nomi" className="nomi-character" onAnimationEnd={(e) => { e.target.classList.add('nomi-resting'); }} /></div></div>
               <div className="edit-empty-title">Start building your quote</div>
-              <button className="edit-empty-cta" onClick={() => setShowPicker(true)}>
-                Browse Products
-              </button>
+              <button className="edit-empty-cta" onClick={() => setShowPicker(true)}>Browse Products</button>
             </div>
           ) : (
             <div className="qd-grouped-cards">
@@ -956,15 +668,9 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                     <span className="qd-category-badge" style={group.badge}>{group.category === 'bundle' ? 'PKG' : group.label}</span>
                   </div>
                   {group.category === 'bundle' ? (
-                    <table className="data-table line-table">
-                      {editTableHead}
-                      <tbody>{group.lines.map((line) => renderEditPackage(line))}</tbody>
-                    </table>
+                    <table className="data-table line-table">{editTableHead}<tbody>{group.lines.map((line) => renderEditPackage(line))}</tbody></table>
                   ) : (
-                    <table className="data-table line-table">
-                      {editTableHead}
-                      <tbody>{group.lines.map(renderEditStandalone)}</tbody>
-                    </table>
+                    <table className="data-table line-table">{editTableHead}<tbody>{group.lines.map(renderEditStandalone)}</tbody></table>
                   )}
                 </div>
               ))}
@@ -974,14 +680,8 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
             <button className="btn-primary" onClick={() => setShowPicker(true)}>Add Product</button>
           </div>
         </div>
-
-        {/* Edit mode modals */}
-        {showPicker && (
-          <ProductPicker products={availableProducts} onAdd={addLineToDraft} onClose={() => setShowPicker(false)} multiSelect existingProductIds={new Set()} />
-        )}
-        {addingToPackageId && (
-          <ProductPicker products={availableProducts.filter((p) => !isBundleProduct(p))} onAdd={(product) => addSubComponentToDraft(product, addingToPackageId)} onClose={() => setAddingToPackageId(null)} />
-        )}
+        {showPicker && <ProductPicker products={availableProducts} onAdd={addLineToDraft} onClose={() => setShowPicker(false)} multiSelect existingProductIds={new Set()} />}
+        {addingToPackageId && <ProductPicker products={availableProducts.filter((p) => !isBundleProduct(p))} onAdd={(product) => addSubComponentToDraft(product, addingToPackageId)} onClose={() => setAddingToPackageId(null)} />}
         {showGroupModal && (
           <div className="modal-overlay" onClick={() => { setShowGroupModal(false); setGroupName(''); }}>
             <div className="modal modal-theme-quotes" style={{ maxWidth: 360 }} onClick={(e) => e.stopPropagation()}>
@@ -1001,7 +701,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     );
   };
 
-  // ── Shared sub-renders ──
   const renderSummary = (t, source) => (
     <div className="qd-summary">
       <div className="qd-summary-item">
@@ -1037,18 +736,8 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     if (!source.comments && !source.prepared_by) return null;
     return (
       <div className="qd-footer-info">
-        {source.prepared_by && (
-          <div className="qd-footer-row">
-            <span className="qd-footer-label">Prepared by</span>
-            <span className="qd-footer-value">{source.prepared_by}</span>
-          </div>
-        )}
-        {source.comments && (
-          <div className="qd-footer-row">
-            <span className="qd-footer-label">Comments</span>
-            <span className="qd-footer-value">{source.comments}</span>
-          </div>
-        )}
+        {source.prepared_by && <div className="qd-footer-row"><span className="qd-footer-label">Prepared by</span><span className="qd-footer-value">{source.prepared_by}</span></div>}
+        {source.comments && <div className="qd-footer-row"><span className="qd-footer-label">Comments</span><span className="qd-footer-value">{source.comments}</span></div>}
       </div>
     );
   };
@@ -1067,11 +756,8 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   );
 
   const isEditing = mode === 'edit';
-  const isArchived = q.status === 'archived';
   const canEditLines = ['draft', 'draft_revision'].includes(q.status);
-  const viewItems = q.line_items.filter((l) => !l.parent_line_id);
 
-  // Group line items by category for card display
   const groupLinesByCategory = (items) => {
     const hasPackage = items.some((l) => l.is_package);
     const order = hasPackage ? CARD_ORDER_WITH_PACKAGE : CARD_ORDER_NO_PACKAGE;
@@ -1092,48 +778,22 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
   return (
     <div className="quote-detail">
-      {/* Header */}
       <div className="qd-header">
-        <button className="back-btn" onClick={onBack}>
-          Back to Quotes
-        </button>
+        <button className="back-btn" onClick={onBack}>Back to Quotes</button>
         <div className="qd-header-info" style={{ flex: 1 }}>
           <div className="qd-quote-number">{q.quote_number}</div>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '24px' }}>
             {editingTitle ? (
-              <input
-                autoFocus
-                type="text"
-                value={q.name}
-                placeholder="Quote name"
+              <input autoFocus type="text" value={q.name} placeholder="Quote name"
                 onChange={(e) => setQ((prev) => ({ ...prev, name: e.target.value }))}
-                onBlur={(e) => {
-                  setEditingTitle(false);
-                  persistQuote((prev) => ({ ...prev, name: e.target.value }));
-                }}
+                onBlur={(e) => { setEditingTitle(false); persistQuote((prev) => ({ ...prev, name: e.target.value })); }}
                 onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setEditingTitle(false); }}
-                style={{
-                  fontFamily: "'Poppins', sans-serif", fontSize: '34px', fontWeight: 300, letterSpacing: '-0.01em',
-                  color: 'var(--text-strong)', background: 'transparent', border: 'none', borderBottom: '1px solid #FBB13D',
-                  outline: 'none', padding: 0, margin: 0, flex: 1, lineHeight: 'inherit',
-                }}
-              />
+                style={{ fontFamily: "'Poppins', sans-serif", fontSize: '34px', fontWeight: 300, letterSpacing: '-0.01em', color: 'var(--text-strong)', background: 'transparent', border: 'none', borderBottom: '1px solid #FBB13D', outline: 'none', padding: 0, margin: 0, flex: 1, lineHeight: 'inherit' }} />
             ) : (
-              <h1 className="qd-title" onClick={() => setEditingTitle(true)} style={{ cursor: 'pointer', flex: 1 }}>
-                {q.name || 'Untitled Quote'}
-              </h1>
+              <h1 className="qd-title" onClick={() => setEditingTitle(true)} style={{ cursor: 'pointer', flex: 1 }}>{q.name || 'Untitled Quote'}</h1>
             )}
             {!isEditing && (
-              <div style={{
-                fontFamily: "'Roboto Mono', monospace",
-                fontSize: '11px',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                color: STATUS_EYEBROW_COLORS[q.status] || '#6b7280',
-                whiteSpace: 'nowrap',
-                paddingRight: '8px',
-              }}>
+              <div style={{ fontFamily: "'Roboto Mono', monospace", fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: STATUS_EYEBROW_COLORS[q.status] || '#6b7280', whiteSpace: 'nowrap', paddingRight: '8px' }}>
                 {(STATUS_META[q.status] || STATUS_META.draft).label}
               </div>
             )}
@@ -1141,24 +801,15 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         </div>
       </div>
 
-      {/* Archived banner */}
-      {q.status === 'archived' && (
-        <div className="qd-archived-banner">
-          This quote is archived
-        </div>
-      )}
+      {q.status === 'archived' && <div className="qd-archived-banner">This quote is archived</div>}
 
-      {/* Validation errors */}
       {validationErrors && (
         <div className="qd-validation-errors">
           <div className="qd-validation-errors-title">Cannot submit — missing required fields:</div>
-          <ul>
-            {validationErrors.map((err, i) => <li key={i}>{err}</li>)}
-          </ul>
+          <ul>{validationErrors.map((err, i) => <li key={i}>{err}</li>)}</ul>
         </div>
       )}
 
-      {/* Action bar */}
       <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', margin: '0 0 24px', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
         {isEditing ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1168,206 +819,99 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
 
-            {/* ── DRAFT actions ── */}
             {q.status === 'draft' && (
               <>
-                <button className="qd-action-btn" onClick={enterEditMode}>
-                  {q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
-                </button>
-                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings, { preview: true })}>
-                  Preview PDF
-                </button>
-                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('sent')}>
-                  Send to Customer
-                </button>
+                <button className="qd-action-btn" onClick={enterEditMode}>{q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}</button>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings, { preview: true })}>Preview PDF</button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('sent')}>Send to Customer</button>
               </>
             )}
 
-            {/* ── SENT actions ── */}
             {q.status === 'sent' && (
               <>
-                <button className="qd-action-btn" onClick={() => { setFeedbackText(q.comments || ''); setFeedbackModal(true); }}>
-                  Record Feedback
-                </button>
-                <button className="qd-action-btn" onClick={() => {
-                  const cloned = onClone(q);
-                  if (cloned) {
-                    persistQuote(() => ({ ...cloned, name: (q.name || 'Quote') + ' — Scenario', status: 'draft' }));
-                  }
-                }}>
-                  Clone as Scenario
-                </button>
-                <button className="qd-action-btn" onClick={() => changeStatus('draft')}>
-                  Revise Quote
-                </button>
+                <button className="qd-action-btn" onClick={() => { setFeedbackText(q.comments || ''); setFeedbackModal(true); }}>Record Feedback</button>
+                <button className="qd-action-btn" onClick={() => { const cloned = onClone(q); if (cloned) persistQuote(() => ({ ...cloned, name: (q.name || 'Quote') + ' — Scenario', status: 'draft' })); }}>Clone as Scenario</button>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings)}>Download PDF</button>
+                <button className="qd-action-btn" onClick={() => changeStatus('draft')}>Revise Quote</button>
               </>
             )}
 
-            {/* ── DRAFT REVISION actions ── */}
             {q.status === 'draft_revision' && (
               <>
-                <button className="qd-action-btn" onClick={enterEditMode}>
-                  {q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
-                </button>
-                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings, { preview: true })}>
-                  Preview PDF
-                </button>
-                <button className="qd-action-btn" onClick={() => {
-                  persistQuote((prev) => ({ ...prev, is_primary: true }));
-                  showToast('Marked as primary quote');
-                }}>
-                  Mark as Primary
-                </button>
-                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('sent')}>
-                  Send to Customer
-                </button>
+                <button className="qd-action-btn" onClick={enterEditMode}>{q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}</button>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings, { preview: true })}>Preview PDF</button>
+                <button className="qd-action-btn" onClick={() => { persistQuote((prev) => ({ ...prev, is_primary: true })); showToast('Marked as primary quote'); }}>Mark as Primary</button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('sent')}>Send to Customer</button>
               </>
             )}
 
-            {/* ── READY TO SUBMIT actions ── */}
             {q.status === 'ready_to_submit' && (
-              <>
-                <button className="qd-action-btn qd-action-btn-teal" onClick={() => {
-                  const errors = validateForSubmission();
-                  if (errors.length > 0) {
-                    setValidationErrors(errors);
-                    return;
-                  }
-                  setValidationErrors(null);
-                  changeStatus('pending_approval');
-                }}>
-                  Submit to Deal Desk
-                </button>
-              </>
+              <button className="qd-action-btn qd-action-btn-teal" onClick={() => {
+                const errors = validateForSubmission();
+                if (errors.length > 0) { setValidationErrors(errors); return; }
+                setValidationErrors(null);
+                changeStatus('pending_approval');
+              }}>Submit to Deal Desk</button>
             )}
 
-            {/* ── PENDING APPROVAL actions ── */}
             {q.status === 'pending_approval' && (
               <>
-                <button className="qd-action-btn" onClick={() => showToast('Submission details coming soon')}>
-                  View Submission
-                </button>
-                <button className="qd-action-btn" onClick={() => setConfirm({
-                  msg: 'Are you sure? This will pull the quote back to Draft.',
-                  label: 'Withdraw',
-                  fn: () => { changeStatus('draft'); setConfirm(null); },
-                })}>
-                  Withdraw Submission
-                </button>
+                <button className="qd-action-btn" onClick={() => showToast('Submission details coming soon')}>View Submission</button>
+                <button className="qd-action-btn" onClick={() => setConfirm({ msg: 'Are you sure? This will pull the quote back to Draft.', label: 'Withdraw', fn: () => { changeStatus('draft'); setConfirm(null); } })}>Withdraw Submission</button>
               </>
             )}
 
-            {/* ── APPROVED actions ── */}
             {q.status === 'approved' && (
               <>
-                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('converted')}>
-                  Convert to Order
-                </button>
-                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings)}>
-                  Download Final PDF
-                </button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('converted')}>Convert to Order</button>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings)}>Download Final PDF</button>
               </>
             )}
 
-            {/* ── REJECTED actions ── */}
             {q.status === 'rejected' && (
               <>
-                <button className="qd-action-btn" onClick={() => setDdNotesModal(true)}>
-                  View DD Notes
-                </button>
-                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('draft')}>
-                  Revise Quote
-                </button>
+                <button className="qd-action-btn" onClick={() => setDdNotesModal(true)}>View DD Notes</button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('draft')}>Revise Quote</button>
               </>
             )}
 
-            {/* ── CONVERTED actions ── */}
             {q.status === 'converted' && (
               <>
-                <button className="qd-action-btn" onClick={() => showToast('Order view coming soon')}>
-                  View Order
-                </button>
-                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings)}>
-                  Download Executed Quote PDF
-                </button>
+                <button className="qd-action-btn" onClick={() => showToast('Order view coming soon')}>View Order</button>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings)}>Download Executed Quote PDF</button>
               </>
             )}
 
-            {/* ── ARCHIVED actions ── */}
             {q.status === 'archived' && (
-              <>
-                <button className="qd-action-btn" onClick={() => setConfirm({
-                  msg: 'Restore this quote as a Draft? It will become editable again.',
-                  label: 'Restore',
-                  fn: () => { changeStatus('draft'); setConfirm(null); },
-                })}>
-                  Restore as Draft
-                </button>
-              </>
+              <button className="qd-action-btn" onClick={() => setConfirm({ msg: 'Restore this quote as a Draft? It will become editable again.', label: 'Restore', fn: () => { changeStatus('draft'); setConfirm(null); } })}>Restore as Draft</button>
             )}
 
-            {/* Overflow menu (...) */}
-            {['draft', 'sent', 'draft_revision', 'ready_to_submit', 'rejected'].includes(q.status) && (
+            {['draft', 'sent', 'draft_revision', 'ready_to_submit', 'pending_approval', 'rejected', 'archived'].includes(q.status) && (
               <div className="qd-more-wrap" ref={moreRef}>
-                <button className="qd-more-btn" style={{ border: 'none', background: 'transparent', boxShadow: 'none', outline: 'none', color: '#FBB13D', cursor: 'pointer', padding: '0 8px' }} onClick={() => setShowMoreMenu(!showMoreMenu)}>
-                  ···
-                </button>
+                <button className="qd-more-btn" style={{ border: 'none', background: 'transparent', boxShadow: 'none', outline: 'none', color: '#FBB13D', cursor: 'pointer', padding: '0 8px' }} onClick={() => setShowMoreMenu(!showMoreMenu)}>···</button>
                 {showMoreMenu && (
                   <div className="qd-more-menu">
-                    {q.status === 'draft' && (
-                      <>
-                        <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); onClone(q); }}>
-                          Clone Quote
-                        </button>
-                        <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>
-                          Archive
-                        </button>
-                      </>
-                    )}
-                    {q.status === 'sent' && (
-                      <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>
-                        Archive
-                      </button>
-                    )}
-                    {q.status === 'draft_revision' && (
-                      <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this scenario? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>
-                        Archive Scenario
-                      </button>
-                    )}
-                    {q.status === 'ready_to_submit' && (
-                      <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); changeStatus('draft'); }}>
-                        Revise Quote
-                      </button>
-                    )}
-                    {q.status === 'rejected' && (
-                      <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>
-                        Archive
-                      </button>
-                    )}
-                    <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(q.id); }}>
-                      Delete Quote
-                    </button>
+                    {q.status === 'draft' && (<><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); onClone(q); }}>Clone Quote</button><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>Archive</button></>)}
+                    {q.status === 'sent' && (<><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); onClone(q); }}>Clone Quote</button><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>Archive</button></>)}
+                    {q.status === 'draft_revision' && (<button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this scenario? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>Archive Scenario</button>)}
+                    {q.status === 'ready_to_submit' && (<><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); generateQuotePDF(q, products, settings); }}>Download PDF</button><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); changeStatus('draft'); }}>Revise Quote</button></>)}
+                    {q.status === 'pending_approval' && (<button className="qd-more-item" onClick={() => { setShowMoreMenu(false); generateQuotePDF(q, products, settings); }}>Download PDF</button>)}
+                    {q.status === 'rejected' && (<button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>Archive</button>)}
+                    {q.status === 'archived' && (<button className="qd-more-item" onClick={() => { setShowMoreMenu(false); generateQuotePDF(q, products, settings); }}>Download PDF</button>)}
+                    <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(q.id); }}>Delete Quote</button>
                   </div>
                 )}
               </div>
             )}
-
           </div>
         )}
       </div>
 
-      {/* Detail Cards */}
       {renderDetailCards(q)}
 
-      {/* Line Items */}
       <div className="qd-lines-section">
-        <div className="line-editor-header">
-          <div className="line-editor-title">Line Items</div>
-        </div>
-
-        {isEditing ? (
-          renderEditTable()
-        ) : (
+        <div className="line-editor-header"><div className="line-editor-title">Line Items</div></div>
+        {isEditing ? renderEditTable() : (
           <>
             {q.line_items.length === 0 ? (
               <div className="empty-state">
@@ -1430,9 +974,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                             const extended = calcLineExtended(line);
                             return (
                               <tr key={line.id}>
-                                <td className="line-td-product" style={{ width: '25%', minWidth: '200px' }}>
-                                  <div className="cell-name">{line.product_name}</div>
-                                </td>
+                                <td className="line-td-product" style={{ width: '25%', minWidth: '200px' }}><div className="cell-name">{line.product_name}</div></td>
                                 {group.category !== 'support' && <td style={{ width: '12%' }}>{line.quantity > 1 ? fmtQty(line.quantity) : ''}</td>}
                                 <td style={{ width: '13%' }}>{isIncluded(unitType) ? '—' : displayCurrency(line.list_price ?? 0)}</td>
                                 <td style={{ width: '12%' }}>{isIncluded(unitType) ? '—' : ((line.discount_percent ?? 0) > 0 ? `${line.discount_percent}%` : '—')}</td>
@@ -1452,7 +994,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         )}
       </div>
 
-      {/* Overage Rates */}
       <div style={{ marginTop: '24px', marginBottom: '24px' }}>
         <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', cursor: 'pointer', userSelect: 'none' }} onClick={() => toggleCard('overage')}>
@@ -1468,44 +1009,25 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         </div>
       </div>
 
-      {/* Summary */}
       {isEditing ? (
         <div className="qd-summary" style={{ marginTop: '16px' }}>
           <div className="qd-summary-item">
             <div className="qd-summary-label">Quote Discount %</div>
             <div className="qd-summary-value">
-              <input className="inline-edit qd-discount-input" type="number" min="0" max="100" step="0.1" value={draft?.header_discount ?? 0}
-                onChange={(e) => updateDraft((d) => ({ ...d, header_discount: parseFloat(e.target.value) || 0 }))} />
+              <input className="inline-edit qd-discount-input" type="number" min="0" max="100" step="0.1" value={draft?.header_discount ?? 0} onChange={(e) => updateDraft((d) => ({ ...d, header_discount: parseFloat(e.target.value) || 0 }))} />
             </div>
           </div>
           <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
-          <div className="qd-summary-item">
-            <div className="qd-summary-label">MRR</div>
-            <AnimatedValue value={fmtCurrency(totals.monthly)} pulseKey={pulseKey} />
-          </div>
+          <div className="qd-summary-item"><div className="qd-summary-label">MRR</div><AnimatedValue value={fmtCurrency(totals.monthly)} pulseKey={pulseKey} /></div>
           <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
-          <div className="qd-summary-item">
-            <div className="qd-summary-label">ARR</div>
-            <AnimatedValue value={fmtCurrency(totals.annual)} pulseKey={pulseKey} />
-          </div>
+          <div className="qd-summary-item"><div className="qd-summary-label">ARR</div><AnimatedValue value={fmtCurrency(totals.annual)} pulseKey={pulseKey} /></div>
           <div style={{ width: '1px', backgroundColor: '#FBB13D', alignSelf: 'stretch', margin: '0', padding: '0', border: 'none', flexShrink: 0 }} />
-          <div className="qd-summary-item qd-summary-tcv">
-            <div className="qd-summary-label">TCV ({q.term_months} month)</div>
-            <AnimatedValue value={fmtCurrency(totals.tcv)} pulseKey={pulseKey} />
-          </div>
+          <div className="qd-summary-item qd-summary-tcv"><div className="qd-summary-label">TCV ({q.term_months} month)</div><AnimatedValue value={fmtCurrency(totals.tcv)} pulseKey={pulseKey} /></div>
         </div>
-      ) : (
-        <div>
-          {renderSummary(totals, q)}
-        </div>
-      )}
+      ) : <div>{renderSummary(totals, q)}</div>}
 
-      {/* Footer info */}
-      <div>
-        {renderFooterInfo(q)}
-      </div>
+      <div>{renderFooterInfo(q)}</div>
 
-      {/* Activity Log */}
       <div style={{ marginTop: '28px' }}>
         <div className="qd-footer-label" style={{ marginBottom: '12px' }}>Activity</div>
         <div className="qd-activity-timeline">
@@ -1539,13 +1061,10 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
               </div>
             );
           })}
-          {(!q.activity_log || q.activity_log.length === 0) && (
-            <div style={{ fontSize: '13px', color: '#9ca3af' }}>No activity recorded.</div>
-          )}
+          {(!q.activity_log || q.activity_log.length === 0) && <div style={{ fontSize: '13px', color: '#9ca3af' }}>No activity recorded.</div>}
         </div>
       </div>
 
-      {/* Feedback modal */}
       {feedbackModal && (
         <div className="modal-overlay" onClick={() => setFeedbackModal(false)}>
           <div className="modal modal-theme-quotes" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
@@ -1553,29 +1072,14 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
             <div className="modal-section">
               <div className="field">
                 <label className="field-label">Revision Notes</label>
-                <textarea
-                  className="field-textarea"
-                  value={feedbackText}
-                  onChange={(e) => setFeedbackText(e.target.value)}
-                  placeholder="Enter customer feedback and revision notes..."
-                  style={{ minHeight: 120 }}
-                  autoFocus
-                />
+                <textarea className="field-textarea" value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} placeholder="Enter customer feedback and revision notes..." style={{ minHeight: 120 }} autoFocus />
               </div>
             </div>
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setFeedbackModal(false)}>Cancel</button>
               <button className="btn-save" onClick={() => {
                 const now = new Date().toISOString();
-                persistQuote((prev) => ({
-                  ...prev,
-                  comments: feedbackText,
-                  status: 'draft_revision',
-                  activity_log: [...(prev.activity_log || []),
-                    { type: 'note', timestamp: now, note: feedbackText, actor: prev.prepared_by || '' },
-                    { type: 'status_change', from_status: prev.status, to_status: 'draft_revision', timestamp: now, actor: prev.prepared_by || '' },
-                  ],
-                }));
+                persistQuote((prev) => ({ ...prev, comments: feedbackText, status: 'draft_revision', activity_log: [...(prev.activity_log || []), { type: 'note', timestamp: now, note: feedbackText, actor: prev.prepared_by || '' }, { type: 'status_change', from_status: prev.status, to_status: 'draft_revision', timestamp: now, actor: prev.prepared_by || '' }] }));
                 setFeedbackModal(false);
               }}>Save Feedback</button>
             </div>
@@ -1583,27 +1087,19 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         </div>
       )}
 
-      {/* Deal Desk Notes modal (read-only) */}
       {ddNotesModal && (
         <div className="modal-overlay" onClick={() => setDdNotesModal(false)}>
           <div className="modal modal-theme-quotes" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-title">Deal Desk Notes</div>
             <div className="modal-section">
-              <div style={{ fontSize: '14px', color: '#374151', lineHeight: 1.6, whiteSpace: 'pre-wrap', minHeight: 60 }}>
-                {q.comments || 'No notes recorded.'}
-              </div>
+              <div style={{ fontSize: '14px', color: '#374151', lineHeight: 1.6, whiteSpace: 'pre-wrap', minHeight: 60 }}>{q.comments || 'No notes recorded.'}</div>
             </div>
-            <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setDdNotesModal(false)}>Close</button>
-            </div>
+            <div className="modal-actions"><button className="btn-cancel" onClick={() => setDdNotesModal(false)}>Close</button></div>
           </div>
         </div>
       )}
 
-      {/* Toast */}
       {toast && <div className="qd-toast">{toast}</div>}
-
-      {/* Confirm modal */}
       {confirm && renderConfirmModal()}
     </div>
   );
