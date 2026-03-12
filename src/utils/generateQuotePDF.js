@@ -386,14 +386,15 @@ export function generateQuotePDF(quote, products, settings, { preview = false } 
   drawConfidentialFooter(doc);
 
   if (preview) {
-    const url = doc.output('bloburl');
-    const a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const dataUri = doc.output('datauristring');
+    const newWin = window.open('', '_blank');
+    if (newWin) {
+      newWin.document.write(
+        `<html><head><title>Quote Preview</title></head><body style="margin:0">` +
+        `<iframe src="${dataUri}" width="100%" height="100%" style="border:none;position:fixed;top:0;left:0;width:100%;height:100%"></iframe>` +
+        `</body></html>`
+      );
+    }
   } else {
     const customerSlug = (quote.customer_name || 'quote').replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
     doc.save(`${quote.quote_number}-${customerSlug}.pdf`);
