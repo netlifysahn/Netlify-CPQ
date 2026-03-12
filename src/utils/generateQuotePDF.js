@@ -213,11 +213,12 @@ export function generateQuotePDF(quote, products, settings, { preview = false } 
   y = drawDivider(doc, y);
 
   // Billing & Payment
-  if (quote.billing_schedule || quote.payment_terms || quote.po_number || quote.vat_number) {
+  if (quote.billing_schedule || quote.payment_terms || quote.payment_method || quote.po_number || quote.vat_number) {
     y = drawEyebrow(doc, 'Billing & Payment', MARGIN, y);
     ly = y; ry = y;
     if (quote.billing_schedule) { ly = drawLabel(doc, 'Billing Schedule', col1x, ly); ly = drawValue(doc, quote.billing_schedule, col1x, ly); ly += 2; }
-    if (quote.payment_terms) { ly = drawLabel(doc, 'Payment Terms', col1x, ly); ly = drawValue(doc, quote.payment_terms, col1x, ly); }
+    if (quote.payment_terms) { ly = drawLabel(doc, 'Payment Terms', col1x, ly); ly = drawValue(doc, quote.payment_terms, col1x, ly); ly += 2; }
+    if (quote.payment_method) { ly = drawLabel(doc, 'Payment Method', col1x, ly); ly = drawValue(doc, quote.payment_method, col1x, ly); }
     if (quote.po_number) { ry = drawLabel(doc, 'PO #', col2x, ry); ry = drawValue(doc, quote.po_number, col2x, ry); ry += 2; }
     if (quote.vat_number) { ry = drawLabel(doc, 'VAT #', col2x, ry); ry = drawValue(doc, quote.vat_number, col2x, ry); }
     y = Math.max(ly, ry) + 4;
