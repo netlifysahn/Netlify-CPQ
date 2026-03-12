@@ -2,96 +2,80 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { calcLineExtended, calcQuoteTotals, fmtCurrency } from '../data/quotes';
 
-const FONT_HEADING = 'helvetica';
-const FONT_BODY = 'helvetica';
+const FONT = 'helvetica';
 const FONT_MONO = 'courier';
+const C_BLACK = [26, 26, 26];
+const C_MUTED = [120, 120, 120];
+const C_DIVIDER = [220, 220, 220];
+const C_TEAL = [0, 173, 159];
+const C_GOLD = [251, 177, 61];
+const C_LIGHT = [248, 248, 248];
+const MARGIN = 18;
 
-const COLOR_TEXT = [26, 26, 26];
-const COLOR_MUTED = [107, 114, 128];
-const COLOR_TEAL = [0, 173, 159];
-const COLOR_GOLD = [251, 177, 61];
-const COLOR_DIVIDER = [230, 230, 230];
-
-const MARGIN = 20;
-
-function fmtDate(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+function fmtDate(s) {
+  if (!s) return '';
+  const d = new Date(s + 'T00:00:00');
+  return isNaN(d) ? s : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function fmtQty(n) {
-  if (n == null) return '';
-  return Number(n).toLocaleString('en-US');
+  return n == null ? '' : Number(n).toLocaleString('en-US');
 }
 
 function checkPage(doc, y, needed = 30) {
-  const pageH = doc.internal.pageSize.getHeight();
-  if (y + needed > pageH - 25) { doc.addPage(); return MARGIN; }
+  if (y + needed > doc.internal.pageSize.getHeight() - 20) {
+    doc.addPage();
+    return MARGIN;
+  }
   return y;
 }
 
-function drawEyebrow(doc, text, x, y) {
+function eyebrow(doc, text, y) {
   doc.setFont(FONT_MONO, 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(...COLOR_MUTED);
-  doc.text(text.toUpperCase(), x, y);
+  doc.setFontSize(7.5);
+  doc.setTextColor(...C_MUTED);
+  doc.text(text.toUpperCase(), MARGIN, y);
+  return y + 5;
+}
+
+function divider(doc, y) {
+  const w = doc.internal.pageSize.getWidth();
+  doc.setDrawColor(...C_DIVIDER);
+  doc.setLineWidth(0.25);
+  doc.line(MARGIN, y, w - MARGIN, y);
   return y + 6;
 }
 
-function drawSubEyebrow(doc, text, x, y) {
-  doc.setFont(FONT_MONO, 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(...COLOR_TEAL);
-  doc.text(text.toUpperCase(), x, y);
-  return y + 5;
+function metaTable(doc, rows, y) {
+  // rows: [[label, value], ...]
+  // Renders as a clean label/value table, single column
+  autoTable(doc, {
+    startY: y,
+    body: rows,
+    margin: { left: MARGIN, right: MARGIN },
+    theme: 'plain',
+    styles: { fontSize: 9.5, cellPadding: { top: 1.5, bottom: 1.5, left: 0, right: 4 }, textColor: C_BLACK },
+    columnStyles: {
+      0: { cellWidth: 52, textColor: C_MUTED, fontStyle: 'normal', font: FONT_MONO, fontSize: 7.5 },
+      1: { cellWidth: 'auto', fontStyle: 'normal' },
+    },
+  });
+  return doc.lastAutoTable.finalY + 4;
 }
 
-function drawDivider(doc, y) {
-  const pageWidth = doc.internal.pageSize.getWidth();
-  doc.setDrawColor(...COLOR_DIVIDER);
-  doc.setLineWidth(0.3);
-  doc.line(MARGIN, y, pageWidth - MARGIN, y);
-  return y + 8;
-}
-
-function drawBodyText(doc, text, x, y, maxWidth) {
-  doc.setFont(FONT_BODY, 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(...COLOR_TEXT);
-  const lines = doc.splitTextToSize(text, maxWidth);
-  doc.text(lines, x, y);
-  return y + lines.length * 4.5 + 2;
-}
-
-function drawLabel(doc, label, x, y) {
-  doc.setFont(FONT_MONO, 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(...COLOR_MUTED);
-  doc.text(label.toUpperCase(), x, y);
-  return y + 4;
-}
-
-function drawValue(doc, value, x, y) {
-  doc.setFont(FONT_BODY, 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(...COLOR_TEXT);
-  doc.text(String(value || ''), x, y);
-  return y + 5;
-}
-
-function drawConfidentialFooter(doc) {
-  const pageCount = doc.internal.getNumberOfPages();
-  const pageWidth = doc.internal.pageSize.getWidth();
-  for (let i = 1; i <= pageCount; i++) {
+function confidentialFooter(doc) {
+  const n = doc.internal.getNumberOfPages();
+  const w = doc.internal.pageSize.getWidth();
+  const h = doc.internal.pageSize.getHeight();
+  for (let i = 1; i <= n; i++) {
     doc.setPage(i);
     doc.setFont(FONT_MONO, 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(160, 160, 160);
-    const pageH = doc.internal.pageSize.getHeight();
-    const footerText = 'Confidential \u2013 Do Not Distribute';
-    const tw = doc.getTextWidth(footerText);
-    doc.text(footerText, (pageWidth - tw) / 2, pageH - 10);
+    doc.setFontSize(7.5);
+    doc.setTextColor(180, 180, 180);
+    const txt = 'Confidential \u2013 Do Not Distribute';
+    doc.text(txt, (w - doc.getTextWidth(txt)) / 2, h - 10);
+    doc.setTextColor(180, 180, 180);
+    doc.text(`${i} / ${n}`, w - MARGIN, h - 10, { align: 'right' });
   }
 }
 
@@ -100,390 +84,426 @@ export function generateQuotePDF(quote, products, settings, { preview = false } 
   const pageWidth = doc.internal.pageSize.getWidth();
   const contentWidth = pageWidth - MARGIN * 2;
   const allLines = quote.line_items || [];
-  const totals = calcQuoteTotals(quote);
   let y = MARGIN;
 
-  // Draft watermark
+  // ── DRAFT WATERMARK ──
   if (quote.status === 'draft' || quote.status === 'draft_revision') {
     doc.saveGraphicsState();
-    doc.setTextColor(230, 230, 230);
-    doc.setFontSize(60);
-    doc.setFont(FONT_HEADING, 'bold');
+    doc.setFont(FONT, 'bold');
+    doc.setFontSize(72);
+    doc.setTextColor(240, 240, 240);
     const wt = 'DRAFT';
-    doc.text(wt, (pageWidth - doc.getTextWidth(wt)) / 2, 150);
+    doc.text(wt, (pageWidth - doc.getTextWidth(wt)) / 2, 160);
     doc.restoreGraphicsState();
   }
 
-  // Header: Netlify logo
-  doc.setFont(FONT_HEADING, 'bold');
-  doc.setFontSize(18);
-  doc.setTextColor(...COLOR_TEAL);
-  doc.text('netlify', MARGIN, y + 2);
+  // ── HEADER ──
+  // Logo
+  doc.setFont(FONT, 'bold');
+  doc.setFontSize(20);
+  doc.setTextColor(...C_TEAL);
+  doc.text('netlify', MARGIN, y + 4);
 
-  // Partner co-brand
   if (quote.partner_name) {
-    doc.setFont(FONT_BODY, 'normal');
+    const logoW = doc.getTextWidth('netlify');
+    doc.setFont(FONT, 'normal');
     doc.setFontSize(9);
-    doc.setTextColor(...COLOR_MUTED);
-    doc.text(`in partnership with ${quote.partner_name}`, MARGIN + doc.getTextWidth('netlify') + 6, y + 2);
+    doc.setTextColor(...C_MUTED);
+    doc.text(`\u00D7 ${quote.partner_name}`, MARGIN + logoW + 5, y + 4);
   }
 
-  // Quote number (top right, gold)
-  doc.setFont(FONT_HEADING, 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(...COLOR_GOLD);
-  doc.text(`QUOTE ${quote.quote_number}`, pageWidth - MARGIN, y, { align: 'right' });
-
-  // Quote type badge
-  if (quote.quote_type) {
-    const typeLabel = quote.quote_type.replace(/_/g, ' ').toUpperCase();
-    y += 7;
-    doc.setFont(FONT_MONO, 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(...COLOR_MUTED);
-    doc.text(typeLabel, pageWidth - MARGIN, y, { align: 'right' });
-  } else {
-    y += 7;
-  }
-
-  if (quote.expiration_date) {
-    doc.setFont(FONT_BODY, 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(...COLOR_MUTED);
-    doc.text(`Valid through ${fmtDate(quote.expiration_date)}`, pageWidth - MARGIN, y, { align: 'right' });
-    y += 5;
-  }
-  if (quote.prepared_by) {
-    doc.setFont(FONT_BODY, 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(...COLOR_MUTED);
-    doc.text(`Prepared by: ${quote.prepared_by}`, pageWidth - MARGIN, y, { align: 'right' });
-    y += 5;
-  }
+  // Quote number — right aligned
+  doc.setFont(FONT, 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...C_BLACK);
+  doc.text(quote.quote_number || '', pageWidth - MARGIN, y, { align: 'right' });
 
   y += 6;
 
-  // Customer Information
-  y = drawEyebrow(doc, 'Customer Information', MARGIN, y);
+  // Quote type + prepared by — right aligned
+  const headerRight = [];
+  if (quote.quote_type) headerRight.push(quote.quote_type.replace(/_/g, ' ').toUpperCase());
+  if (quote.prepared_by) headerRight.push(`Prepared by ${quote.prepared_by}`);
+  if (quote.expiration_date) headerRight.push(`Expires ${fmtDate(quote.expiration_date)}`);
+
+  headerRight.forEach((line) => {
+    doc.setFont(FONT_MONO, 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...C_MUTED);
+    doc.text(line, pageWidth - MARGIN, y, { align: 'right' });
+    y += 4.5;
+  });
+
+  y = Math.max(y, MARGIN + 14);
+  y = divider(doc, y);
+
+  // ── CUSTOMER ──
+  y = eyebrow(doc, 'Customer', y);
+
+  // Company name large
   if (quote.customer_name) {
-    doc.setFont(FONT_HEADING, 'bold');
-    doc.setFontSize(16);
-    doc.setTextColor(...COLOR_TEXT);
+    doc.setFont(FONT, 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...C_BLACK);
     doc.text(quote.customer_name, MARGIN, y);
     y += 7;
   }
+
+  // Address
   if (quote.address) {
-    doc.setFont(FONT_BODY, 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(...COLOR_TEXT);
+    doc.setFont(FONT, 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...C_MUTED);
     const addrLines = doc.splitTextToSize(quote.address, contentWidth);
     doc.text(addrLines, MARGIN, y);
-    y += addrLines.length * 4.5 + 4;
+    y += addrLines.length * 4.5 + 3;
   }
 
-  const col1x = MARGIN;
-  const col2x = pageWidth / 2 + 5;
-  let ly = y;
-  let ry = y;
-
+  // Contact rows
+  const contactRows = [];
   if (quote.contact_name || quote.contact_email) {
-    ly = drawLabel(doc, 'Primary Contact', col1x, ly);
-    if (quote.contact_name) ly = drawValue(doc, quote.contact_name, col1x, ly);
-    if (quote.contact_email) ly = drawValue(doc, quote.contact_email, col1x, ly);
-    ly += 3;
+    const contact = [quote.contact_name, quote.contact_email].filter(Boolean).join('  \u00B7  ');
+    contactRows.push(['Primary Contact', contact]);
   }
-  if (quote.account_id) {
-    ly = drawLabel(doc, 'Netlify Account ID', col1x, ly);
-    ly = drawValue(doc, quote.account_id, col1x, ly);
+  if (quote.billing_contact_name || quote.billing_contact_email) {
+    const billing = [quote.billing_contact_name, quote.billing_contact_email, quote.billing_contact_phone].filter(Boolean).join('  \u00B7  ');
+    contactRows.push(['Billing Contact', billing]);
+  }
+  if (quote.invoice_email) contactRows.push(['Invoice Email', quote.invoice_email]);
+  if (quote.account_id) contactRows.push(['Account ID', quote.account_id]);
+
+  if (contactRows.length > 0) y = metaTable(doc, contactRows, y);
+
+  y = divider(doc, y);
+
+  // ── SUBSCRIPTION TERM ──
+  y = eyebrow(doc, 'Subscription Term', y);
+  const termRows = [];
+  if (quote.start_date) termRows.push(['Start Date', fmtDate(quote.start_date)]);
+  if (quote.end_date) termRows.push(['End Date', fmtDate(quote.end_date)]);
+  termRows.push(['Term', `${quote.term_months || 12} months`]);
+  if (quote.expiration_date) termRows.push(['Quote Expires', fmtDate(quote.expiration_date)]);
+  y = metaTable(doc, termRows, y);
+
+  y = divider(doc, y);
+
+  // ── BILLING & PAYMENT ──
+  const billingRows = [];
+  if (quote.billing_schedule) billingRows.push(['Billing Schedule', quote.billing_schedule]);
+  if (quote.payment_method) billingRows.push(['Payment Method', quote.payment_method]);
+  if (quote.payment_terms) billingRows.push(['Payment Terms', quote.payment_terms]);
+  if (quote.po_number) billingRows.push(['PO #', quote.po_number]);
+  if (quote.vat_number) billingRows.push(['VAT #', quote.vat_number]);
+
+  if (billingRows.length > 0) {
+    y = eyebrow(doc, 'Billing & Payment', y);
+    y = metaTable(doc, billingRows, y);
+    y = divider(doc, y);
   }
 
-  if (quote.billing_contact_name || quote.billing_contact_email || quote.billing_contact_phone) {
-    ry = drawLabel(doc, 'Billing Contact', col2x, ry);
-    if (quote.billing_contact_name) ry = drawValue(doc, quote.billing_contact_name, col2x, ry);
-    if (quote.billing_contact_email) ry = drawValue(doc, quote.billing_contact_email, col2x, ry);
-    if (quote.billing_contact_phone) ry = drawValue(doc, quote.billing_contact_phone, col2x, ry);
-    ry += 3;
-  }
-  if (quote.invoice_email) {
-    ry = drawLabel(doc, 'Invoice Email', col2x, ry);
-    ry = drawValue(doc, quote.invoice_email, col2x, ry);
-  }
-
-  y = Math.max(ly, ry) + 6;
-  y = drawDivider(doc, y);
-
-  // Billing & Payment
-  if (quote.billing_schedule || quote.payment_terms || quote.payment_method || quote.po_number || quote.vat_number) {
-    y = drawEyebrow(doc, 'Billing & Payment', MARGIN, y);
-    ly = y; ry = y;
-    if (quote.billing_schedule) { ly = drawLabel(doc, 'Billing Schedule', col1x, ly); ly = drawValue(doc, quote.billing_schedule, col1x, ly); ly += 2; }
-    if (quote.payment_terms) { ly = drawLabel(doc, 'Payment Terms', col1x, ly); ly = drawValue(doc, quote.payment_terms, col1x, ly); ly += 2; }
-    if (quote.payment_method) { ly = drawLabel(doc, 'Payment Method', col1x, ly); ly = drawValue(doc, quote.payment_method, col1x, ly); }
-    if (quote.po_number) { ry = drawLabel(doc, 'PO #', col2x, ry); ry = drawValue(doc, quote.po_number, col2x, ry); ry += 2; }
-    if (quote.vat_number) { ry = drawLabel(doc, 'VAT #', col2x, ry); ry = drawValue(doc, quote.vat_number, col2x, ry); }
-    y = Math.max(ly, ry) + 4;
-    y = drawDivider(doc, y);
-  }
-
-  // Subscription Term
-  y = drawEyebrow(doc, 'Subscription Term', MARGIN, y);
-  const termCols = [];
-  if (quote.start_date) termCols.push({ label: 'Start Date', value: fmtDate(quote.start_date) });
-  termCols.push({ label: 'Term', value: `${quote.term_months || 12} months` });
-  if (quote.expiration_date) termCols.push({ label: 'Quote Expiration', value: fmtDate(quote.expiration_date) });
-  const colW = contentWidth / termCols.length;
-  termCols.forEach((col, i) => {
-    const cx = MARGIN + colW * i;
-    drawLabel(doc, col.label, cx, y);
-    drawValue(doc, col.value, cx, y + 4);
-  });
-  y += 14;
-  y = drawDivider(doc, y);
-
-  // ── 1. BASE PACKAGE ──
+  // ── BASE PACKAGE ──
   const packageLines = allLines.filter((l) => l.is_package);
   if (packageLines.length > 0) {
     y = checkPage(doc, y, 40);
-    y = drawEyebrow(doc, 'Base Package', MARGIN, y);
+    y = eyebrow(doc, 'Base Package', y);
+
     packageLines.forEach((pkg) => {
       y = checkPage(doc, y, 40);
       const subs = allLines.filter((l) => l.parent_line_id === pkg.id);
       const pkgTotal = subs.reduce((s, l) => s + calcLineExtended(l), 0);
-      doc.setDrawColor(...COLOR_DIVIDER);
-      doc.setLineWidth(0.5);
-      const cardStartY = y;
-      doc.setFont(FONT_HEADING, 'bold'); doc.setFontSize(14); doc.setTextColor(...COLOR_TEXT);
-      doc.text(pkg.product_name, MARGIN + 8, y + 6);
-      doc.setFont(FONT_BODY, 'normal'); doc.setFontSize(11);
-      doc.text(`${fmtCurrency(pkgTotal)}/month`, pageWidth - MARGIN - 8, y + 6, { align: 'right' });
-      y += 14;
-      const platformSubs = subs.filter((s) => s.product_type === 'platform');
-      const entitlementSubs = subs.filter((s) => ['entitlements', 'seats', 'credits'].includes(s.product_type));
-      const supportSubs = subs.filter((s) => s.product_type === 'support');
-      if (platformSubs.length > 0) {
-        y = checkPage(doc, y, 15); y = drawSubEyebrow(doc, 'Platform', MARGIN + 8, y);
-        platformSubs.forEach((s) => { y = checkPage(doc, y, 8); doc.setFont(FONT_BODY, 'bold'); doc.setFontSize(10); doc.setTextColor(...COLOR_TEXT); doc.text(s.product_name, MARGIN + 12, y); y += 5; });
-        y += 3;
-      }
-      if (entitlementSubs.length > 0) {
-        y = checkPage(doc, y, 15); y = drawSubEyebrow(doc, 'Entitlements', MARGIN + 8, y);
-        entitlementSubs.forEach((s) => { y = checkPage(doc, y, 8); doc.setFont(FONT_BODY, 'bold'); doc.setFontSize(10); doc.setTextColor(...COLOR_TEXT); const qtyStr = s.quantity > 1 ? `  (${fmtQty(s.quantity)})` : ''; doc.text(`${s.product_name}${qtyStr}`, MARGIN + 12, y); y += 5; });
-        y += 3;
-      }
-      if (supportSubs.length > 0) {
-        y = checkPage(doc, y, 15); y = drawSubEyebrow(doc, 'Support', MARGIN + 8, y);
-        supportSubs.forEach((s) => { y = checkPage(doc, y, 8); doc.setFont(FONT_BODY, 'bold'); doc.setFontSize(10); doc.setTextColor(...COLOR_TEXT); doc.text(s.product_name, MARGIN + 12, y); y += 5; });
-        y += 3;
-      }
-      doc.roundedRect(MARGIN, cardStartY - 2, contentWidth, y - cardStartY + 4, 3, 3, 'S');
+
+      const cardStart = y;
+      doc.setDrawColor(...C_DIVIDER);
+      doc.setLineWidth(0.4);
+
+      // Package name + monthly price
+      doc.setFont(FONT, 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(...C_BLACK);
+      doc.text(pkg.product_name, MARGIN + 6, y + 5);
+      doc.setFont(FONT, 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(...C_MUTED);
+      doc.text(`${fmtCurrency(pkgTotal)} / mo`, pageWidth - MARGIN - 6, y + 5, { align: 'right' });
+      y += 11;
+
+      // Divider under header
+      doc.setDrawColor(...C_DIVIDER);
+      doc.line(MARGIN + 6, y, pageWidth - MARGIN - 6, y);
+      y += 5;
+
+      const groups = [
+        { label: 'Platform', types: ['platform'] },
+        { label: 'Entitlements', types: ['entitlements', 'seats', 'credits'] },
+        { label: 'Support', types: ['support'] },
+      ];
+
+      groups.forEach(({ label, types }) => {
+        const items = subs.filter((s) => types.includes(s.product_type));
+        if (!items.length) return;
+        y = checkPage(doc, y, 10);
+        doc.setFont(FONT_MONO, 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(...C_MUTED);
+        doc.text(label.toUpperCase(), MARGIN + 6, y);
+        y += 4;
+        items.forEach((s) => {
+          y = checkPage(doc, y, 6);
+          doc.setFont(FONT, 'normal');
+          doc.setFontSize(9.5);
+          doc.setTextColor(...C_BLACK);
+          const qtyStr = s.quantity > 1 ? ` (${fmtQty(s.quantity)})` : '';
+          doc.text(`${s.product_name}${qtyStr}`, MARGIN + 10, y);
+          y += 5;
+        });
+        y += 2;
+      });
+
+      doc.roundedRect(MARGIN, cardStart, contentWidth, y - cardStart + 2, 2, 2, 'S');
       y += 8;
     });
   }
 
-  // ── 2. STANDALONE SUPPORT ──
-  const standaloneSupportLines = allLines.filter((l) => !l.parent_line_id && !l.is_package && l.product_type === 'support');
-  if (standaloneSupportLines.length > 0) {
+  // ── STANDALONE SUPPORT ──
+  const standaloneSupport = allLines.filter((l) => !l.parent_line_id && !l.is_package && l.product_type === 'support');
+  if (standaloneSupport.length > 0) {
     y = checkPage(doc, y, 30);
-    y = drawEyebrow(doc, 'Support', MARGIN, y);
-    standaloneSupportLines.forEach((line) => {
-      y = checkPage(doc, y, 20);
-      const cardStartY = y;
-      doc.setFont(FONT_HEADING, 'bold'); doc.setFontSize(14); doc.setTextColor(...COLOR_TEXT);
-      doc.text(line.product_name, MARGIN + 8, y + 6);
-      doc.setFont(FONT_BODY, 'normal'); doc.setFontSize(11);
-      doc.text(`${fmtCurrency(line.net_price || line.list_price || 0)}/month`, pageWidth - MARGIN - 8, y + 6, { align: 'right' });
-      y += 14;
-      doc.setDrawColor(...COLOR_DIVIDER);
-      doc.roundedRect(MARGIN, cardStartY - 2, contentWidth, y - cardStartY + 2, 3, 3, 'S');
+    y = eyebrow(doc, 'Support', y);
+    standaloneSupport.forEach((line) => {
+      y = checkPage(doc, y, 16);
+      const cardStart = y;
+      doc.setFont(FONT, 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(...C_BLACK);
+      doc.text(line.product_name, MARGIN + 6, y + 5);
+      doc.setFont(FONT, 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(...C_MUTED);
+      doc.text(`${fmtCurrency(line.net_price || line.list_price || 0)} / mo`, pageWidth - MARGIN - 6, y + 5, { align: 'right' });
+      y += 11;
+      doc.setDrawColor(...C_DIVIDER);
+      doc.roundedRect(MARGIN, cardStart, contentWidth, y - cardStart + 2, 2, 2, 'S');
       y += 8;
     });
   }
 
-  // ── 3. PLATFORM ADD-ONS ──
+  // ── PLATFORM ADD-ONS ──
   const standaloneAddons = allLines.filter((l) => !l.parent_line_id && !l.is_package && l.product_type === 'addon');
   if (standaloneAddons.length > 0) {
     y = checkPage(doc, y, 40);
-    y = drawEyebrow(doc, 'Platform Add-Ons', MARGIN, y);
-    const addonHead = [['', 'MONTHLY PRICE', 'ANNUAL PRICE']];
-    const addonBody = standaloneAddons.map((l) => {
-      const monthly = l.net_price || l.list_price || 0;
-      return [l.product_name, fmtCurrency(monthly), fmtCurrency(monthly * 12)];
+    y = eyebrow(doc, 'Platform Add-Ons', y);
+    const addonRows = standaloneAddons.map((l) => {
+      const mo = l.net_price || l.list_price || 0;
+      return [l.product_name, fmtCurrency(mo), fmtCurrency(mo * 12)];
     });
-    const addonAnnualSubtotal = standaloneAddons.reduce((s, l) => s + (l.net_price || l.list_price || 0) * 12, 0);
-    autoTable(doc, { startY: y, head: addonHead, body: addonBody, margin: { left: MARGIN, right: MARGIN }, theme: 'plain', styles: { fontSize: 9, cellPadding: 4, textColor: COLOR_TEXT, lineColor: COLOR_DIVIDER, lineWidth: 0.3 }, headStyles: { fillColor: [245, 245, 245], textColor: COLOR_MUTED, fontStyle: 'bold', fontSize: 8, font: FONT_MONO }, columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'right', cellWidth: 38 }, 2: { halign: 'right', cellWidth: 38 } } });
-    y = doc.lastAutoTable.finalY + 4;
-    doc.setFont(FONT_BODY, 'bold'); doc.setFontSize(10); doc.setTextColor(...COLOR_TEXT);
-    doc.text(`${fmtCurrency(addonAnnualSubtotal)} / year`, pageWidth - MARGIN, y, { align: 'right' });
-    y += 10;
+    autoTable(doc, {
+      startY: y,
+      head: [['', 'Monthly', 'Annual']],
+      body: addonRows,
+      margin: { left: MARGIN, right: MARGIN },
+      theme: 'plain',
+      styles: { fontSize: 9, cellPadding: 3, textColor: C_BLACK, lineColor: C_DIVIDER, lineWidth: 0.2 },
+      headStyles: { fillColor: C_LIGHT, textColor: C_MUTED, fontStyle: 'normal', fontSize: 7.5, font: FONT_MONO },
+      columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'right', cellWidth: 35 }, 2: { halign: 'right', cellWidth: 35 } },
+    });
+    y = doc.lastAutoTable.finalY + 8;
   }
 
-  // ── 4. ENTITLEMENTS ──
-  const standaloneEntitlements = allLines.filter((l) => !l.parent_line_id && !l.is_package && ['entitlements', 'seats', 'credits'].includes(l.product_type));
-  if (standaloneEntitlements.length > 0) {
+  // ── ENTITLEMENTS ──
+  const standaloneEnt = allLines.filter((l) => !l.parent_line_id && !l.is_package && ['entitlements', 'seats', 'credits'].includes(l.product_type));
+  if (standaloneEnt.length > 0) {
     y = checkPage(doc, y, 40);
-    y = drawEyebrow(doc, 'Entitlements', MARGIN, y);
-    const entHead = [['', 'QTY', 'UNIT PRICE', 'ANNUAL PRICE']];
-    const entBody = standaloneEntitlements.map((l) => {
-      const isAnnualCredit = l.product_type === 'credits' && l.unit_type === 'per_credit';
-      const annualPrice = isAnnualCredit
+    y = eyebrow(doc, 'Entitlements', y);
+    const entRows = standaloneEnt.map((l) => {
+      const isCredit = l.product_type === 'credits' && l.unit_type === 'per_credit';
+      const annual = isCredit
         ? (l.net_price || l.list_price || 0) * (l.quantity || 1)
         : (l.net_price || l.list_price || 0) * (l.quantity || 1) * 12;
-      return [l.product_name, fmtQty(l.quantity), fmtCurrency(l.net_price || l.list_price || 0), fmtCurrency(annualPrice)];
+      return [l.product_name, fmtQty(l.quantity), fmtCurrency(l.net_price || l.list_price || 0), fmtCurrency(annual)];
     });
-    const entAnnualSubtotal = standaloneEntitlements.reduce((s, l) => {
-      const isAnnualCredit = l.product_type === 'credits' && l.unit_type === 'per_credit';
-      return s + (isAnnualCredit
-        ? (l.net_price || l.list_price || 0) * (l.quantity || 1)
-        : (l.net_price || l.list_price || 0) * (l.quantity || 1) * 12);
-    }, 0);
-    autoTable(doc, { startY: y, head: entHead, body: entBody, margin: { left: MARGIN, right: MARGIN }, theme: 'plain', styles: { fontSize: 9, cellPadding: 4, textColor: COLOR_TEXT, lineColor: COLOR_DIVIDER, lineWidth: 0.3 }, headStyles: { fillColor: [245, 245, 245], textColor: COLOR_MUTED, fontStyle: 'bold', fontSize: 8, font: FONT_MONO }, columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'center', cellWidth: 22 }, 2: { halign: 'right', cellWidth: 38 }, 3: { halign: 'right', cellWidth: 38 } } });
-    y = doc.lastAutoTable.finalY + 4;
-    doc.setFont(FONT_BODY, 'bold'); doc.setFontSize(10); doc.setTextColor(...COLOR_TEXT);
-    doc.text(`${fmtCurrency(entAnnualSubtotal)} / year`, pageWidth - MARGIN, y, { align: 'right' });
-    y += 10;
+    autoTable(doc, {
+      startY: y,
+      head: [['', 'Qty', 'Unit Price', 'Annual']],
+      body: entRows,
+      margin: { left: MARGIN, right: MARGIN },
+      theme: 'plain',
+      styles: { fontSize: 9, cellPadding: 3, textColor: C_BLACK, lineColor: C_DIVIDER, lineWidth: 0.2 },
+      headStyles: { fillColor: C_LIGHT, textColor: C_MUTED, fontStyle: 'normal', fontSize: 7.5, font: FONT_MONO },
+      columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'center', cellWidth: 20 }, 2: { halign: 'right', cellWidth: 32 }, 3: { halign: 'right', cellWidth: 32 } },
+    });
+    y = doc.lastAutoTable.finalY + 8;
   }
 
   // ── OVERAGE RATES ──
   const overageRows = [];
-  const allEntLines = allLines.filter((l) => ['seats', 'credits', 'entitlements'].includes(l.product_type));
   const seen = new Set();
-  allEntLines.forEach((l) => {
+  allLines.filter((l) => ['seats', 'credits', 'entitlements'].includes(l.product_type)).forEach((l) => {
     const key = l.product_type === 'seats' ? 'Enterprise Seats' : l.product_type === 'credits' ? 'Credits' : l.product_name;
     if (seen.has(key)) return;
     seen.add(key);
-    let overage = '';
+    let overage = '\u2014';
     if (l.product_type === 'seats' && quote.overage_rate_seats) overage = quote.overage_rate_seats;
-    else if (l.product_type === 'credits' && quote.overage_rate_credits) overage = quote.overage_rate_credits;
-    overageRows.push([key, fmtQty(l.quantity), overage || '\u2014']);
+    if (l.product_type === 'credits' && quote.overage_rate_credits) overage = quote.overage_rate_credits;
+    overageRows.push([key, fmtQty(l.quantity), overage]);
   });
   if (overageRows.length > 0) {
     y = checkPage(doc, y, 40);
-    y = drawEyebrow(doc, 'Consumption Limits & Overage Rates', MARGIN, y);
-    autoTable(doc, { startY: y, head: [['', 'INCLUDED (MONTHLY)', 'OVERAGE RATES (MONTHLY)']], body: overageRows, margin: { left: MARGIN, right: MARGIN }, theme: 'plain', styles: { fontSize: 9, cellPadding: 4, textColor: COLOR_TEXT, lineColor: COLOR_DIVIDER, lineWidth: 0.3 }, headStyles: { fillColor: [245, 245, 245], textColor: COLOR_MUTED, fontStyle: 'bold', fontSize: 8, font: FONT_MONO }, columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'center', cellWidth: 40 }, 2: { halign: 'center', cellWidth: 45 } } });
-    y = doc.lastAutoTable.finalY + 10;
+    y = eyebrow(doc, 'Consumption Limits & Overage Rates', y);
+    autoTable(doc, {
+      startY: y,
+      head: [['', 'Included (Monthly)', 'Overage Rate']],
+      body: overageRows,
+      margin: { left: MARGIN, right: MARGIN },
+      theme: 'plain',
+      styles: { fontSize: 9, cellPadding: 3, textColor: C_BLACK, lineColor: C_DIVIDER, lineWidth: 0.2 },
+      headStyles: { fillColor: C_LIGHT, textColor: C_MUTED, fontStyle: 'normal', fontSize: 7.5, font: FONT_MONO },
+      columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'center', cellWidth: 40 }, 2: { halign: 'center', cellWidth: 40 } },
+    });
+    y = doc.lastAutoTable.finalY + 8;
   }
 
   // ── PRICING SUMMARY ──
   y = checkPage(doc, y, 50);
-  y = drawDivider(doc, y);
-  y = drawEyebrow(doc, 'Pricing Summary', MARGIN, y);
+  y = divider(doc, y);
+  y = eyebrow(doc, 'Pricing Summary', y);
 
-  const priceableLines = allLines.filter((l) => {
-    if (l.parent_line_id) return l.price_behavior === 'related';
-    return true;
-  });
+  const priceableLines = allLines.filter((l) => l.parent_line_id ? l.price_behavior === 'related' : true);
   const subtotal = priceableLines.reduce((s, l) => {
-    const isAnnualCredit = l.product_type === 'credits' && l.unit_type === 'per_credit';
-    const monthly = (l.net_price || l.list_price || 0) * (l.quantity || 1);
-    return s + (isAnnualCredit ? monthly : monthly * 12);
+    const isCredit = l.product_type === 'credits' && l.unit_type === 'per_credit';
+    const mo = (l.net_price || l.list_price || 0) * (l.quantity || 1);
+    return s + (isCredit ? mo : mo * 12);
   }, 0);
 
-  const headerDiscountPct = quote.header_discount || 0;
-  const discountAmount = subtotal * (headerDiscountPct / 100);
-  const netACV = subtotal - discountAmount;
-  const hasDiscount = discountAmount > 0;
-  const totalsData = [];
+  const discPct = quote.header_discount || 0;
+  const discAmt = subtotal * (discPct / 100);
+  const netACV = subtotal - discAmt;
+  const hasDiscount = discAmt > 0;
+
+  const summaryRows = [];
   if (hasDiscount) {
-    totalsData.push(['Subtotal', fmtCurrency(subtotal)]);
-    totalsData.push([`Discount (${headerDiscountPct}%)`, `-${fmtCurrency(discountAmount)}`]);
+    summaryRows.push(['List Price', fmtCurrency(subtotal)]);
+    summaryRows.push([`Discount (${discPct}%)`, `-${fmtCurrency(discAmt)}`]);
   }
-  totalsData.push(['Net Annual Contract Value', fmtCurrency(netACV)]);
+  summaryRows.push(['Net Annual Contract Value', fmtCurrency(netACV)]);
 
   autoTable(doc, {
     startY: y,
-    body: totalsData,
-    margin: { left: pageWidth - MARGIN - 100, right: MARGIN },
+    body: summaryRows,
+    margin: { left: pageWidth - MARGIN - 110, right: MARGIN },
     theme: 'plain',
-    styles: { fontSize: 10, cellPadding: 4, textColor: COLOR_TEXT },
+    styles: { fontSize: 9.5, cellPadding: { top: 2, bottom: 2, left: 0, right: 0 }, textColor: C_BLACK },
     columnStyles: {
-      0: { fontStyle: 'normal', textColor: COLOR_MUTED, cellWidth: 60 },
-      1: { fontStyle: 'bold', halign: 'right', cellWidth: 40 },
+      0: { cellWidth: 68, textColor: C_MUTED, font: FONT_MONO, fontSize: 7.5 },
+      1: { cellWidth: 42, halign: 'right', fontStyle: 'bold' },
     },
     didParseCell: (data) => {
-      if (data.row.index === totalsData.length - 1) {
-        data.cell.styles.textColor = COLOR_TEAL;
-        data.cell.styles.fontSize = 12;
+      if (data.row.index === summaryRows.length - 1) {
+        data.cell.styles.fontSize = 13;
         data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.textColor = C_BLACK;
       }
     },
   });
-  y = doc.lastAutoTable.finalY + 6;
+  y = doc.lastAutoTable.finalY + 4;
 
   if ((quote.term_months || 12) > 12) {
-    y = checkPage(doc, y, 12);
-    doc.setFont(FONT_MONO, 'normal'); doc.setFontSize(8); doc.setTextColor(...COLOR_GOLD);
+    doc.setFont(FONT_MONO, 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...C_GOLD);
     doc.text(`${quote.term_months}-MONTH TERM`, pageWidth - MARGIN, y, { align: 'right' });
-    y += 6;
+    y += 5;
   }
 
-  doc.setFont(FONT_BODY, 'normal'); doc.setFontSize(8); doc.setTextColor(160, 160, 160);
-  const priceNote = 'All prices are quoted in USD and are exclusive of any applicable taxes, commissions, import duties, or other similar taxes or fees.';
-  const noteLines = doc.splitTextToSize(priceNote, contentWidth);
-  const noteWidth = doc.getTextWidth(noteLines[0]);
-  doc.text(noteLines, (pageWidth - noteWidth) / 2, y);
-  y += noteLines.length * 4 + 10;
+  // Disclaimer
+  y += 2;
+  doc.setFont(FONT, 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(180, 180, 180);
+  const note = 'All prices are quoted in USD and are exclusive of any applicable taxes, commissions, import duties, or other similar fees.';
+  const noteLines = doc.splitTextToSize(note, contentWidth);
+  doc.text(noteLines, MARGIN, y);
+  y += noteLines.length * 4 + 8;
 
   // ── TERMS & CONDITIONS ──
   const termsSections = settings?.terms?.sections || [];
   const productTerms = [];
   const productMap = new Map((products || []).map((p) => [p.id, p]));
-  const seenProducts = new Set();
+  const seenProds = new Set();
   allLines.forEach((l) => {
-    if (seenProducts.has(l.product_id)) return;
-    seenProducts.add(l.product_id);
+    if (seenProds.has(l.product_id)) return;
+    seenProds.add(l.product_id);
     const prod = productMap.get(l.product_id);
-    if (prod?.terms && prod.terms.trim()) productTerms.push({ name: prod.name, terms: prod.terms.trim() });
+    if (prod?.terms?.trim()) productTerms.push({ name: prod.name, terms: prod.terms.trim() });
   });
 
-  const hasTerms = termsSections.length > 0 || productTerms.length > 0 || (quote.terms_conditions && quote.terms_conditions.trim());
+  const hasTerms = termsSections.length > 0 || productTerms.length > 0 || quote.terms_conditions?.trim();
   if (hasTerms) {
-    doc.addPage(); y = MARGIN;
-    doc.setFont(FONT_HEADING, 'bold'); doc.setFontSize(16); doc.setTextColor(...COLOR_TEXT);
-    doc.text('Terms & Conditions', MARGIN, y); y += 10;
+    doc.addPage();
+    y = MARGIN;
+    doc.setFont(FONT, 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...C_BLACK);
+    doc.text('Terms & Conditions', MARGIN, y);
+    y += 10;
+
     termsSections.forEach((section) => {
       y = checkPage(doc, y, 20);
-      doc.setFont(FONT_HEADING, 'bold'); doc.setFontSize(11); doc.setTextColor(...COLOR_TEXT);
-      doc.text(section.title, MARGIN, y); y += 6;
+      doc.setFont(FONT, 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...C_BLACK);
+      doc.text(section.title, MARGIN, y);
+      y += 5;
       if (section.body) {
-        y = checkPage(doc, y, 10);
-        doc.setFont(FONT_BODY, 'normal'); doc.setFontSize(10); doc.setTextColor(...COLOR_TEXT);
-        const bodyLines = doc.splitTextToSize(section.body, contentWidth);
-        doc.text(bodyLines, MARGIN, y); y += bodyLines.length * 4.5 + 6;
+        doc.setFont(FONT, 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(...C_BLACK);
+        const lines = doc.splitTextToSize(section.body, contentWidth);
+        lines.forEach((l) => { y = checkPage(doc, y, 6); doc.text(l, MARGIN, y); y += 4.5; });
+        y += 4;
       }
     });
-    const exhibitLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     productTerms.forEach((pt, i) => {
       y = checkPage(doc, y, 20);
-      doc.setFont(FONT_HEADING, 'bold'); doc.setFontSize(11); doc.setTextColor(...COLOR_TEXT);
-      doc.text(`Exhibit ${exhibitLetters[i] || String(i + 1)} \u2014 ${pt.name}`, MARGIN, y); y += 6;
-      doc.setFont(FONT_BODY, 'normal'); doc.setFontSize(10); doc.setTextColor(...COLOR_TEXT);
-      doc.splitTextToSize(pt.terms, contentWidth).forEach((line) => { y = checkPage(doc, y, 6); doc.text(line, MARGIN, y); y += 4.5; });
-      y += 6;
+      doc.setFont(FONT, 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...C_BLACK);
+      doc.text(`Exhibit ${letters[i] || i + 1} \u2014 ${pt.name}`, MARGIN, y);
+      y += 5;
+      doc.setFont(FONT, 'normal');
+      doc.setFontSize(9);
+      doc.splitTextToSize(pt.terms, contentWidth).forEach((l) => { y = checkPage(doc, y, 6); doc.text(l, MARGIN, y); y += 4.5; });
+      y += 4;
     });
-    if (quote.terms_conditions && quote.terms_conditions.trim()) {
+
+    if (quote.terms_conditions?.trim()) {
       y = checkPage(doc, y, 20);
-      doc.setFont(FONT_HEADING, 'bold'); doc.setFontSize(11); doc.setTextColor(...COLOR_TEXT);
-      doc.text('Additional Terms', MARGIN, y); y += 6;
-      doc.setFont(FONT_BODY, 'normal'); doc.setFontSize(10); doc.setTextColor(...COLOR_TEXT);
-      doc.splitTextToSize(quote.terms_conditions.trim(), contentWidth).forEach((line) => { y = checkPage(doc, y, 6); doc.text(line, MARGIN, y); y += 4.5; });
+      doc.setFont(FONT, 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...C_BLACK);
+      doc.text('Additional Terms', MARGIN, y);
+      y += 5;
+      doc.setFont(FONT, 'normal');
+      doc.setFontSize(9);
+      doc.splitTextToSize(quote.terms_conditions.trim(), contentWidth).forEach((l) => { y = checkPage(doc, y, 6); doc.text(l, MARGIN, y); y += 4.5; });
     }
   }
 
-  drawConfidentialFooter(doc);
+  confidentialFooter(doc);
 
   // ── OUTPUT ──
   if (preview) {
     const dataUri = doc.output('datauristring');
-    const newWin = window.open('', '_blank');
-    if (newWin) {
-      newWin.document.write(
-        `<html><head><title>Quote Preview</title></head><body style="margin:0">` +
-        `<iframe src="${dataUri}" width="100%" height="100%" style="border:none;position:fixed;top:0;left:0;width:100%;height:100%"></iframe>` +
-        `</body></html>`
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(
+        `<html><head><title>${quote.quote_number || 'Quote'} Preview</title></head>` +
+        `<body style="margin:0;padding:0"><iframe src="${dataUri}" style="border:none;position:fixed;top:0;left:0;width:100%;height:100%"></iframe></body></html>`
       );
     }
   } else {
-    const customerSlug = (quote.customer_name || 'quote').replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-    doc.save(`${quote.quote_number}-${customerSlug}.pdf`);
+    const slug = (quote.customer_name || 'quote').replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    doc.save(`${quote.quote_number}-${slug}.pdf`);
   }
 }
