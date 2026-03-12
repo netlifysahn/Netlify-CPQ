@@ -387,7 +387,13 @@ export function generateQuotePDF(quote, products, settings, { preview = false } 
 
   if (preview) {
     const url = doc.output('bloburl');
-    window.open(url, '_blank');
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   } else {
     const customerSlug = (quote.customer_name || 'quote').replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
     doc.save(`${quote.quote_number}-${customerSlug}.pdf`);
