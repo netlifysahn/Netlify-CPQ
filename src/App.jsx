@@ -53,7 +53,14 @@ export default function App() {
     fetch('/api/quotes')
       .then(r => r.json())
       .then(data => {
-        setQuotes(Array.isArray(data) && data.length > 0 ? data : [...seedQuotes]);
+        const migrated = (Array.isArray(data) ? data : []).map(q => ({
+          payment_terms: 'Net 30',
+          payment_method: 'Credit Card',
+          quote_type: 'net_new',
+          partner_name: '',
+          ...q,
+        }));
+        setQuotes(migrated.length > 0 ? migrated : [...seedQuotes]);
         setQuotesLoaded(true);
       })
       .catch(() => {
