@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { calcLineExtended, calcQuoteTotals, fmtCurrency } from '../data/quotes';
-import { NETLIFY_LOGO_B64 } from '../assets/netlifyLogo';
+
 
 const FONT = 'helvetica';
 const FONT_MONO = 'helvetica';
@@ -80,7 +80,7 @@ function confidentialFooter(doc) {
   }
 }
 
-export function generateQuotePDF(quote, products, settings, { preview = false } = {}) {
+export async function generateQuotePDF(quote, products, settings, { preview = false } = {}) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const contentWidth = pageWidth - MARGIN * 2;
@@ -94,109 +94,136 @@ export function generateQuotePDF(quote, products, settings, { preview = false } 
     doc.setFontSize(72);
     doc.setTextColor(240, 240, 240);
     const wt = 'DRAFT';
-    doc.text(wt, (pageWidth - doc.getTextWidth(wt)) / 2, 160);
+    doc.text(wt, (pageWidth - doc.getTextWidth(wt)) / 2, 120);
     doc.restoreGraphicsState();
   }
 
   // ── HEADER ──
-  // Netlify logo image
-  doc.addImage('data:image/png;base64,' + NETLIFY_LOGO_B64, 'PNG', MARGIN, y - 2, 28, 11);
+  const col1 = MARGIN;
+  const col2 = pageWidth / 2 + 5;
+
+  // Logo
+  const { NETLIFY_LOGO_B64 } = await import('../assets/netlifyLogo.js').catch(() => ({ NETLIFY_LOGO_B64: null }));
+  if (NETLIFY_LOGO_B64) {
+    doc.addImage('data:image/png;base64,' + NETLIFY_LOGO_B64, 'PNG', col1, y, 28, 11);
+  }
 
   if (quote.partner_name) {
     doc.setFont(FONT, 'normal');
     doc.setFontSize(9);
     doc.setTextColor(...C_MUTED);
-    doc.text(`\u00D7 ${quote.partner_name}`, MARGIN + 44, y + 7);
+    doc.text(`\u00D7 ${quote.partner_name}`, col1 + 32, y + 7);
   }
 
-  // Quote number — right aligned
+  // Quote number top right
+  const quoteNumDisplay = 'QUOTE - ' + (quote.quote_number || '').replace('QUO-', '');
   doc.setFont(FONT, 'bold');
-  doc.setFontSize(11);
+  doc.setFontSize(16);
   doc.setTextColor(...C_BLACK);
-  doc.text(quote.quote_number || '', pageWidth - MARGIN, y, { align: 'right' });
+  doc.text(quoteNumDisplay, pageWidth - MARGIN, y + 2, { align: 'right' });
 
-  y += 6;
+  y += 13;
 
-  // Quote type + prepared by — right aligned
-  const headerRight = [];
-  if (quote.quote_type) headerRight.push(quote.quote_type.replace(/_/g, ' ').toUpperCase());
-  if (quote.prepared_by) headerRight.push(`Prepared by ${quote.prepared_by}`);
-  if (quote.expiration_date) headerRight.push(`Expires ${fmtDate(quote.expiration_date)}`);
-
-  headerRight.forEach((line) => {
-    doc.setFont(FONT_MONO, 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...C_MUTED);
-    doc.text(line, pageWidth - MARGIN, y, { align: 'right' });
-    y += 4.5;
-  });
-
-  y = Math.max(y, MARGIN + 14);
-  y = divider(doc, y);
-
-  // ── CUSTOMER ──
-  y = eyebrow(doc, 'Customer', y);
-
-  // Company name large
-  if (quote.customer_name) {
-    doc.setFont(FONT, 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(...C_BLACK);
-    doc.text(quote.customer_name, MARGIN, y);
-    y += 7;
-  }
-
-  // Address
-  if (quote.address) {
+  const headerMeta = [];
+  if (quote.prepared_by) headerMeta.push(`Prepared by ${quote.prepared_by}`);
+  if (quote.start_date) headerMeta.push(`Quote Date:   ${fmtDate(quote.start_date)}`);
+  if (quote.expiration_date) headerMeta.push(`Quote Expiration Date: ${fmtDate(quote.expiration_date)}`);
+  headerMeta.forEach((line) => {
     doc.setFont(FONT, 'normal');
     doc.setFontSize(9);
     doc.setTextColor(...C_MUTED);
+    doc.text(line, pageWidth - MARGIN, y, { align: 'right' });
+    y += 5;
+  });
+
+  y += 2;
+  y = divider(doc, y);
+
+  // ── CUSTOMER ──
+  if (quote.customer_name) {
+    doc.setFont(FONT, 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(...C_BLACK);
+    doc.text(quote.customer_name, col1, y);
+    y += 7;
+  }
+  if (quote.address) {
+    doc.setFont(FONT, 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...C_MUTED);
     const addrLines = doc.splitTextToSize(quote.address, contentWidth);
-    doc.text(addrLines, MARGIN, y);
-    y += addrLines.length * 4.5 + 3;
+    doc.text(addrLines, col1, y);
+    y += addrLines.length * 5 + 4;
   }
-
-  // Contact rows
-  const contactRows = [];
-  if (quote.contact_name || quote.contact_email) {
-    const contact = [quote.contact_name, quote.contact_email].filter(Boolean).join('  \u00B7  ');
-    contactRows.push(['Primary Contact', contact]);
-  }
-  if (quote.billing_contact_name || quote.billing_contact_email) {
-    const billing = [quote.billing_contact_name, quote.billing_contact_email, quote.billing_contact_phone].filter(Boolean).join('  \u00B7  ');
-    contactRows.push(['Billing Contact', billing]);
-  }
-  if (quote.invoice_email) contactRows.push(['Invoice Email', quote.invoice_email]);
-  if (quote.account_id) contactRows.push(['Account ID', quote.account_id]);
-
-  if (contactRows.length > 0) y = metaTable(doc, contactRows, y);
 
   y = divider(doc, y);
 
-  // ── SUBSCRIPTION TERM ──
-  y = eyebrow(doc, 'Subscription Term', y);
-  const termRows = [];
-  if (quote.start_date) termRows.push(['Start Date', fmtDate(quote.start_date)]);
-  if (quote.end_date) termRows.push(['End Date', fmtDate(quote.end_date)]);
-  termRows.push(['Term', `${quote.term_months || 12} months`]);
-  if (quote.expiration_date) termRows.push(['Quote Expires', fmtDate(quote.expiration_date)]);
-  y = metaTable(doc, termRows, y);
-
-  y = divider(doc, y);
-
-  // ── BILLING & PAYMENT ──
-  const billingRows = [];
-  if (quote.billing_schedule) billingRows.push(['Billing Schedule', quote.billing_schedule]);
-  if (quote.payment_method) billingRows.push(['Payment Method', quote.payment_method]);
-  if (quote.payment_terms) billingRows.push(['Payment Terms', quote.payment_terms]);
-  if (quote.po_number) billingRows.push(['PO #', quote.po_number]);
-  if (quote.vat_number) billingRows.push(['VAT #', quote.vat_number]);
-
-  if (billingRows.length > 0) {
-    y = eyebrow(doc, 'Billing & Payment', y);
-    y = metaTable(doc, billingRows, y);
+  // Helper: two-column label+stacked-values block with divider after
+  function twoColBlock(leftLabel, leftLines, rightLabel, rightLines) {
+    if (leftLabel) {
+      doc.setFont(FONT, 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...C_MUTED);
+      doc.text(leftLabel.toUpperCase(), col1, y);
+    }
+    if (rightLabel) {
+      doc.setFont(FONT, 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...C_MUTED);
+      doc.text(rightLabel.toUpperCase(), col2, y);
+    }
+    y += 5;
+    const maxLines = Math.max(leftLines.length, rightLines.length);
+    for (let i = 0; i < maxLines; i++) {
+      doc.setFont(FONT, i === 0 ? 'bold' : 'normal');
+      doc.setFontSize(i === 0 ? 11 : 10);
+      doc.setTextColor(...C_BLACK);
+      if (leftLines[i]) doc.text(String(leftLines[i]), col1, y);
+      if (rightLines[i]) doc.text(String(rightLines[i]), col2, y);
+      y += i === 0 ? 6 : 5;
+    }
+    y += 3;
     y = divider(doc, y);
   }
+
+  // Primary Contact / Billing Contact
+  const primaryLines = [quote.contact_name, quote.contact_email].filter(Boolean);
+  const billingContactLines = [quote.billing_contact_name, quote.billing_contact_email, quote.billing_contact_phone].filter(Boolean);
+  if (primaryLines.length || billingContactLines.length) {
+    twoColBlock('Primary Contact', primaryLines, 'Billing Contact', billingContactLines);
+  }
+
+  // Account ID / Invoice Email
+  if (quote.account_id || quote.invoice_email) {
+    twoColBlock(
+      quote.account_id ? 'Netlify Account ID' : '',
+      quote.account_id ? [quote.account_id] : [],
+      quote.invoice_email ? 'Invoice Email' : '',
+      quote.invoice_email ? [quote.invoice_email] : []
+    );
+  }
+
+  // Billing Schedule / Payment Terms
+  if (quote.billing_schedule || quote.payment_terms) {
+    twoColBlock(
+      'Billing Schedule', quote.billing_schedule ? [quote.billing_schedule] : [],
+      'Payment Terms', quote.payment_terms ? [quote.payment_terms] : []
+    );
+  }
+
+  // Payment Method / PO#
+  if (quote.payment_method || quote.po_number) {
+    twoColBlock(
+      quote.payment_method ? 'Payment Method' : '', quote.payment_method ? [quote.payment_method] : [],
+      quote.po_number ? 'PO #' : '', quote.po_number ? [quote.po_number] : []
+    );
+  }
+
+  // Subscription Term / Start Date
+  twoColBlock(
+    'Subscription Term', [`${quote.term_months || 12} Months`],
+    'Subscription Start Date', [fmtDate(quote.start_date)]
+  );
 
   // ── BASE PACKAGE ──
   const packageLines = allLines.filter((l) => l.is_package);
