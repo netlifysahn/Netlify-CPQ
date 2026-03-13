@@ -140,7 +140,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
 
   y += 2;
   y = divider(doc, y);
-  y += 5;
+  y += 3;
 
   // ── CUSTOMER ──
   if (quote.customer_name) {
@@ -158,7 +158,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     doc.text(addrLines, col1 + INDENT, y);
     y += addrLines.length * 4 + 3;
   }
-  y += 5;
+  y += 3;
 
   y = divider(doc, y);
 
@@ -206,7 +206,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       if (rightLines[i]) doc.text(rightLines[i], col2 + INDENT, y);
       y += 4.5;
     }
-    y += 3;
+    y += 2;
   });
 
   y += 2;
