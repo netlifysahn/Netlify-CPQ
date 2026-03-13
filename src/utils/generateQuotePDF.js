@@ -154,7 +154,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
   if (quote.address) {
     doc.setFont(FONT, 'normal');
     doc.setFontSize(8);
-    doc.setTextColor(...C_MUTED);
+    doc.setTextColor(...C_BLACK);
     const addrLines = doc.splitTextToSize(quote.address, contentWidth);
     doc.text(addrLines, col1 + INDENT, y);
     y += addrLines.length * 4 + 2;
@@ -229,7 +229,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       }
     },
   });
-  y = doc.lastAutoTable.finalY + 4;
+  y = doc.lastAutoTable.finalY;
   y = divider(doc, y);
 
   // ── BASE PACKAGE ──
