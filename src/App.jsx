@@ -54,11 +54,11 @@ export default function App() {
       .then(r => r.json())
       .then(data => {
         const migrated = (Array.isArray(data) ? data : []).map(q => ({
-          payment_terms: 'Net 30',
-          payment_method: 'Credit Card',
-          quote_type: 'net_new',
-          partner_name: '',
           ...q,
+          payment_terms: q.payment_terms || 'Net 30',
+          payment_method: q.payment_method || 'Credit Card',
+          quote_type: q.quote_type || 'net_new',
+          partner_name: q.partner_name ?? '',
         }));
         setQuotes(migrated.length > 0 ? migrated : [...seedQuotes]);
         setQuotesLoaded(true);
