@@ -193,7 +193,7 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
               </div>
               <div className="field">
                 <label className="field-label">Payment Terms</label>
-                <select className="field-select" value={f.payment_terms} onChange={(e) => s('payment_terms', e.target.value)}>
+                <select className="field-select" value={f.payment_terms || 'Net 30'} onChange={(e) => s('payment_terms', e.target.value)}>
                   {PAYMENT_TERMS.map((t) => (
                     <option key={t} value={t}>{t}</option>
                   ))}
