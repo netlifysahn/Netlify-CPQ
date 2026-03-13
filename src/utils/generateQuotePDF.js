@@ -133,7 +133,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
   if (quote.expiration_date) headerMeta.push(`Quote Expiration Date: ${fmtDate(quote.expiration_date)}`);
   headerMeta.forEach((line) => {
     doc.setFont(FONT, 'normal');
-    doc.setFontSize(8);
+    doc.setFontSize(9);
     doc.setTextColor(...C_MUTED);
     doc.text(line, pageWidth - MARGIN, y, { align: 'right' });
     y += 4;
@@ -146,14 +146,14 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
   // ── CUSTOMER ──
   if (quote.customer_name) {
     doc.setFont(FONT, 'normal');
-    doc.setFontSize(11);
+    doc.setFontSize(12);
     doc.setTextColor(...C_BLACK);
     doc.text(quote.customer_name, col1 + INDENT, y);
     y += 4;
   }
   if (quote.address) {
     doc.setFont(FONT, 'normal');
-    doc.setFontSize(8);
+    doc.setFontSize(9);
     doc.setTextColor(...C_BLACK);
     const addrLines = doc.splitTextToSize(quote.address, contentWidth);
     doc.text(addrLines, col1 + INDENT, y);
@@ -209,7 +209,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     margin: { left: MARGIN + INDENT, right: MARGIN },
     theme: 'plain',
     styles: {
-      fontSize: 8,
+      fontSize: 9,
       cellPadding: { top: 1, bottom: 2, left: 0, right: 4 },
       textColor: C_BLACK,
       lineWidth: 0,
