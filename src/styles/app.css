@@ -17,7 +17,7 @@
 
   /* Accent — Netlify Teal */
   --teal: #05BDBA;
-  --teal-dark: #04A29F;
+  --teal-dark: #05BDBA;
   --teal-muted: rgba(5, 189, 186, 0.08);
 
   /* Semantic — Netlify brand */
@@ -314,17 +314,17 @@
 
 .main-content.section-products {
   --page-cta: #05BDBA;
-  --page-cta-hover: #049f9d;
+  --page-cta-hover: #32E6E2;
 }
 
 .main-content.section-pricebooks {
   --page-cta: #05BDBA;
-  --page-cta-hover: #049f9d;
+  --page-cta-hover: #32E6E2;
 }
 
 .main-content.section-quotes {
   --page-cta: #FBB13D;
-  --page-cta-hover: #E9A32B;
+  --page-cta-hover: #FACD6F;
 }
 
 .main-content.section-scope {
@@ -566,8 +566,8 @@
 }
 
 .btn-product-add {
-  background: #0ea5a4;
-  border-color: #0ea5a4;
+  background: #05BDBA;
+  border-color: #05BDBA;
   color: #ffffff;
   font-weight: 500;
 }
@@ -3998,7 +3998,7 @@ tr.drag-over {
 .status-teal {
   background: #f0fdfa;
   border: none;
-  color: #00AD9F;
+  color: #05BDBA;
 }
 
 .status-purple {
@@ -4076,7 +4076,7 @@ tr.drag-over {
 }
 
 .qd-action-btn-teal {
-  background: #00AD9F;
+  background: #05BDBA;
   color: #fff;
   font-weight: 600;
   border: none;
@@ -5030,4 +5030,104 @@ tr.drag-over {
 
 .bundle-picker {
   animation: dropdown-enter 150ms ease both;
+}
+
+/* 8. Button hover normalization — color transitions only */
+.btn-primary,
+.btn-secondary,
+.btn-save,
+.btn-product-add,
+.btn-quote-add,
+.btn-cancel,
+.empty-state-cta,
+.edit-empty-cta,
+.qd-edit-lines-btn.qd-edit-lines-btn,
+.qd-status-btn,
+.qd-action-btn,
+.qd-action-btn-primary,
+.qd-action-btn-teal,
+.picker-v2-footer .btn-primary,
+.qd-line-footer-actions .btn-primary {
+  transition: all 0.22s ease !important;
+  box-shadow: none !important;
+}
+
+.toolbar .btn-primary:not(.btn-product-add):not(.btn-quote-add):hover,
+.toolbar .btn-primary:not(.btn-product-add):not(.btn-quote-add):focus-visible,
+.btn-secondary:hover,
+.btn-cancel:hover,
+.qd-status-btn:hover,
+.qd-line-footer-actions .btn-primary:hover,
+.main-content.section-products .toolbar .btn-primary:not(.btn-product-add):hover,
+.main-content.section-products .toolbar .btn-primary:not(.btn-product-add):focus-visible {
+  box-shadow: none !important;
+  background: #FFFFFF !important;
+  border-color: rgba(0, 0, 0, 0.24);
+  color: var(--text-strong);
+}
+
+.btn-product-add:hover,
+.btn-save:hover,
+.qd-edit-lines-btn.qd-edit-lines-btn:hover,
+.qd-action-btn-teal:hover {
+  box-shadow: none !important;
+  background: #32E6E2;
+  border-color: #32E6E2;
+  color: #FFFFFF;
+}
+
+.btn-quote-add:hover,
+.empty-state-cta:hover,
+.edit-empty-cta:hover,
+.qd-action-btn-primary:hover,
+.picker-v2-footer .btn-primary:hover {
+  box-shadow: none !important;
+  background: #FACD6F !important;
+  border-color: #FACD6F !important;
+  color: #FFFFFF !important;
+}
+
+.qd-action-btn:not(.qd-action-btn-primary):not(.qd-action-btn-teal):hover,
+.main-content.section-quotes .qd-status-btn:hover {
+  box-shadow: none !important;
+  background: #FFFFFF !important;
+  border-color: #FACD6F;
+  color: #FACD6F;
+}
+
+.main-content.section-products .btn-product-add,
+.main-content.section-products .empty-state-cta,
+.main-content.section-pricebooks .btn-product-add,
+.main-content.section-pricebooks .empty-state-cta,
+.main-content.section-pricebooks .btn-primary {
+  box-shadow: none !important;
+}
+
+.main-content.section-products .btn-product-add:hover,
+.main-content.section-products .empty-state-cta:hover,
+.main-content.section-pricebooks .btn-product-add:hover,
+.main-content.section-pricebooks .empty-state-cta:hover,
+.main-content.section-pricebooks .btn-primary:hover {
+  box-shadow: none !important;
+  background: #32E6E2;
+  border-color: #32E6E2;
+  color: #FFFFFF;
+}
+
+.main-content.section-quotes .btn-quote-add:hover,
+.main-content.section-quotes .empty-state-cta:hover {
+  box-shadow: none !important;
+  background: #FACD6F;
+  border-color: #FACD6F;
+  color: #FFFFFF;
+}
+
+.main-content.section-scope .btn-primary:hover,
+.main-content.section-scope .empty-state-cta:hover,
+.main-content.section-orders .btn-primary:hover,
+.main-content.section-orders .empty-state-cta:hover {
+  box-shadow: none !important;
+  background: var(--page-cta-hover);
+  border-color: var(--page-cta-hover);
+  color: #FFFFFF;
 }
