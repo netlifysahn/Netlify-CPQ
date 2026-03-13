@@ -187,17 +187,18 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
 
   metaRows.forEach((row) => {
     const [left, right] = row;
-    if (!left.value && !right.value) return;
+    const hasContent = (left.value && left.value.trim()) || (right.value && right.value.trim());
+    if (!hasContent) return;
     // Labels
     doc.setFont(FONT, 'normal');
-    doc.setFontSize(7.5);
+    doc.setFontSize(7);
     doc.setTextColor(...C_MUTED);
     if (left.label) doc.text(left.label.toUpperCase(), col1 + INDENT, y);
     if (right.label) doc.text(right.label.toUpperCase(), col2 + INDENT, y);
-    y += 4;
+    y += 3.5;
     // Values (handle multiline)
     doc.setFont(FONT, 'normal');
-    doc.setFontSize(9.5);
+    doc.setFontSize(9);
     doc.setTextColor(...C_BLACK);
     const leftLines = left.value ? left.value.split('\n') : [];
     const rightLines = right.value ? right.value.split('\n') : [];
