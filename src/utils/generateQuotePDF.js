@@ -6,6 +6,7 @@ import { calcLineExtended, calcQuoteTotals, fmtCurrency } from '../data/quotes';
 const FONT = 'helvetica';
 const FONT_MONO = 'helvetica';
 const C_BLACK = [26, 26, 26];
+const C_TEXT = [40, 40, 40];
 const C_MUTED = [120, 120, 120];
 const C_DIVIDER = [220, 220, 220];
 const C_TEAL = [0, 173, 159];
@@ -118,7 +119,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
   // Quote number top right
   const quoteNumDisplay = 'QUOTE - ' + (quote.quote_number || '').replace('QUO-', '');
   doc.setFont(FONT, 'bold');
-  doc.setFontSize(16);
+  doc.setFontSize(14);
   doc.setTextColor(...C_BLACK);
   doc.text(quoteNumDisplay, pageWidth - MARGIN, y + 2, { align: 'right' });
 
@@ -141,8 +142,8 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
 
   // ── CUSTOMER ──
   if (quote.customer_name) {
+    doc.setFontSize(12);
     doc.setFont(FONT, 'bold');
-    doc.setFontSize(16);
     doc.setTextColor(...C_BLACK);
     doc.text(quote.customer_name, col1, y);
     y += 7;
@@ -150,7 +151,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
   if (quote.address) {
     doc.setFont(FONT, 'normal');
     doc.setFontSize(10);
-    doc.setTextColor(...C_MUTED);
+    doc.setTextColor(...C_TEXT);
     const addrLines = doc.splitTextToSize(quote.address, contentWidth);
     doc.text(addrLines, col1, y);
     y += addrLines.length * 5 + 4;
@@ -175,8 +176,8 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     y += 5;
     const maxLines = Math.max(leftLines.length, rightLines.length);
     for (let i = 0; i < maxLines; i++) {
-      doc.setFont(FONT, i === 0 ? 'bold' : 'normal');
-      doc.setFontSize(i === 0 ? 11 : 10);
+      doc.setFont(FONT, 'normal');
+      doc.setFontSize(10);
       doc.setTextColor(...C_BLACK);
       if (leftLines[i]) doc.text(String(leftLines[i]), col1, y);
       if (rightLines[i]) doc.text(String(rightLines[i]), col2, y);
