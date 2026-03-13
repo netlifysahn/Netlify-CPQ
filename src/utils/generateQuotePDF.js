@@ -140,7 +140,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
 
   y += 2;
   y = divider(doc, y);
-  y += 3;
+  y += 2;
 
   // ── CUSTOMER ──
   if (quote.customer_name) {
@@ -148,7 +148,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     doc.setFontSize(11);
     doc.setTextColor(...C_BLACK);
     doc.text(quote.customer_name, col1 + INDENT, y);
-    y += 5;
+    y += 4;
   }
   if (quote.address) {
     doc.setFont(FONT, 'normal');
@@ -156,9 +156,9 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     doc.setTextColor(...C_MUTED);
     const addrLines = doc.splitTextToSize(quote.address, contentWidth);
     doc.text(addrLines, col1 + INDENT, y);
-    y += addrLines.length * 4 + 3;
+    y += addrLines.length * 4 + 2;
   }
-  y += 3;
+  y += 2;
 
   y = divider(doc, y);
 
@@ -187,6 +187,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
 
   metaRows.forEach((row) => {
     const [left, right] = row;
+    if (!left.value && !right.value) return;
     // Labels
     doc.setFont(FONT, 'normal');
     doc.setFontSize(7.5);
