@@ -100,7 +100,7 @@ export function generateQuotePDF(quote, products, settings, { preview = false } 
 
   // ── HEADER ──
   // Netlify logo image
-  doc.addImage('data:image/png;base64,' + NETLIFY_LOGO_B64, 'PNG', MARGIN, y - 2, 40, 16);
+  doc.addImage('data:image/png;base64,' + NETLIFY_LOGO_B64, 'PNG', MARGIN, y - 2, 28, 11);
 
   if (quote.partner_name) {
     doc.setFont(FONT, 'normal');
