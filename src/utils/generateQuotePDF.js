@@ -153,7 +153,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
   }
   if (quote.address) {
     doc.setFont(FONT, 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(10);
     doc.setTextColor(...C_MUTED);
     const addrLines = doc.splitTextToSize(quote.address, contentWidth);
     doc.text(addrLines, col1 + INDENT, y);
@@ -211,7 +211,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     styles: {
       fontSize: 10,
       cellPadding: { top: 1, bottom: 2, left: 0, right: 4 },
-      textColor: C_TEXT,
+      textColor: C_BLACK,
       lineWidth: 0,
     },
     columnStyles: {
