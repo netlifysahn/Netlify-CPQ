@@ -36,6 +36,7 @@
   --section-quotes-tint: rgba(0, 0, 0, 0.04);
   --section-orders: #2E51ED;
   --section-orders-tint: rgba(0, 0, 0, 0.04);
+  --section-settings: #382AA4;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
@@ -212,6 +213,10 @@
   color: var(--section-orders);
 }
 
+.sidebar-item.section-settings i {
+  color: var(--section-settings);
+}
+
 .sidebar-item.section-products:hover,
 .sidebar-item.section-pricebooks:hover {
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
@@ -268,11 +273,12 @@
 }
 
 .sidebar-item.section-settings.active {
-  background: color-mix(in srgb, #6b7280 8%, transparent);
+  background: color-mix(in srgb, var(--section-settings) 8%, transparent);
+  color: var(--section-settings);
 }
 
 .sidebar-item.section-settings.active::before {
-  background: #6b7280;
+  background: var(--section-settings);
 }
 
 /* ─── Main Content ────────────────────────────────────────── */
@@ -3508,6 +3514,10 @@ tr.drag-over {
   color: var(--section-orders);
 }
 
+.sidebar-item.section-settings i {
+  color: var(--section-settings);
+}
+
 .sidebar-item.section-products:hover,
 .sidebar-item.section-pricebooks:hover {
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
@@ -3551,8 +3561,8 @@ tr.drag-over {
 }
 
 .sidebar-item.section-settings.active {
-  background: color-mix(in srgb, #6b7280 12%, transparent);
-  color: #6b7280;
+  background: color-mix(in srgb, var(--section-settings) 12%, transparent);
+  color: var(--section-settings);
 }
 
 .sidebar-item.section-products.active i,
@@ -3570,6 +3580,10 @@ tr.drag-over {
 
 .sidebar-item.section-orders.active i {
   color: var(--section-orders);
+}
+
+.sidebar-item.section-settings.active i {
+  color: var(--section-settings);
 }
 
 /* ─── Theme toggle (light mode) ───────────────────────────── */
@@ -5130,4 +5144,70 @@ tr.drag-over {
   background: var(--page-cta-hover);
   border-color: var(--page-cta-hover);
   color: #FFFFFF;
+}
+
+.main-content.section-settings {
+  --page-cta: #382AA4;
+  --page-cta-hover: #30248c;
+}
+
+.main-content.section-settings .settings-action-btn {
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.main-content.section-settings .settings-action-btn-outline {
+  background: transparent;
+  border-color: var(--page-cta);
+  color: var(--page-cta);
+}
+
+.main-content.section-settings .settings-action-btn-outline:hover {
+  border-color: var(--page-cta-hover);
+  color: var(--page-cta-hover);
+}
+
+.main-content.section-settings .settings-action-btn-outline:active {
+  border-color: var(--page-cta-hover);
+  color: var(--page-cta-hover);
+}
+
+.main-content.section-settings .settings-action-btn-solid {
+  background: var(--page-cta);
+  border-color: var(--page-cta);
+  color: #ffffff;
+}
+
+.main-content.section-settings .settings-action-btn-solid:hover:not(:disabled) {
+  background: var(--page-cta-hover);
+  border-color: var(--page-cta-hover);
+  color: #ffffff;
+}
+
+.main-content.section-settings .settings-action-btn-solid:active:not(:disabled) {
+  background: var(--page-cta-hover);
+  border-color: var(--page-cta-hover);
+  color: #ffffff;
+}
+
+.main-content.section-settings .settings-action-btn-solid:disabled {
+  background: #d1d5db;
+  border-color: #d1d5db;
+  color: #ffffff;
+}
+
+.main-content.section-settings .settings-card-icon-btn {
+  color: var(--text-tertiary);
+  transition: color 150ms ease;
+}
+
+.main-content.section-settings .settings-card-icon-btn i {
+  transform: scale(1);
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.main-content.section-settings .settings-card-icon-btn:hover i,
+.main-content.section-settings .settings-card-icon-btn:active i,
+.main-content.section-settings .settings-card-icon-btn:focus-visible i {
+  color: #382AA4;
+  transform: scale(1.1);
 }
