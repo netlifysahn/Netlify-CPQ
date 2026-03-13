@@ -185,37 +185,50 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
   const startVal = fmtDate(quote.start_date);
   metaRows.push([{ label: 'Subscription Term', value: termVal }, { label: 'Subscription Start Date', value: startVal }]);
 
-  metaRows.forEach((row) => {
-    const [left, right] = row;
-    const leftHas = left.value && String(left.value).trim().length > 0;
-    const rightHas = right.value && String(right.value).trim().length > 0;
-    if (!leftHas && !rightHas) return;
-    // Reassign to skip empty side labels too
-    if (!leftHas) left.label = '';
-    if (!rightHas) right.label = '';
-    // Labels
-    doc.setFont(FONT, 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(...C_MUTED);
-    if (left.label) doc.text(left.label.toUpperCase(), col1 + INDENT, y);
-    if (right.label) doc.text(right.label.toUpperCase(), col2 + INDENT, y);
-    y += 3.5;
-    // Values (handle multiline)
-    doc.setFont(FONT, 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(...C_BLACK);
-    const leftLines = left.value ? left.value.split('\n') : [];
-    const rightLines = right.value ? right.value.split('\n') : [];
-    const maxL = Math.max(leftLines.length, rightLines.length, 1);
-    for (let i = 0; i < maxL; i++) {
-      if (leftLines[i]) doc.text(leftLines[i], col1 + INDENT, y);
-      if (rightLines[i]) doc.text(rightLines[i], col2 + INDENT, y);
-      y += 4;
-    }
-    y += 1;
+  const filteredRows = metaRows.filter(([l, r]) => {
+    const lv = l.value && String(l.value).trim();
+    const rv = r.value && String(r.value).trim();
+    return lv || rv;
   });
 
-  y += 2;
+  const tableBody = filteredRows.map(([l, r]) => {
+    const lv = l.value && String(l.value).trim();
+    const rv = r.value && String(r.value).trim();
+    return [
+      { label: lv ? l.label : '', value: lv || '' },
+      { label: rv ? r.label : '', value: rv || '' },
+    ];
+  });
+
+  autoTable(doc, {
+    startY: y,
+    body: tableBody.map(([l, r]) => [
+      `${l.label ? l.label.toUpperCase() + '\n' : ''}${l.value}`,
+      `${r.label ? r.label.toUpperCase() + '\n' : ''}${r.value}`,
+    ]),
+    margin: { left: MARGIN + INDENT, right: MARGIN },
+    theme: 'plain',
+    styles: {
+      fontSize: 9,
+      cellPadding: { top: 1, bottom: 2, left: 0, right: 4 },
+      textColor: C_BLACK,
+      lineWidth: 0,
+    },
+    columnStyles: {
+      0: { cellWidth: 'auto' },
+      1: { cellWidth: 'auto' },
+    },
+    didParseCell: (data) => {
+      const text = data.cell.raw || '';
+      const lines = text.split('\n');
+      if (lines.length > 1) {
+        // First line is label — style it muted small
+        data.cell.styles.textColor = C_MUTED;
+        data.cell.styles.fontSize = 7;
+      }
+    },
+  });
+  y = doc.lastAutoTable.finalY + 4;
   y = divider(doc, y);
 
   // ── BASE PACKAGE ──
