@@ -205,9 +205,9 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     for (let i = 0; i < maxL; i++) {
       if (leftLines[i]) doc.text(leftLines[i], col1 + INDENT, y);
       if (rightLines[i]) doc.text(rightLines[i], col2 + INDENT, y);
-      y += 4.5;
+      y += 4;
     }
-    y += 2;
+    y += 1;
   });
 
   y += 2;
