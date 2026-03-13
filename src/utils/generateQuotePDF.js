@@ -118,9 +118,9 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
 
   // Quote number top right
   const quoteNumDisplay = 'QUOTE - ' + (quote.quote_number || '').replace('QUO-', '');
-  doc.setFont(FONT, 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(...C_BLACK);
+  doc.setFont(FONT, 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(...C_MUTED);
   doc.text(quoteNumDisplay, pageWidth - MARGIN, y + 2, { align: 'right' });
 
   y += 13;
@@ -139,10 +139,11 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
 
   y += 2;
   y = divider(doc, y);
+  y += 3;
 
   // ── CUSTOMER ──
   if (quote.customer_name) {
-    doc.setFont(FONT, 'bold');
+    doc.setFont(FONT, 'normal');
     doc.setFontSize(11);
     doc.setTextColor(...C_BLACK);
     doc.text(quote.customer_name, col1, y);
@@ -156,6 +157,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     doc.text(addrLines, col1, y);
     y += addrLines.length * 4 + 3;
   }
+  y += 3;
 
   y = divider(doc, y);
 
@@ -206,6 +208,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     y += 3;
   });
 
+  y += 2;
   y = divider(doc, y);
 
   // ── BASE PACKAGE ──
