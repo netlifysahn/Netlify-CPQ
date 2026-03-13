@@ -103,14 +103,14 @@ export default function ProductTable({ products, allProducts, onEdit, onDupe, on
                   </td>
                   <td className="col-actions">
                     <div className="actions-group">
-                      <button className="action-btn edit" title="Edit" onClick={() => onEdit(p)}>
-                        Edit
+                      <button className="action-btn edit" title="Edit" aria-label="Edit" onClick={() => onEdit(p)}>
+                        <i className="fa-solid fa-pen-to-square fa-fw fa-sm" aria-hidden="true" />
                       </button>
-                      <button className="action-btn duplicate" title="Duplicate" onClick={() => onDupe(p)}>
-                        Clone
+                      <button className="action-btn duplicate" title="Duplicate" aria-label="Duplicate" onClick={() => onDupe(p)}>
+                        <i className="fa-solid fa-clone fa-fw fa-sm" aria-hidden="true" />
                       </button>
-                      <button className="action-btn delete" title="Delete" onClick={() => onDelete(p.id)}>
-                        Delete
+                      <button className="action-btn delete" title="Delete" aria-label="Delete" onClick={() => onDelete(p.id)}>
+                        <i className="fa-solid fa-trash fa-fw fa-sm" aria-hidden="true" />
                       </button>
                     </div>
                   </td>

@@ -61,11 +61,11 @@ export default function PricebookTable({ pricebooks, onOpen, onEdit, onDelete, o
               </td>
               <td className="col-actions">
                 <div className="actions-group">
-                  <button className="action-btn edit" title="Edit" onClick={() => onEdit(pricebook)}>
-                    Edit
+                  <button className="action-btn edit" title="Edit" aria-label="Edit" onClick={() => onEdit(pricebook)}>
+                    <i className="fa-solid fa-pen-to-square fa-fw fa-sm" aria-hidden="true" />
                   </button>
-                  <button className="action-btn delete" title="Delete" onClick={() => onDelete(pricebook.id)}>
-                    Delete
+                  <button className="action-btn delete" title="Delete" aria-label="Delete" onClick={() => onDelete(pricebook.id)}>
+                    <i className="fa-solid fa-trash fa-fw fa-sm" aria-hidden="true" />
                   </button>
                 </div>
               </td>

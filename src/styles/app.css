@@ -4873,8 +4873,19 @@ tr.drag-over {
   transition: opacity 150ms ease, color 150ms ease;
 }
 
+.data-table tbody tr .actions-group .action-btn i {
+  cursor: pointer;
+  transform: scale(1);
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
 .data-table tbody tr:hover .actions-group .action-btn {
   opacity: 1;
+}
+
+.data-table tbody tr:hover .actions-group .action-btn:hover i {
+  color: var(--section-accent);
+  transform: scale(1.1);
 }
 
 .edit-drag-handle {
