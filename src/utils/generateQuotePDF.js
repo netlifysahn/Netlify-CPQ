@@ -8,6 +8,7 @@ const FONT_MONO = 'helvetica';
 const C_BLACK = [26, 26, 26];
 const C_TEXT = [40, 40, 40];
 const C_MUTED = [120, 120, 120];
+const C_LABEL = [160, 160, 160];
 const C_DIVIDER = [220, 220, 220];
 const C_TEAL = [0, 173, 159];
 const C_GOLD = [251, 177, 61];
@@ -210,7 +211,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     styles: {
       fontSize: 9,
       cellPadding: { top: 1, bottom: 2, left: 0, right: 4 },
-      textColor: C_BLACK,
+      textColor: C_TEXT,
       lineWidth: 0,
     },
     columnStyles: {
@@ -221,8 +222,8 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       const text = data.cell.raw || '';
       const lines = text.split('\n');
       if (lines.length > 1) {
-        // First line is label — style it muted small
-        data.cell.styles.textColor = C_MUTED;
+        // First line is label — style it lighter
+        data.cell.styles.textColor = C_LABEL;
         data.cell.styles.fontSize = 7;
       }
     },
