@@ -209,7 +209,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     margin: { left: MARGIN + INDENT, right: MARGIN },
     theme: 'plain',
     styles: {
-      fontSize: 9,
+      fontSize: 9.5,
       cellPadding: { top: 1, bottom: 2, left: 0, right: 4 },
       textColor: C_TEXT,
       lineWidth: 0,
@@ -224,7 +224,8 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       if (lines.length > 1) {
         // First line is label — style it lighter
         data.cell.styles.textColor = C_LABEL;
-        data.cell.styles.fontSize = 7;
+        data.cell.styles.fontSize = 6.5;
+        data.cell.styles.fontStyle = 'normal';
       }
     },
   });
