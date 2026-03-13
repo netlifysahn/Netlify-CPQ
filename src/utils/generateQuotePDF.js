@@ -187,8 +187,12 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
 
   metaRows.forEach((row) => {
     const [left, right] = row;
-    const hasContent = (left.value && left.value.trim()) || (right.value && right.value.trim());
-    if (!hasContent) return;
+    const leftHas = left.value && String(left.value).trim().length > 0;
+    const rightHas = right.value && String(right.value).trim().length > 0;
+    if (!leftHas && !rightHas) return;
+    // Reassign to skip empty side labels too
+    if (!leftHas) left.label = '';
+    if (!rightHas) right.label = '';
     // Labels
     doc.setFont(FONT, 'normal');
     doc.setFontSize(7);
