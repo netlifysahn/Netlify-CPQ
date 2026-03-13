@@ -13,6 +13,7 @@ const C_TEAL = [0, 173, 159];
 const C_GOLD = [251, 177, 61];
 const C_LIGHT = [248, 248, 248];
 const MARGIN = 18;
+const INDENT = 4;
 
 function fmtDate(s) {
   if (!s) return '';
@@ -139,14 +140,14 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
 
   y += 2;
   y = divider(doc, y);
-  y += 3;
+  y += 5;
 
   // ── CUSTOMER ──
   if (quote.customer_name) {
     doc.setFont(FONT, 'normal');
     doc.setFontSize(11);
     doc.setTextColor(...C_BLACK);
-    doc.text(quote.customer_name, col1, y);
+    doc.text(quote.customer_name, col1 + INDENT, y);
     y += 5;
   }
   if (quote.address) {
@@ -154,10 +155,10 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     doc.setFontSize(9);
     doc.setTextColor(...C_MUTED);
     const addrLines = doc.splitTextToSize(quote.address, contentWidth);
-    doc.text(addrLines, col1, y);
+    doc.text(addrLines, col1 + INDENT, y);
     y += addrLines.length * 4 + 3;
   }
-  y += 3;
+  y += 5;
 
   y = divider(doc, y);
 
@@ -190,8 +191,8 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     doc.setFont(FONT, 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(...C_MUTED);
-    if (left.label) doc.text(left.label.toUpperCase(), col1, y);
-    if (right.label) doc.text(right.label.toUpperCase(), col2, y);
+    if (left.label) doc.text(left.label.toUpperCase(), col1 + INDENT, y);
+    if (right.label) doc.text(right.label.toUpperCase(), col2 + INDENT, y);
     y += 4;
     // Values (handle multiline)
     doc.setFont(FONT, 'normal');
@@ -201,8 +202,8 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     const rightLines = right.value ? right.value.split('\n') : [];
     const maxL = Math.max(leftLines.length, rightLines.length, 1);
     for (let i = 0; i < maxL; i++) {
-      if (leftLines[i]) doc.text(leftLines[i], col1, y);
-      if (rightLines[i]) doc.text(rightLines[i], col2, y);
+      if (leftLines[i]) doc.text(leftLines[i], col1 + INDENT, y);
+      if (rightLines[i]) doc.text(rightLines[i], col2 + INDENT, y);
       y += 4.5;
     }
     y += 3;
