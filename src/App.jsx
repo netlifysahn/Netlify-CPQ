@@ -46,7 +46,30 @@ export default function App() {
   // ── Data loaded exclusively from static JSON files ──
   const [products, setProducts] = useState(() => [...seedProducts]);
   const [pricebooks, setPricebooks] = useState(() => [...seedPricebooks]);
-  const [quotes, setQuotes] = useState(() => [...seedQuotes]);
+  const [quotes, setQuotes] = useState([]);
+  const [quotesLoaded, setQuotesLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/quotes')
+      .then(r => r.json())
+      .then(data => {
+        setQuotes(Array.isArray(data) && data.length > 0 ? data : [...seedQuotes]);
+        setQuotesLoaded(true);
+      })
+      .catch(() => {
+        setQuotes([...seedQuotes]);
+        setQuotesLoaded(true);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!quotesLoaded) return;
+    fetch('/api/quotes', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(quotes),
+    }).catch(() => {});
+  }, [quotes, quotesLoaded]);
   const [settings, setSettings] = useState(() => ({ ...seedSettings }));
 
   const [search, setSearch] = useState('');
