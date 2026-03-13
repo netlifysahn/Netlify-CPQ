@@ -114,7 +114,7 @@ export default function Settings({ settings, onSave }) {
             onClick={handleSave}
             disabled={!dirty}
             style={{
-              background: dirty ? '#00AD9F' : '#d1d5db', border: 'none', borderRadius: '6px',
+              background: dirty ? '#05BDBA' : '#d1d5db', border: 'none', borderRadius: '6px',
               padding: '8px 20px', cursor: dirty ? 'pointer' : 'default',
               fontFamily: "'Mulish', sans-serif", fontSize: '13px', fontWeight: 600, color: '#fff',
             }}

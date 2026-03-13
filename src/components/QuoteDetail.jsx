@@ -61,7 +61,7 @@ const relativeTime = (timestamp) => {
 
 const ACTIVITY_DOT_COLORS = {
   draft: '#6b7280', sent: '#2E51ED', draft_revision: '#FBB13D',
-  ready_to_submit: '#00AD9F', pending_approval: '#7C3AED',
+  ready_to_submit: '#05BDBA', pending_approval: '#7C3AED',
   approved: '#059669', rejected: '#ef4444', converted: '#065f46',
   archived: '#9ca3af',
 };
@@ -415,7 +415,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
   const STATUS_EYEBROW_COLORS = {
     draft: '#6b7280', sent: '#2E51ED', draft_revision: '#FBB13D',
-    ready_to_submit: '#00AD9F', pending_approval: '#7C3AED',
+    ready_to_submit: '#05BDBA', pending_approval: '#7C3AED',
     approved: '#16A34A', rejected: '#ef4444', converted: '#15803d', archived: '#9ca3af',
   };
 
@@ -1032,7 +1032,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         <div className="qd-footer-label" style={{ marginBottom: '12px' }}>Activity</div>
         <div className="qd-activity-timeline">
           {[...(q.activity_log || [])].reverse().map((entry, i, arr) => {
-            let dotColor = '#00AD9F';
+            let dotColor = '#05BDBA';
             let text = '';
             if (entry.type === 'status_change') {
               dotColor = ACTIVITY_DOT_COLORS[entry.to_status] || '#6b7280';
@@ -1040,7 +1040,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
               const toLabel = (STATUS_META[entry.to_status] || {}).label || entry.to_status;
               text = `${entry.actor || 'System'} moved quote from ${fromLabel} → ${toLabel}`;
             } else if (entry.type === 'created') {
-              dotColor = '#00AD9F';
+              dotColor = '#05BDBA';
               text = `Quote created${entry.actor ? ` by ${entry.actor}` : ''}`;
             } else if (entry.type === 'note') {
               dotColor = '#FBB13D';

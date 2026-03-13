@@ -5,11 +5,12 @@ import { calcLineExtended, calcQuoteTotals, fmtCurrency } from '../data/quotes';
 
 const FONT = 'helvetica';
 const FONT_MONO = 'helvetica';
+const C_INK = [53, 58, 53];
+const C_SLATE = [119, 128, 137];
+const C_RULE = [233, 235, 237];  // #E9EBED
 const C_BLACK = [26, 26, 26];
 const C_TEXT = [40, 40, 40];
 const C_MUTED = [120, 120, 120];
-const C_LABEL = [160, 160, 160];
-const C_DIVIDER = [220, 220, 220];
 const C_TEAL = [0, 173, 159];
 const C_GOLD = [251, 177, 61];
 const C_LIGHT = [248, 248, 248];
@@ -44,7 +45,7 @@ function eyebrow(doc, text, y) {
 
 function divider(doc, y) {
   const w = doc.internal.pageSize.getWidth();
-  doc.setDrawColor(...C_DIVIDER);
+  doc.setDrawColor(...C_RULE);
   doc.setLineWidth(0.25);
   doc.line(MARGIN, y, w - MARGIN, y);
   return y + 4;
@@ -104,6 +105,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
   // ── HEADER ──
   const col1 = MARGIN;
   const col2 = pageWidth / 2 + 5;
+  const col3 = MARGIN + INDENT + (contentWidth / 3) * 2;
 
   // Logo
   const { NETLIFY_LOGO_B64 } = await import('../assets/netlifyLogo.js').catch(() => ({ NETLIFY_LOGO_B64: null }));
@@ -121,8 +123,8 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
   // Quote number top right
   const quoteNumDisplay = 'QUOTE - ' + (quote.quote_number || '').replace('QUO-', '');
   doc.setFont(FONT, 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(...C_MUTED);
+  doc.setFontSize(12);
+  doc.setTextColor(...C_SLATE);
   doc.text(quoteNumDisplay, pageWidth - MARGIN, y + 2, { align: 'right' });
 
   y += 13;
@@ -134,7 +136,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
   headerMeta.forEach((line) => {
     doc.setFont(FONT, 'normal');
     doc.setFontSize(9);
-    doc.setTextColor(...C_MUTED);
+    doc.setTextColor(...C_SLATE);
     doc.text(line, pageWidth - MARGIN, y, { align: 'right' });
     y += 4;
   });
@@ -147,14 +149,14 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
   if (quote.customer_name) {
     doc.setFont(FONT, 'normal');
     doc.setFontSize(12);
-    doc.setTextColor(...C_BLACK);
+    doc.setTextColor(...C_INK);
     doc.text(quote.customer_name, col1 + INDENT, y);
     y += 4;
   }
   if (quote.address) {
     doc.setFont(FONT, 'normal');
     doc.setFontSize(9);
-    doc.setTextColor(...C_BLACK);
+    doc.setTextColor(...C_INK);
     const addrLines = doc.splitTextToSize(quote.address, contentWidth);
     doc.text(addrLines, col1 + INDENT, y);
     y += addrLines.length * 4 + 2;
@@ -162,74 +164,44 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
 
   y = divider(doc, y);
 
-  // ── METADATA TABLE: two-column, no internal dividers ──
-  const metaRows = [];
+  // ── METADATA TABLE: three-column layout ──
+  const metaRows = [
+    [
+      { label: 'Primary Contact', value: [quote.contact_name, quote.contact_email].filter(Boolean).join('\n') },
+      { label: 'Billing Contact', value: [quote.billing_contact_name, quote.billing_contact_email, quote.billing_contact_phone].filter(Boolean).join('\n') },
+      { label: 'Invoice Email', value: quote.invoice_email || '' },
+    ],
+    [
+      { label: 'Payment Terms', value: quote.payment_terms || '' },
+      { label: 'Billing Schedule', value: quote.billing_schedule || '' },
+      { label: 'Payment Method', value: quote.payment_method || '' },
+    ],
+    [
+      { label: 'Subscription Start Date', value: fmtDate(quote.start_date) },
+      { label: 'Subscription Term', value: quote.term_months ? `${quote.term_months} Months` : '' },
+      { label: 'Netlify Account ID', value: quote.account_id || '' },
+    ],
+  ];
 
-  const primaryVal = [quote.contact_name, quote.contact_email].filter(Boolean).join('\n');
-  const billingVal = [quote.billing_contact_name, quote.billing_contact_email, quote.billing_contact_phone].filter(Boolean).join('\n');
-  if (primaryVal || billingVal) metaRows.push([{ label: 'Primary Contact', value: primaryVal }, { label: 'Billing Contact', value: billingVal }]);
-
-  const accountVal = quote.account_id || '';
-  const invoiceVal = quote.invoice_email || '';
-  if (accountVal || invoiceVal) metaRows.push([{ label: 'Netlify Account ID', value: accountVal }, { label: 'Invoice Email', value: invoiceVal }]);
-
-  const billingSchedVal = quote.billing_schedule || '';
-  const paymentTermsVal = quote.payment_terms || '';
-  if (billingSchedVal || paymentTermsVal) metaRows.push([{ label: 'Billing Schedule', value: billingSchedVal }, { label: 'Payment Terms', value: paymentTermsVal }]);
-
-  const paymentMethodVal = quote.payment_method || '';
-  const poVal = quote.po_number || '';
-  if (paymentMethodVal || poVal) metaRows.push([{ label: 'Payment Method', value: paymentMethodVal }, { label: 'PO #', value: poVal }]);
-
-  const termVal = `${quote.term_months || 12} Months`;
-  const startVal = fmtDate(quote.start_date);
-  metaRows.push([{ label: 'Subscription Term', value: termVal }, { label: 'Subscription Start Date', value: startVal }]);
-
-  const filteredRows = metaRows.filter(([l, r]) => {
-    const lv = l.value && String(l.value).trim();
-    const rv = r.value && String(r.value).trim();
-    return lv || rv;
+  metaRows.forEach((row) => {
+    const colWidth = contentWidth / 3;
+    const col2 = MARGIN + INDENT + colWidth;
+    const col3 = MARGIN + INDENT + colWidth * 2;
+    const cols = [col1 + INDENT, col2 + INDENT, col3 + INDENT];
+    if (!row.some(c => c.value && String(c.value).trim())) return;
+    let colYs = [y, y, y];
+    doc.setFontSize(6.5);
+    doc.setTextColor(...C_SLATE);
+    row.forEach((col, i) => {
+      if (col.label && col.value?.trim()) { doc.text(col.label.toUpperCase(), cols[i], colYs[i]); colYs[i] += 3.5; }
+    });
+    doc.setFontSize(9);
+    doc.setTextColor(...C_INK);
+    row.forEach((col, i) => {
+      col.value?.split('\n').forEach(line => { doc.text(line, cols[i], colYs[i]); colYs[i] += 4; });
+    });
+    y = Math.max(...colYs) + 2;
   });
-
-  const tableBody = filteredRows.map(([l, r]) => {
-    const lv = l.value && String(l.value).trim();
-    const rv = r.value && String(r.value).trim();
-    return [
-      { label: lv ? l.label : '', value: lv || '' },
-      { label: rv ? r.label : '', value: rv || '' },
-    ];
-  });
-
-  autoTable(doc, {
-    startY: y,
-    body: tableBody.map(([l, r]) => [
-      `${l.label ? l.label.toUpperCase() + '\n' : ''}${l.value}`,
-      `${r.label ? r.label.toUpperCase() + '\n' : ''}${r.value}`,
-    ]),
-    margin: { left: MARGIN + INDENT, right: MARGIN },
-    theme: 'plain',
-    styles: {
-      fontSize: 9,
-      cellPadding: { top: 1, bottom: 2, left: 0, right: 4 },
-      textColor: C_BLACK,
-      lineWidth: 0,
-    },
-    columnStyles: {
-      0: { cellWidth: 'auto' },
-      1: { cellWidth: 'auto' },
-    },
-    didParseCell: (data) => {
-      const text = data.cell.raw || '';
-      const lines = text.split('\n');
-      if (lines.length > 1) {
-        // First line is label — style it lighter
-        data.cell.styles.textColor = C_LABEL;
-        data.cell.styles.fontSize = 6.5;
-        data.cell.styles.fontStyle = 'normal';
-      }
-    },
-  });
-  y = doc.lastAutoTable.finalY;
   y = divider(doc, y);
 
   // ── BASE PACKAGE ──
@@ -255,7 +227,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       y += 11;
 
       // Divider under header
-      doc.setDrawColor(...C_DIVIDER);
+      doc.setDrawColor(...C_RULE);
       doc.line(MARGIN + 6, y, pageWidth - MARGIN - 6, y);
       y += 5;
 
@@ -325,7 +297,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       body: addonRows,
       margin: { left: MARGIN, right: MARGIN },
       theme: 'plain',
-      styles: { fontSize: 9, cellPadding: 3, textColor: C_BLACK, lineColor: C_DIVIDER, lineWidth: 0.2 },
+      styles: { fontSize: 9, cellPadding: 3, textColor: C_BLACK, lineColor: C_RULE, lineWidth: 0.2 },
       headStyles: { fillColor: C_LIGHT, textColor: C_MUTED, fontStyle: 'normal', fontSize: 7.5, font: FONT_MONO },
       columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'right', cellWidth: 35 }, 2: { halign: 'right', cellWidth: 35 } },
     });
@@ -350,7 +322,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       body: entRows,
       margin: { left: MARGIN, right: MARGIN },
       theme: 'plain',
-      styles: { fontSize: 9, cellPadding: 3, textColor: C_BLACK, lineColor: C_DIVIDER, lineWidth: 0.2 },
+      styles: { fontSize: 9, cellPadding: 3, textColor: C_BLACK, lineColor: C_RULE, lineWidth: 0.2 },
       headStyles: { fillColor: C_LIGHT, textColor: C_MUTED, fontStyle: 'normal', fontSize: 7.5, font: FONT_MONO },
       columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'center', cellWidth: 20 }, 2: { halign: 'right', cellWidth: 32 }, 3: { halign: 'right', cellWidth: 32 } },
     });
@@ -378,7 +350,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       body: overageRows,
       margin: { left: MARGIN, right: MARGIN },
       theme: 'plain',
-      styles: { fontSize: 9, cellPadding: 3, textColor: C_BLACK, lineColor: C_DIVIDER, lineWidth: 0.2 },
+      styles: { fontSize: 9, cellPadding: 3, textColor: C_BLACK, lineColor: C_RULE, lineWidth: 0.2 },
       headStyles: { fillColor: C_LIGHT, textColor: C_MUTED, fontStyle: 'normal', fontSize: 7.5, font: FONT_MONO },
       columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'center', cellWidth: 40 }, 2: { halign: 'center', cellWidth: 40 } },
     });
