@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { calcLineExtended, calcQuoteTotals, fmtCurrency } from '../data/quotes';
+import { NETLIFY_LOGO_B64 } from '../assets/netlifyLogo';
 
 const FONT = 'helvetica';
 const FONT_MONO = 'helvetica';
@@ -98,18 +99,14 @@ export function generateQuotePDF(quote, products, settings, { preview = false } 
   }
 
   // ── HEADER ──
-  // Logo
-  doc.setFont(FONT, 'bold');
-  doc.setFontSize(20);
-  doc.setTextColor(...C_TEAL);
-  doc.text('netlify', MARGIN, y + 4);
+  // Netlify logo image
+  doc.addImage('data:image/png;base64,' + NETLIFY_LOGO_B64, 'PNG', MARGIN, y - 2, 16, 14);
 
   if (quote.partner_name) {
-    const logoW = doc.getTextWidth('netlify');
     doc.setFont(FONT, 'normal');
     doc.setFontSize(9);
     doc.setTextColor(...C_MUTED);
-    doc.text(`\u00D7 ${quote.partner_name}`, MARGIN + logoW + 5, y + 4);
+    doc.text(`\u00D7 ${quote.partner_name}`, MARGIN + 20, y + 7);
   }
 
   // Quote number — right aligned
