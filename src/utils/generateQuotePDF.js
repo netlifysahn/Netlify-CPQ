@@ -142,89 +142,71 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
 
   // ── CUSTOMER ──
   if (quote.customer_name) {
-    doc.setFontSize(13);
     doc.setFont(FONT, 'bold');
+    doc.setFontSize(11);
     doc.setTextColor(...C_BLACK);
     doc.text(quote.customer_name, col1, y);
-    y += 7;
+    y += 5;
   }
   if (quote.address) {
     doc.setFont(FONT, 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(...C_TEXT);
+    doc.setFontSize(9);
+    doc.setTextColor(...C_MUTED);
     const addrLines = doc.splitTextToSize(quote.address, contentWidth);
     doc.text(addrLines, col1, y);
-    y += addrLines.length * 4 + 2;
+    y += addrLines.length * 4 + 3;
   }
 
   y = divider(doc, y);
 
-  // Helper: two-column label+stacked-values block with divider after
-  function twoColBlock(leftLabel, leftLines, rightLabel, rightLines) {
-    if (leftLabel) {
-      doc.setFont(FONT, 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(...C_MUTED);
-      doc.text(leftLabel.toUpperCase(), col1, y);
-    }
-    if (rightLabel) {
-      doc.setFont(FONT, 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(...C_MUTED);
-      doc.text(rightLabel.toUpperCase(), col2, y);
-    }
+  // ── METADATA TABLE: two-column, no internal dividers ──
+  const metaRows = [];
+
+  const primaryVal = [quote.contact_name, quote.contact_email].filter(Boolean).join('\n');
+  const billingVal = [quote.billing_contact_name, quote.billing_contact_email, quote.billing_contact_phone].filter(Boolean).join('\n');
+  if (primaryVal || billingVal) metaRows.push([{ label: 'Primary Contact', value: primaryVal }, { label: 'Billing Contact', value: billingVal }]);
+
+  const accountVal = quote.account_id || '';
+  const invoiceVal = quote.invoice_email || '';
+  if (accountVal || invoiceVal) metaRows.push([{ label: 'Netlify Account ID', value: accountVal }, { label: 'Invoice Email', value: invoiceVal }]);
+
+  const billingSchedVal = quote.billing_schedule || '';
+  const paymentTermsVal = quote.payment_terms || '';
+  if (billingSchedVal || paymentTermsVal) metaRows.push([{ label: 'Billing Schedule', value: billingSchedVal }, { label: 'Payment Terms', value: paymentTermsVal }]);
+
+  const paymentMethodVal = quote.payment_method || '';
+  const poVal = quote.po_number || '';
+  if (paymentMethodVal || poVal) metaRows.push([{ label: 'Payment Method', value: paymentMethodVal }, { label: 'PO #', value: poVal }]);
+
+  const termVal = `${quote.term_months || 12} Months`;
+  const startVal = fmtDate(quote.start_date);
+  metaRows.push([{ label: 'Subscription Term', value: termVal }, { label: 'Subscription Start Date', value: startVal }]);
+
+  metaRows.forEach((row) => {
+    const [left, right] = row;
+    // Labels
+    doc.setFont(FONT, 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...C_MUTED);
+    if (left.label) doc.text(left.label.toUpperCase(), col1, y);
+    if (right.label) doc.text(right.label.toUpperCase(), col2, y);
     y += 4;
-    const maxLines = Math.max(leftLines.length, rightLines.length);
-    for (let i = 0; i < maxLines; i++) {
-      doc.setFont(FONT, 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(...C_BLACK);
-      if (leftLines[i]) doc.text(String(leftLines[i]), col1, y);
-      if (rightLines[i]) doc.text(String(rightLines[i]), col2, y);
-      y += i === 0 ? 5 : 4;
+    // Values (handle multiline)
+    doc.setFont(FONT, 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...C_BLACK);
+    const leftLines = left.value ? left.value.split('\n') : [];
+    const rightLines = right.value ? right.value.split('\n') : [];
+    const maxL = Math.max(leftLines.length, rightLines.length, 1);
+    for (let i = 0; i < maxL; i++) {
+      if (leftLines[i]) doc.text(leftLines[i], col1, y);
+      if (rightLines[i]) doc.text(rightLines[i], col2, y);
+      y += 4.5;
     }
-    y += 2;
-    y = divider(doc, y);
-  }
+    y += 3;
+  });
 
-  // Primary Contact / Billing Contact
-  const primaryLines = [quote.contact_name, quote.contact_email].filter(Boolean);
-  const billingContactLines = [quote.billing_contact_name, quote.billing_contact_email, quote.billing_contact_phone].filter(Boolean);
-  if (primaryLines.length || billingContactLines.length) {
-    twoColBlock('Primary Contact', primaryLines, 'Billing Contact', billingContactLines);
-  }
-
-  // Account ID / Invoice Email
-  if (quote.account_id || quote.invoice_email) {
-    twoColBlock(
-      quote.account_id ? 'Netlify Account ID' : '',
-      quote.account_id ? [quote.account_id] : [],
-      quote.invoice_email ? 'Invoice Email' : '',
-      quote.invoice_email ? [quote.invoice_email] : []
-    );
-  }
-
-  // Billing Schedule / Payment Terms
-  if (quote.billing_schedule || quote.payment_terms) {
-    twoColBlock(
-      'Billing Schedule', quote.billing_schedule ? [quote.billing_schedule] : [],
-      'Payment Terms', quote.payment_terms ? [quote.payment_terms] : []
-    );
-  }
-
-  // Payment Method / PO#
-  if (quote.payment_method || quote.po_number) {
-    twoColBlock(
-      quote.payment_method ? 'Payment Method' : '', quote.payment_method ? [quote.payment_method] : [],
-      quote.po_number ? 'PO #' : '', quote.po_number ? [quote.po_number] : []
-    );
-  }
-
-  // Subscription Term / Start Date
-  twoColBlock(
-    'Subscription Term', [`${quote.term_months || 12} Months`],
-    'Subscription Start Date', [fmtDate(quote.start_date)]
-  );
+  y = divider(doc, y);
 
   // ── BASE PACKAGE ──
   const packageLines = allLines.filter((l) => l.is_package);
