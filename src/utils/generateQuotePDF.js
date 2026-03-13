@@ -45,7 +45,7 @@ function divider(doc, y) {
   doc.setDrawColor(...C_DIVIDER);
   doc.setLineWidth(0.25);
   doc.line(MARGIN, y, w - MARGIN, y);
-  return y + 6;
+  return y + 4;
 }
 
 function metaTable(doc, rows, y) {
@@ -134,7 +134,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     doc.setFontSize(9);
     doc.setTextColor(...C_MUTED);
     doc.text(line, pageWidth - MARGIN, y, { align: 'right' });
-    y += 5;
+    y += 4;
   });
 
   y += 2;
@@ -142,7 +142,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
 
   // ── CUSTOMER ──
   if (quote.customer_name) {
-    doc.setFontSize(12);
+    doc.setFontSize(13);
     doc.setFont(FONT, 'bold');
     doc.setTextColor(...C_BLACK);
     doc.text(quote.customer_name, col1, y);
@@ -154,7 +154,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     doc.setTextColor(...C_TEXT);
     const addrLines = doc.splitTextToSize(quote.address, contentWidth);
     doc.text(addrLines, col1, y);
-    y += addrLines.length * 5 + 4;
+    y += addrLines.length * 4 + 2;
   }
 
   y = divider(doc, y);
@@ -173,7 +173,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       doc.setTextColor(...C_MUTED);
       doc.text(rightLabel.toUpperCase(), col2, y);
     }
-    y += 5;
+    y += 4;
     const maxLines = Math.max(leftLines.length, rightLines.length);
     for (let i = 0; i < maxLines; i++) {
       doc.setFont(FONT, 'normal');
@@ -181,9 +181,9 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       doc.setTextColor(...C_BLACK);
       if (leftLines[i]) doc.text(String(leftLines[i]), col1, y);
       if (rightLines[i]) doc.text(String(rightLines[i]), col2, y);
-      y += i === 0 ? 6 : 5;
+      y += i === 0 ? 5 : 4;
     }
-    y += 3;
+    y += 2;
     y = divider(doc, y);
   }
 
