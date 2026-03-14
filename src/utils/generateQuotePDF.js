@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { calcLineExtended, calcQuoteTotals, fmtCurrency } from '../data/quotes';
+import { calcLineExtended, calcQuoteTotals, fmtCurrency, getEffectiveLineQuantity } from '../data/quotes';
 
 
 const FONT = 'helvetica';
@@ -251,7 +251,8 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
           doc.setFont(FONT, 'normal');
           doc.setFontSize(9.5);
           doc.setTextColor(...C_BLACK);
-          const qtyStr = s.quantity > 1 ? ` (${fmtQty(s.quantity)})` : '';
+          const qty = getEffectiveLineQuantity(s);
+          const qtyStr = qty > 1 ? ` (${fmtQty(qty)})` : '';
           doc.text(`${s.product_name}${qtyStr}`, MARGIN + 10, y);
           y += 5;
         });
@@ -310,11 +311,12 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     y = checkPage(doc, y, 40);
     y = eyebrow(doc, 'Entitlements', y);
     const entRows = standaloneEnt.map((l) => {
+      const quantity = getEffectiveLineQuantity(l);
       const isCredit = l.product_type === 'credits' && l.unit_type === 'per_credit';
       const annual = isCredit
-        ? (l.net_price || l.list_price || 0) * (l.quantity || 1)
-        : (l.net_price || l.list_price || 0) * (l.quantity || 1) * 12;
-      return [l.product_name, fmtQty(l.quantity), fmtCurrency(l.net_price || l.list_price || 0), fmtCurrency(annual)];
+        ? (l.net_price || l.list_price || 0) * quantity
+        : (l.net_price || l.list_price || 0) * quantity * 12;
+      return [l.product_name, fmtQty(quantity), fmtCurrency(l.net_price || l.list_price || 0), fmtCurrency(annual)];
     });
     autoTable(doc, {
       startY: y,
@@ -365,7 +367,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
   const priceableLines = allLines.filter((l) => l.parent_line_id ? l.price_behavior === 'related' : true);
   const subtotal = priceableLines.reduce((s, l) => {
     const isCredit = l.product_type === 'credits' && l.unit_type === 'per_credit';
-    const mo = (l.net_price || l.list_price || 0) * (l.quantity || 1);
+    const mo = (l.net_price || l.list_price || 0) * getEffectiveLineQuantity(l);
     return s + (isCredit ? mo : mo * 12);
   }, 0);
 

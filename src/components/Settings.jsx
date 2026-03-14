@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 const genSectionId = () => `term_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 const AUTOSAVE_DEBOUNCE_MS = 450;
 
-export default function Settings({ settings, onSave }) {
+export default function Settings({ settings, onSave, saveError = '' }) {
   const [sections, setSections] = useState(() =>
     (settings?.terms?.sections || []).map((s) => ({ ...s }))
   );
@@ -30,10 +30,21 @@ export default function Settings({ settings, onSave }) {
     sectionsRef.current = sections;
   }, [sections]);
 
+  useEffect(() => {
+    const nextSections = (settings?.terms?.sections || []).map((s) => ({ ...s }));
+    const nextSnapshot = JSON.stringify(nextSections);
+    if (nextSnapshot !== JSON.stringify(sectionsRef.current)) {
+      setSections(nextSections);
+      sectionsRef.current = nextSections;
+    }
+    lastSavedSnapshotRef.current = nextSnapshot;
+  }, [settings]);
+
   const persistSections = useCallback((nextSections) => {
     const nextSnapshot = JSON.stringify(nextSections);
     if (nextSnapshot === lastSavedSnapshotRef.current) return;
     const latestSettings = settingsRef.current;
+    if (typeof onSaveRef.current !== 'function') return;
     onSaveRef.current({
       ...latestSettings,
       terms: { ...latestSettings?.terms, sections: nextSections },
@@ -201,6 +212,22 @@ export default function Settings({ settings, onSave }) {
       </div>
 
       <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
+        {saveError && (
+          <div
+            style={{
+              marginBottom: '12px',
+              padding: '10px 12px',
+              border: '1px solid rgba(185, 28, 28, 0.25)',
+              borderRadius: '8px',
+              background: 'rgba(254, 242, 242, 0.8)',
+              color: '#B91C1C',
+              fontSize: '12px',
+              lineHeight: 1.45,
+            }}
+          >
+            {saveError}
+          </div>
+        )}
         <div className="settings-section-label-row">
           <div className="qd-category-card-title">Terms & Conditions</div>
         </div>
@@ -225,7 +252,7 @@ export default function Settings({ settings, onSave }) {
                 draggedSectionId === section.id
                   ? '0 12px 28px rgba(17,24,39,0.20)'
                   : dragOverSectionId === section.id
-                    ? 'inset 0 0 0 1px rgba(5,189,186,0.45)'
+                    ? 'inset 0 0 0 1px rgba(56,42,164,0.45)'
                     : 'none',
               opacity: draggedSectionId === section.id ? 0 : 1,
               position: 'relative',
@@ -272,17 +299,12 @@ export default function Settings({ settings, onSave }) {
             </div>
             <div className="settings-terms-card-body">
               <textarea
-                className="settings-terms-card-textarea"
+                className="qd-terms-textarea settings-terms-card-textarea"
                 value={section.body}
                 onChange={(e) => update(index, 'body', e.target.value)}
                 onBlur={flushAutosave}
                 placeholder="Section body text..."
                 rows={4}
-                style={{
-                  width: '100%', fontFamily: "'Mulish', sans-serif", fontSize: '13px', fontWeight: 400, lineHeight: '1.6',
-                  border: 'none', borderRadius: 0, padding: 0,
-                  outline: 'none', background: 'transparent', boxSizing: 'border-box', appearance: 'none',
-                }}
               />
             </div>
           </div>
@@ -295,7 +317,6 @@ export default function Settings({ settings, onSave }) {
             style={{
               border: '1px solid', borderRadius: '6px',
               padding: '8px 16px', cursor: 'pointer', fontFamily: "'Mulish', sans-serif",
-              fontSize: '13px', fontWeight: 500,
             }}
           >Add Section</button>
         </div>

@@ -85,7 +85,7 @@ export default function ProductTable({ products, allProducts, onEdit, onDupe, on
                   </td>
                   <td className="col-product">
                     <div className="cell-name-wrap">
-                      <div className="cell-name">{p.name}{bundle && <span className="pkg-badge">PKG</span>}</div>
+                      <div className="cell-name">{p.name}</div>
                     </div>
                     <div className="cell-sku">{p.sku}</div>
                     {p.description && <div className="cell-description">{p.description}</div>}

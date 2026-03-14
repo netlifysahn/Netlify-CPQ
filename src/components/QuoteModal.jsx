@@ -109,7 +109,7 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
             </div>
             <div className="field">
               <label className="field-label">Address</label>
-              <textarea className="field-textarea" rows={2} value={f.address} onChange={(e) => s('address', e.target.value)} placeholder="Street, City, State, ZIP, Country" />
+              <input className="field-input" value={f.address} onChange={(e) => s('address', e.target.value)} placeholder="Street, City, State, ZIP, Country" />
             </div>
             <div className="grid-2">
               <div className="field">
