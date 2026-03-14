@@ -1765,7 +1765,7 @@ tr.drag-over {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 .pkg-components-table th {
   text-align: left;
@@ -1779,6 +1779,126 @@ tr.drag-over {
   padding: 6px 8px;
   color: var(--text-body);
   border-bottom: 1px solid var(--border);
+}
+
+/* ─── Categorized Package Components ─────────────────────── */
+.pkg-components-categorized {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pkg-category-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pkg-category-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  min-height: 40px;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+}
+
+.pkg-category-card-title {
+  font-family: var(--card-label-font-family, 'Mulish', sans-serif);
+  font-size: var(--card-label-font-size, 11px);
+  font-weight: var(--card-label-font-weight, 700);
+  text-transform: var(--card-label-text-transform, uppercase);
+  color: var(--card-label-color, var(--text-muted));
+  letter-spacing: 0.05em;
+}
+
+.pkg-category-picker {
+  max-width: 240px;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  border-radius: 6px;
+}
+
+.pkg-category-card .pkg-components-table {
+  margin-bottom: 0;
+}
+
+.pkg-category-card .pkg-components-table th {
+  padding: 6px 12px;
+  background: transparent;
+}
+
+.pkg-category-card .pkg-components-table th:first-child {
+  padding-left: 16px;
+}
+
+.pkg-category-card .pkg-components-table td {
+  padding: 8px 12px;
+}
+
+.pkg-category-card .pkg-components-table td:first-child {
+  padding-left: 16px;
+}
+
+.pkg-category-card .pkg-components-table tr:last-child td {
+  border-bottom: none;
+}
+
+.pkg-cell-product {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pkg-member-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-body);
+}
+
+.pkg-inline-select {
+  flex: 1;
+  padding: 4px 6px !important;
+  font-size: 13px !important;
+  border-radius: 6px;
+  max-width: 280px;
+}
+
+.pkg-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  opacity: 0.5;
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.pkg-remove-btn:hover {
+  opacity: 1;
+  color: var(--red, #ef4444);
+}
+
+.pkg-behavior-included {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.pkg-empty-row {
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 12px;
+  padding: 16px 8px !important;
+  font-style: italic;
 }
 
 .pricebook-modal {
@@ -2250,14 +2370,15 @@ tr.drag-over {
 /* ─── Quote Detail ───────────────────────────────────────── */
 
 .quote-detail {
-  --qd-col-product: calc((2.8 / 8.3) * 100%);
-  --qd-col-qty: calc((0.9 / 8.3) * 100%);
-  --qd-col-pricing: calc((1.15 / 8.3) * 100%);
+  --qd-col-product: calc((2.8 / 9.3) * 100%);
+  --qd-col-qty: calc((0.9 / 9.3) * 100%);
+  --qd-col-pricing: calc((1.12 / 9.3) * 100%);
   --qd-col-list-price: var(--qd-col-pricing);
   --qd-col-discount: var(--qd-col-pricing);
   --qd-col-net-price: var(--qd-col-pricing);
   --qd-col-amount: var(--qd-col-pricing);
-  --qd-shared-grid-columns: 2.8fr 0.9fr 1.15fr 1.15fr 1.15fr 1.15fr;
+  --qd-col-annual-price: var(--qd-col-pricing);
+  --qd-shared-grid-columns: 2.8fr 0.9fr 1.12fr 1.12fr 1.12fr 1.12fr 1.12fr;
   max-width: 100%;
 }
 
@@ -2750,7 +2871,8 @@ tr.drag-over {
 .qd-pkg-col-list-price,
 .qd-pkg-col-discount,
 .qd-pkg-col-net-price,
-.qd-pkg-col-amount {
+.qd-pkg-col-amount,
+.qd-pkg-col-annual-price {
   font-family: var(--font-body);
   font-size: 11px;
   font-weight: 600;
@@ -2789,6 +2911,11 @@ tr.drag-over {
 
 .qd-pkg-col-amount {
   grid-column: 6;
+  text-align: right;
+}
+
+.qd-pkg-col-annual-price {
+  grid-column: 7;
   text-align: right;
   padding-right: 28px;
 }
@@ -2837,6 +2964,12 @@ tr.drag-over {
 
 .qd-pkg-header-amount {
   grid-column: 6;
+  padding: 12px;
+  text-align: right;
+}
+
+.qd-pkg-header-annual-price {
+  grid-column: 7;
   padding: 12px 28px 12px 12px;
   text-align: right;
 }
@@ -2918,8 +3051,57 @@ tr.drag-over {
 
 .qd-pkg-member-amount {
   grid-column: 6;
+  padding: var(--qd-pkg-component-row-padding-y) 12px;
+  text-align: right;
+}
+
+.qd-pkg-member-annual-price {
+  grid-column: 7;
   padding: var(--qd-pkg-component-row-padding-y) 28px var(--qd-pkg-component-row-padding-y) 12px;
   text-align: right;
+}
+
+/* --- Package component section grouping (Included Platform / Configuration) --- */
+
+.qd-pkg-section {
+  padding: 0;
+}
+
+.qd-pkg-section + .qd-pkg-section {
+  margin-top: 4px;
+}
+
+.qd-pkg-section-label {
+  padding: 8px 0 4px 32px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+/* Included Platform rows: name only, subdued, no grid columns for qty/pricing */
+.qd-pkg-member-row--included {
+  display: flex;
+  align-items: center;
+  min-height: auto;
+  padding: 2px 0;
+}
+
+.qd-pkg-member-row--included .qd-pkg-member-name {
+  padding-top: 3px;
+  padding-bottom: 3px;
+  color: #6b7280;
+  font-weight: 400;
+  font-size: 13px;
+}
+
+/* Configuration rows: use grid for name + qty, keep editable feel */
+.qd-pkg-member-row--config {
+  display: grid;
+  grid-template-columns: var(--qd-shared-grid-columns);
+  align-items: center;
 }
 
 .line-editor-header {
@@ -2966,7 +3148,8 @@ tr.drag-over {
 .quote-detail .qd-category-card .line-table col.qd-col-list-price,
 .quote-detail .qd-category-card .line-table col.qd-col-discount,
 .quote-detail .qd-category-card .line-table col.qd-col-net-price,
-.quote-detail .qd-category-card .line-table col.qd-col-amount {
+.quote-detail .qd-category-card .line-table col.qd-col-amount,
+.quote-detail .qd-category-card .line-table col.qd-col-annual-price {
   width: var(--qd-col-pricing);
 }
 
@@ -2988,11 +3171,12 @@ tr.drag-over {
 .quote-detail .qd-category-card .line-table .qd-col-discount,
 .quote-detail .qd-category-card .line-table .qd-col-list-price,
 .quote-detail .qd-category-card .line-table .qd-col-net-price,
-.quote-detail .qd-category-card .line-table .qd-col-amount {
+.quote-detail .qd-category-card .line-table .qd-col-amount,
+.quote-detail .qd-category-card .line-table .qd-col-annual-price {
   text-align: right;
 }
 
-.quote-detail .qd-category-card .line-table .qd-col-amount {
+.quote-detail .qd-category-card .line-table .qd-col-annual-price {
   padding-right: 28px;
 }
 
@@ -3000,10 +3184,12 @@ tr.drag-over {
 .quote-detail .qd-category-card .line-table .qd-col-discount,
 .quote-detail .qd-category-card .line-table .qd-col-net-price,
 .quote-detail .qd-category-card .line-table .qd-col-amount,
+.quote-detail .qd-category-card .line-table .qd-col-annual-price,
 .quote-detail .qd-pkg-col-list-price,
 .quote-detail .qd-pkg-col-discount,
 .quote-detail .qd-pkg-col-net-price,
-.quote-detail .qd-pkg-col-amount {
+.quote-detail .qd-pkg-col-amount,
+.quote-detail .qd-pkg-col-annual-price {
   white-space: nowrap;
 }
 
@@ -5820,7 +6006,8 @@ tr.drag-over {
 .quote-detail--editing .qd-pkg-header-list-price,
 .quote-detail--editing .qd-pkg-header-discount,
 .quote-detail--editing .qd-pkg-header-net-price,
-.quote-detail--editing .qd-pkg-header-amount {
+.quote-detail--editing .qd-pkg-header-amount,
+.quote-detail--editing .qd-pkg-header-annual-price {
   justify-self: end;
   text-align: right;
 }
@@ -5828,7 +6015,8 @@ tr.drag-over {
 .quote-detail--editing .qd-pkg-header-list-price .qd-grid-input,
 .quote-detail--editing .qd-pkg-header-discount .qd-grid-input,
 .quote-detail--editing .qd-pkg-header-net-price .qd-grid-input,
-.quote-detail--editing .qd-pkg-header-amount .qd-grid-input {
+.quote-detail--editing .qd-pkg-header-amount .qd-grid-input,
+.quote-detail--editing .qd-pkg-header-annual-price .qd-grid-input {
   margin-left: auto;
 }
 
@@ -5841,6 +6029,10 @@ tr.drag-over {
 }
 
 .quote-detail--editing .qd-pkg-member-amount {
+  text-align: right;
+}
+
+.quote-detail--editing .qd-pkg-member-annual-price {
   text-align: right;
 }
 

@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import ProductPicker from './ProductPicker';
 import {
   PRICE_UNITS,
   PRICING_METHODS,
@@ -90,7 +89,6 @@ const COLLAPSIBLE_SECTION_KEYS = {
 export default function ProductModal({ product, products, onSave, onClose }) {
   const [f, setF] = useState(coerceProduct(product));
   const [jsonError, setJsonError] = useState('');
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [creditInputDrafts, setCreditInputDrafts] = useState({});
   const [openSections, setOpenSections] = useState({
     [COLLAPSIBLE_SECTION_KEYS.BASIC_INFO]: true,
@@ -137,10 +135,68 @@ export default function ProductModal({ product, products, onSave, onClose }) {
   const isStepperProduct = isSeatProduct || isConcurrentBuildsProduct;
   const isCreditProduct = !isConcurrentBuildsProduct && isCreditLikeProduct(f);
   const productMap = useMemo(() => new Map((products || []).map((p) => [p.id, p])), [products]);
-  const nonBundleProducts = useMemo(() => {
-    const selectedIds = new Set((f.members || []).map((m) => m.product_id));
-    return (products || []).filter((p) => getProductCategory(p) !== 'bundle' && !isBundleProduct(p) && p.id !== f.id && !selectedIds.has(p.id));
-  }, [products, f.members, f.id]);
+  const COMPONENT_CARD_ORDER = ['platform', 'support', 'entitlements'];
+  const COMPONENT_CARD_LABELS = { platform: 'Platform', support: 'Support', entitlements: 'Entitlements' };
+
+  const productsByCategory = useMemo(() => {
+    const grouped = { platform: [], support: [], entitlements: [] };
+    (products || []).forEach((p) => {
+      if (p.id === f.id || isBundleProduct(p) || getProductCategory(p) === 'bundle') return;
+      const cat = getProductCategory(p);
+      if (grouped[cat]) grouped[cat].push(p);
+    });
+    Object.values(grouped).forEach((list) => list.sort((a, b) => (a.name || '').localeCompare(b.name || '')));
+    return grouped;
+  }, [products, f.id]);
+
+  const membersByCategory = useMemo(() => {
+    const grouped = { platform: [], support: [], entitlements: [] };
+    (f.members || []).forEach((member, index) => {
+      const ref = productMap.get(member.product_id);
+      const cat = ref ? getProductCategory(ref) : 'platform';
+      const normalizedCat = grouped[cat] ? cat : 'platform';
+      grouped[normalizedCat].push({ ...member, _index: index });
+    });
+    return grouped;
+  }, [f.members, productMap]);
+
+  const creditProducts = useMemo(() =>
+    (products || []).filter((p) => isCreditLikeProduct(p)),
+  [products]);
+
+  const swapMember = (index, newProductId) => {
+    const newProd = productMap.get(newProductId);
+    if (!newProd) return;
+    setF((prev) => {
+      const members = [...(prev.members || [])];
+      members[index] = {
+        ...members[index],
+        product_id: newProductId,
+        name: newProd.name,
+        sku: newProd.sku,
+        unit_type: newProd.default_price?.unit || 'flat',
+        list_price: parseFloat(newProd.default_price?.amount) || 0,
+        price_behavior: 'included',
+      };
+      return { ...prev, members };
+    });
+  };
+
+  const addMemberFromCategory = (category, productId) => {
+    const prod = productMap.get(productId);
+    if (!prod) return;
+    if (category === 'support') {
+      const existingIdx = (f.members || []).findIndex((m) => {
+        const ref = productMap.get(m.product_id);
+        return ref && getProductCategory(ref) === 'support';
+      });
+      if (existingIdx >= 0) {
+        swapMember(existingIdx, productId);
+        return;
+      }
+    }
+    addMember(prod);
+  };
 
   const categoryOptions = useMemo(() => {
     const values = [...PRODUCT_TYPES];
@@ -171,6 +227,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
         price_behavior: 'included',
         list_price: parseFloat(prod.default_price?.amount) || 0,
         sort_order: (prev.members || []).length + 1,
+        _category: getProductCategory(prod),
       }],
     }));
   };
@@ -208,7 +265,6 @@ export default function ProductModal({ product, products, onSave, onClose }) {
       type: enabled ? 'bundle' : 'platform',
       configuration_method: enabled ? 'bundle' : 'none',
     }));
-    setPickerOpen(false);
     setOpenSections((prev) => ({
       ...prev,
       [COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS]: enabled ? true : prev[COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS],
@@ -235,7 +291,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
       qty,
       default_quantity: qty,
       unit_type: member.unit_type || referencedProduct?.default_price?.unit || 'flat',
-      price_behavior: member.price_behavior || 'related',
+      price_behavior: member.price_behavior || 'included',
       list_price: parseNumber(member.list_price ?? referencedProduct?.default_price?.amount, 0),
       sort_order: index + 1,
     };
@@ -299,8 +355,6 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                     s('configuration_method', val === 'bundle' ? 'bundle' : 'none');
                     if (val === 'bundle') {
                       setOpenSections((prev) => ({ ...prev, [COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS]: true }));
-                    } else {
-                      setPickerOpen(false);
                     }
                   }}
                 >
@@ -384,110 +438,171 @@ export default function ProductModal({ product, products, onSave, onClose }) {
             </button>
 
             <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS] ? 'is-open' : ''}`}>
-              <div className="pkg-components">
-                {(f.members || []).length > 0 && (
-                  <table className="pkg-components-table">
-                    <thead>
-                      <tr>
-                        <th>Product</th>
-                        <th>SKU</th>
-                        <th style={{ width: 100, minWidth: 100 }}>Qty</th>
-                        <th style={{ width: 130, minWidth: 130 }}>Behavior</th>
-                        <th style={{ width: 36 }} />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(f.members || []).map((member, index) => {
-                        const referencedProduct = productMap.get(member.product_id);
-                        const seatStepperClass = isSeatLikeProduct({
-                          ...referencedProduct,
-                          ...member,
-                          unit_type: member.unit_type || referencedProduct?.default_price?.unit,
-                        }) || isConcurrentBuildsLikeProduct({
-                          ...referencedProduct,
-                          ...member,
-                          unit_type: member.unit_type || referencedProduct?.default_price?.unit,
-                        }) ? 'number-stepper-seat' : '';
-                        const isConcurrentBuildsMember = isConcurrentBuildsLikeProduct({
-                          ...referencedProduct,
-                          ...member,
-                          unit_type: member.unit_type || referencedProduct?.default_price?.unit,
-                        });
-                        const isCreditMember = !isConcurrentBuildsMember && isCreditLikeProduct({
-                          ...referencedProduct,
-                          ...member,
-                          unit_type: member.unit_type || referencedProduct?.default_price?.unit,
-                        });
-                        const memberQtyKey = `member:${index}:qty`;
-                        const currentQty = parsePositiveIntegerInput(member.qty ?? member.default_quantity, 1, 1);
-                        const isEditingCreditQty = Object.prototype.hasOwnProperty.call(creditInputDrafts, memberQtyKey);
-                        return (
-                          <tr key={`${member.product_id}_${index}`}>
-                          <td>{member.name || productMap.get(member.product_id)?.name || 'Unknown'}</td>
-                          <td className="cell-sku">{member.sku || productMap.get(member.product_id)?.sku || ''}</td>
-                          <td>
-                            <input
-                              className={`field-input ${seatStepperClass}`.trim()}
-                              type={isCreditMember ? 'text' : 'number'}
-                              inputMode={isCreditMember ? 'numeric' : undefined}
-                              min="1"
-                              step="1"
-                              value={isCreditMember
-                                ? (isEditingCreditQty ? creditInputDrafts[memberQtyKey] : formatIntegerWithCommas(currentQty, 1))
-                                : currentQty}
-                              onFocus={() => {
-                                if (!isCreditMember) return;
-                                setCreditInputDrafts((prev) => ({ ...prev, [memberQtyKey]: formatIntegerForEdit(currentQty, 1, 1) }));
-                              }}
-                              onChange={(e) => {
-                                const raw = e.target.value;
-                                if (isCreditMember) setCreditInputDrafts((prev) => ({ ...prev, [memberQtyKey]: raw }));
-                                updateMember(index, 'qty', parsePositiveIntegerInput(raw, 1, 1));
-                              }}
-                              onBlur={(e) => {
-                                if (!isCreditMember) return;
-                                updateMember(index, 'qty', parsePositiveIntegerInput(e.target.value, 1, 1));
-                                setCreditInputDrafts((prev) => {
-                                  const clone = { ...prev };
-                                  delete clone[memberQtyKey];
-                                  return clone;
-                                });
-                              }}
-                              style={{ width: '100%', padding: '4px 6px', textAlign: 'center' }}
-                            />
-                          </td>
-                          <td>
-                            <select
-                              className="field-select"
-                              value={member.price_behavior || 'included'}
-                              onChange={(e) => updateMember(index, 'price_behavior', e.target.value)}
-                              style={{ padding: '4px 6px', fontSize: '13px' }}
-                            >
-                              <option value="included">Included</option>
-                              <option value="related">Related</option>
-                            </select>
-                          </td>
-                          <td>
-                            <button type="button" className="action-btn delete" onClick={() => removeMember(index)} title="Remove">
-                              Remove
-                            </button>
-                          </td>
+              <div className="pkg-components pkg-components-categorized">
+                {COMPONENT_CARD_ORDER.map((category) => {
+                  const catMembers = membersByCategory[category] || [];
+                  const catLabel = COMPONENT_CARD_LABELS[category];
+                  const catProducts = productsByCategory[category] || [];
+                  const isSupportCategory = category === 'support';
+
+                  return (
+                    <div key={category} className="pkg-category-card">
+                      <div className="pkg-category-card-header">
+                        <span className="pkg-category-card-title">{catLabel}</span>
+                        {isSupportCategory && catMembers.length === 0 && catProducts.length > 0 && (
+                          <select
+                            className="field-select pkg-category-picker"
+                            value=""
+                            onChange={(e) => {
+                              if (e.target.value) addMemberFromCategory(category, e.target.value);
+                            }}
+                          >
+                            <option value="">Select Support Level</option>
+                            {catProducts.map((p) => (
+                              <option key={p.id} value={p.id}>{p.sku ? `${p.name} (${p.sku})` : p.name}</option>
+                            ))}
+                          </select>
+                        )}
+                        {!isSupportCategory && catProducts.length > 0 && (
+                          <select
+                            className="field-select pkg-category-picker"
+                            value=""
+                            onChange={(e) => {
+                              if (e.target.value) addMemberFromCategory(category, e.target.value);
+                            }}
+                          >
+                            <option value="">{`Add ${catLabel}`}</option>
+                            {catProducts
+                              .filter((p) => !catMembers.some((m) => m.product_id === p.id))
+                              .map((p) => (
+                                <option key={p.id} value={p.id}>{p.sku ? `${p.name} (${p.sku})` : p.name}</option>
+                              ))}
+                          </select>
+                        )}
+                      </div>
+                      <table className="pkg-components-table">
+                        <thead>
+                          <tr>
+                            <th>Product</th>
+                            <th>SKU</th>
+                            <th style={{ width: 80, minWidth: 80 }}>Qty</th>
+                            <th style={{ width: 100, minWidth: 100 }}>Behavior</th>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                )}
+                        </thead>
+                        <tbody>
+                          {catMembers.length > 0 ? catMembers.map((member) => {
+                            const index = member._index;
+                            const referencedProduct = productMap.get(member.product_id);
+                            const isConcurrentBuildsMember = isConcurrentBuildsLikeProduct({
+                              ...referencedProduct,
+                              ...member,
+                              unit_type: member.unit_type || referencedProduct?.default_price?.unit,
+                            });
+                            const isCreditMember = !isConcurrentBuildsMember && isCreditLikeProduct({
+                              ...referencedProduct,
+                              ...member,
+                              unit_type: member.unit_type || referencedProduct?.default_price?.unit,
+                            });
+                            const isSeatMember = isSeatLikeProduct({
+                              ...referencedProduct,
+                              ...member,
+                              unit_type: member.unit_type || referencedProduct?.default_price?.unit,
+                            });
+                            const seatStepperClass = (isSeatMember || isConcurrentBuildsMember) ? 'number-stepper-seat' : '';
+                            const memberQtyKey = `member:${index}:qty`;
+                            const currentQty = parsePositiveIntegerInput(member.qty ?? member.default_quantity, 1, 1);
+                            const isEditingCreditQty = Object.prototype.hasOwnProperty.call(creditInputDrafts, memberQtyKey);
+                            const qtyLocked = isSupportCategory;
 
-                {(f.members || []).length === 0 && (
-                  <div className="bundle-members-empty">No components added.</div>
-                )}
-
-                <div className="bundle-picker-wrap">
-                  <button type="button" className="btn-secondary bundle-add-btn" onClick={() => setPickerOpen(true)}>
-                    Add Component
-                  </button>
-                </div>
+                            return (
+                              <tr key={`${member.product_id}_${index}`}>
+                                <td className="pkg-cell-product">
+                                  {isSupportCategory ? (
+                                    <select
+                                      className="field-select pkg-inline-select"
+                                      value={member.product_id}
+                                      onChange={(e) => {
+                                        if (e.target.value) swapMember(index, e.target.value);
+                                        else removeMember(index);
+                                      }}
+                                    >
+                                      <option value="">No Support</option>
+                                      {catProducts.map((p) => (
+                                        <option key={p.id} value={p.id}>{p.sku ? `${p.name} (${p.sku})` : p.name}</option>
+                                      ))}
+                                    </select>
+                                  ) : isCreditMember && creditProducts.length > 1 ? (
+                                    <select
+                                      className="field-select pkg-inline-select"
+                                      value={member.product_id}
+                                      onChange={(e) => {
+                                        if (e.target.value) swapMember(index, e.target.value);
+                                      }}
+                                    >
+                                      {creditProducts.map((p) => (
+                                        <option key={p.id} value={p.id}>{p.sku ? `${p.name} (${p.sku})` : p.name}</option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <span className="pkg-member-name">{member.name || referencedProduct?.name || 'Unknown'}</span>
+                                  )}
+                                  <button type="button" className="pkg-remove-btn" onClick={() => removeMember(index)} title="Remove">
+                                    <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
+                                  </button>
+                                </td>
+                                <td className="cell-sku">{member.sku || referencedProduct?.sku || ''}</td>
+                                <td>
+                                  {qtyLocked ? (
+                                    <span className="cell-locked">1</span>
+                                  ) : (
+                                    <input
+                                      className={`field-input ${seatStepperClass}`.trim()}
+                                      type={isCreditMember ? 'text' : 'number'}
+                                      inputMode={isCreditMember ? 'numeric' : undefined}
+                                      min="1"
+                                      step="1"
+                                      value={isCreditMember
+                                        ? (isEditingCreditQty ? creditInputDrafts[memberQtyKey] : formatIntegerWithCommas(currentQty, 1))
+                                        : currentQty}
+                                      onFocus={() => {
+                                        if (!isCreditMember) return;
+                                        setCreditInputDrafts((prev) => ({ ...prev, [memberQtyKey]: formatIntegerForEdit(currentQty, 1, 1) }));
+                                      }}
+                                      onChange={(e) => {
+                                        const raw = e.target.value;
+                                        if (isCreditMember) setCreditInputDrafts((prev) => ({ ...prev, [memberQtyKey]: raw }));
+                                        updateMember(index, 'qty', parsePositiveIntegerInput(raw, 1, 1));
+                                      }}
+                                      onBlur={(e) => {
+                                        if (!isCreditMember) return;
+                                        updateMember(index, 'qty', parsePositiveIntegerInput(e.target.value, 1, 1));
+                                        setCreditInputDrafts((prev) => {
+                                          const clone = { ...prev };
+                                          delete clone[memberQtyKey];
+                                          return clone;
+                                        });
+                                      }}
+                                      style={{ width: '100%', padding: '4px 6px', textAlign: 'center' }}
+                                    />
+                                  )}
+                                </td>
+                                <td><span className="pkg-behavior-included">Included</span></td>
+                              </tr>
+                            );
+                          }) : (
+                            <tr>
+                              <td colSpan="4" className="pkg-empty-row">
+                                {catProducts.length > 0
+                                  ? `No ${catLabel.toLowerCase()} components selected`
+                                  : `No ${catLabel.toLowerCase()} SKUs available`}
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -755,15 +870,6 @@ export default function ProductModal({ product, products, onSave, onClose }) {
             Save Product
           </button>
         </div>
-        {pickerOpen && isPackage && (
-          <ProductPicker
-            products={nonBundleProducts}
-            existingProductIds={new Set((f.members || []).map((m) => m.product_id))}
-            onAdd={addMember}
-            onClose={() => setPickerOpen(false)}
-            multiSelect
-          />
-        )}
       </div>
     </div>
   );
