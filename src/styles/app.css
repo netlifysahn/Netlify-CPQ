@@ -2527,6 +2527,7 @@ tr.drag-over {
 .qd-summary-item {
   flex: 1;
   padding: 0 24px;
+  text-align: right;
 }
 
 .qd-summary-divider {
@@ -2777,7 +2778,6 @@ tr.drag-over {
   grid-template-columns: var(--qd-shared-grid-columns);
   align-items: center;
   cursor: pointer;
-  font-size: 14px;
 }
 .qd-pkg-header:hover {
   background: rgba(0, 0, 0, 0.015);
@@ -2794,27 +2794,39 @@ tr.drag-over {
 .qd-pkg-header-qty {
   grid-column: 2;
   padding: 12px;
+  text-align: center;
 }
 
 .qd-pkg-header-list-price {
   grid-column: 3;
   padding: 12px;
+  text-align: right;
 }
 
 .qd-pkg-header-discount {
   grid-column: 4;
   padding: 12px;
+  text-align: right;
 }
 
 .qd-pkg-header-net-price {
   grid-column: 5;
   padding: 12px;
+  text-align: right;
 }
 
 .qd-pkg-header-amount {
   grid-column: 6;
   padding: 12px 28px 12px 12px;
   text-align: right;
+}
+
+.qd-line-price-value {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
 }
 
 .qd-pkg-name {
@@ -2857,7 +2869,8 @@ tr.drag-over {
 
 .qd-pkg-member-qty-value {
   grid-column: 2;
-  justify-self: center;
+  padding: 4px 12px;
+  text-align: center;
   font-family: 'Poppins', sans-serif;
   font-size: 13px;
   font-weight: 400;
@@ -2866,20 +2879,26 @@ tr.drag-over {
 
 .qd-pkg-member-list-price {
   grid-column: 3;
+  padding: 4px 12px;
+  text-align: right;
 }
 
 .qd-pkg-member-discount {
   grid-column: 4;
+  padding: 4px 12px;
+  text-align: right;
 }
 
 .qd-pkg-member-net-price {
   grid-column: 5;
+  padding: 4px 12px;
+  text-align: right;
 }
 
 .qd-pkg-member-amount {
   grid-column: 6;
-  justify-self: end;
-  padding-right: 28px;
+  padding: 4px 28px 4px 12px;
+  text-align: right;
 }
 
 .line-editor-header {
@@ -3343,8 +3362,8 @@ tr.drag-over {
 /* ─── Product Picker v2 (multi-select, category-based) ───── */
 
 .picker-modal-v2 {
-  width: 760px;
-  max-width: 760px;
+  width: 920px;
+  max-width: calc(100vw - 32px);
   height: 560px;
   max-height: 85vh;
   display: flex;
@@ -5573,6 +5592,27 @@ tr.drag-over {
 .quote-detail--editing .qd-grid-input-discount {
   width: 92px;
   text-align: right;
+}
+
+.quote-detail--editing .qd-currency-input-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.quote-detail--editing .qd-currency-input-symbol {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  pointer-events: none;
+}
+
+.quote-detail--editing .qd-grid-input-currency {
+  padding-left: 18px;
 }
 
 .quote-detail--editing .qd-col-discount .qd-grid-input-discount {

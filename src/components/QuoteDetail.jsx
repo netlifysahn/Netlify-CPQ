@@ -4,7 +4,6 @@ import {
   fmtCurrency, STATUS_META, emptyLineItem, emptyGroup,
   emptyPackageLine, emptySubLineItem,
   syncDiscountFromPercent, syncDiscountFromAmount,
-  isQuantityEditable,
   isIncluded,
 } from '../data/quotes';
 import { isBundleProduct, TYPE_LABELS, getProductCategory } from '../data/catalog';
@@ -82,12 +81,6 @@ const displayCurrency = (v) => {
 const displayCurrencyValue = (v) => {
   const n = typeof v === 'number' && !isNaN(v) ? v : 0;
   return fmtCurrency(n);
-};
-
-const displayCurrencyOrBlank = (v) => {
-  if (v === null || v === undefined || v === '') return '';
-  if (typeof v !== 'number' || Number.isNaN(v)) return '';
-  return fmtCurrency(v);
 };
 
 const SEAT_INPUT_PATTERN = /\b(seat|seats|user|users|license|licenses)\b/i;
@@ -184,6 +177,11 @@ export default function QuoteDetail(props) {
 function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBack, onDelete, onClone }) {
   const [q, setQ] = useState(() => normalizeQuote(quote));
   const [mode, setMode] = useState('view');
+
+  useEffect(() => {
+    if (mode === 'edit') return;
+    setQ(normalizeQuote(quote));
+  }, [quote, mode]);
   const [draft, setDraft] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
   const [confirm, setConfirm] = useState(null);
@@ -199,6 +197,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const [ddNotesModal, setDdNotesModal] = useState(false);
   const [validationErrors, setValidationErrors] = useState(null);
   const [toast, setToast] = useState(null);
+  const [currencyInputDrafts, setCurrencyInputDrafts] = useState({});
   const moreRef = useRef(null);
   const prevTotalsRef = useRef(null);
   const [pulseKey, setPulseKey] = useState(0);
@@ -211,6 +210,10 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  useEffect(() => {
+    if (mode !== 'edit') setCurrencyInputDrafts({});
+  }, [mode]);
 
   const persistQuote = (fn) => {
     setQ((prev) => {
@@ -353,6 +356,19 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   };
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+  const getCurrencyInputKey = (lineId, field) => `${lineId}:${field}`;
+  const formatCurrencyForEdit = (value) => {
+    const n = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+    return String(Math.round(n * 100) / 100);
+  };
+  const parseCurrencyFromInput = (raw) => {
+    const normalized = String(raw ?? '').replace(/[^0-9.]/g, '');
+    if (!normalized) return 0;
+    const parts = normalized.split('.');
+    const numeric = parts.length > 1 ? `${parts[0]}.${parts.slice(1).join('')}` : parts[0];
+    const parsed = parseFloat(numeric);
+    return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+  };
 
   const validateForSubmission = () => {
     const errors = [];
@@ -368,8 +384,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   };
 
   const getSubLines = (items, parentId) => items.filter((l) => l.parent_line_id === parentId);
-  const isCommerciallyIncludedLine = (line) => line?.price_behavior === 'included' || isIncluded(line?.unit_type || 'flat');
-
   const getPackageProductAmount = (line) => {
     const lineListPrice = typeof line.list_price === 'number' && Number.isFinite(line.list_price) ? line.list_price : null;
     if (lineListPrice != null && lineListPrice > 0) return lineListPrice;
@@ -386,6 +400,49 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     const discountAmount = typeof line.discount_amount === 'number' && Number.isFinite(line.discount_amount) ? line.discount_amount : 0;
     return Math.max(0, packageList - discountAmount);
   };
+
+  const getPackageDisplayPricing = (line) => {
+    const product = productsById.get(line.product_id);
+    const defaultList = typeof product?.default_price?.amount === 'number' && Number.isFinite(product.default_price.amount)
+      ? product.default_price.amount
+      : 0;
+    const defaultNetCandidate = product?.default_net_price ?? product?.default_sell_price ?? product?.default_price?.net_amount;
+    const defaultNet = typeof defaultNetCandidate === 'number' && Number.isFinite(defaultNetCandidate)
+      ? defaultNetCandidate
+      : defaultList;
+    const defaultDiscountCandidate = product?.default_discount_amount ?? product?.default_discount?.amount;
+    const defaultDiscountPercentCandidate = product?.default_discount_percent ?? product?.default_discount?.percent;
+    const defaultDiscountFromPercent = typeof defaultDiscountPercentCandidate === 'number' && Number.isFinite(defaultDiscountPercentCandidate)
+      ? (defaultList * Math.max(0, Math.min(100, defaultDiscountPercentCandidate))) / 100
+      : null;
+    const defaultDiscount = typeof defaultDiscountCandidate === 'number' && Number.isFinite(defaultDiscountCandidate)
+      ? Math.max(0, defaultDiscountCandidate)
+      : (defaultDiscountFromPercent ?? Math.max(0, defaultList - defaultNet));
+
+    const hasSavedList = typeof line.list_price === 'number' && Number.isFinite(line.list_price) && line.list_price > 0;
+    const hasSavedDiscount = typeof line.discount_amount === 'number' && Number.isFinite(line.discount_amount) && line.discount_amount > 0;
+    const hasSavedNet = typeof line.net_price === 'number' && Number.isFinite(line.net_price) && line.net_price > 0;
+    const hasSavedPricing = hasSavedList || hasSavedDiscount || hasSavedNet;
+
+    const listPrice = hasSavedPricing ? (hasSavedList ? line.list_price : defaultList) : defaultList;
+    const discount = hasSavedPricing
+      ? (typeof line.discount_amount === 'number' && Number.isFinite(line.discount_amount) ? line.discount_amount : 0)
+      : defaultDiscount;
+    const netPrice = hasSavedPricing
+      ? (hasSavedNet ? line.net_price : Math.max(0, listPrice - discount))
+      : Math.max(0, defaultNet);
+
+    return { listPrice, discount, netPrice };
+  };
+
+  const getLineCategory = (line) => {
+    if (!line) return 'platform';
+    if (line.product_type) return getProductCategory({ category: line.product_type });
+    const product = productsById.get(line.product_id);
+    return getProductCategory(product);
+  };
+
+  const isEntitlementLine = (line) => getLineCategory(line) === 'entitlements';
 
   const cardHeaderStyle = { cursor: 'pointer', userSelect: 'none' };
   const cardBodyStyle = { padding: '4px 24px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' };
@@ -463,7 +520,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const renderEditTable = () => {
     if (!draft) return null;
     const items = draft.line_items;
-    const editablePackageQuantityComponentNames = new Set(['Enterprise Seat', 'Monthly Credits']);
     const renderQtyInput = (line, included = false, className = '') => {
       if (included) return <span className="cell-locked">1</span>;
       const seatStepperClass = isSeatQuantityLine(line) ? 'number-stepper-seat' : '';
@@ -482,12 +538,8 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       );
     };
 
-    const renderPackageQtyInput = (line, included = false) => {
-      const isEditableComponent = editablePackageQuantityComponentNames.has(line.product_name);
-      if (
-        !isEditableComponent
-        || !isQuantityEditable(line.unit_type)
-      ) return '';
+    const renderPackageQtyInput = (line) => {
+      if (!isEntitlementLine(line)) return null;
       return renderQtyInput(
         line,
         false,
@@ -497,18 +549,38 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
     const renderDiscountInput = (line, included = false) => {
       if (included) return <span className="price-annual">—</span>;
+      const field = 'discount_amount';
+      const key = getCurrencyInputKey(line.id, field);
+      const isEditingCurrency = Object.prototype.hasOwnProperty.call(currencyInputDrafts, key);
+      const currentValue = typeof line.discount_amount === 'number' && Number.isFinite(line.discount_amount) ? line.discount_amount : 0;
       return (
-        <input
-          className="qd-grid-input qd-grid-input-discount"
-          type="number"
-          min="0"
-          step="0.01"
-          value={line.discount_amount ?? 0}
-          onChange={(e) => {
-            const next = Math.max(0, parseFloat(e.target.value) || 0);
-            updateDraftDiscount(line.id, 'discount_amount', next);
-          }}
-        />
+        <span className={`qd-currency-input-wrap${isEditingCurrency ? ' qd-currency-input-wrap--editing' : ''}`}>
+          {isEditingCurrency && <span className="qd-currency-input-symbol" aria-hidden>$</span>}
+          <input
+            className={`qd-grid-input qd-grid-input-discount${isEditingCurrency ? ' qd-grid-input-currency' : ''}`}
+            type="text"
+            inputMode="decimal"
+            value={isEditingCurrency ? currencyInputDrafts[key] : displayCurrencyValue(currentValue)}
+            onFocus={() => {
+              setCurrencyInputDrafts((prev) => ({ ...prev, [key]: formatCurrencyForEdit(currentValue) }));
+            }}
+            onChange={(e) => {
+              const raw = e.target.value;
+              const next = parseCurrencyFromInput(raw);
+              setCurrencyInputDrafts((prev) => ({ ...prev, [key]: raw }));
+              updateDraftDiscount(line.id, 'discount_amount', next);
+            }}
+            onBlur={(e) => {
+              const next = parseCurrencyFromInput(e.target.value);
+              updateDraftDiscount(line.id, 'discount_amount', next);
+              setCurrencyInputDrafts((prev) => {
+                const clone = { ...prev };
+                delete clone[key];
+                return clone;
+              });
+            }}
+          />
+        </span>
       );
     };
 
@@ -540,6 +612,15 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       const packageList = typeof productInfoNet === 'number' && Number.isFinite(productInfoNet) ? productInfoNet : 0;
       const packageNet = getPackageNetAmount(line, packageList);
       const packageAmount = packageNet;
+      const listPriceField = 'list_price';
+      const discountField = 'discount_amount';
+      const netField = 'net_price';
+      const listPriceKey = getCurrencyInputKey(line.id, listPriceField);
+      const discountKey = getCurrencyInputKey(line.id, discountField);
+      const netKey = getCurrencyInputKey(line.id, netField);
+      const isListEditing = Object.prototype.hasOwnProperty.call(currencyInputDrafts, listPriceKey);
+      const isDiscountEditing = Object.prototype.hasOwnProperty.call(currencyInputDrafts, discountKey);
+      const isNetEditing = Object.prototype.hasOwnProperty.call(currencyInputDrafts, netKey);
       return (
         <div key={line.id} className="qd-pkg-block">
           <div className="qd-pkg-header" onClick={() => togglePackage(line.id)}>
@@ -550,60 +631,103 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
               <button type="button" className="qd-line-icon-btn" aria-label={`Remove ${line.product_name}`} onClick={(e) => { e.stopPropagation(); removeDraftLine(line.id); }}>×</button>
             </div>
             <span className="qd-pkg-header-qty" />
-            <span className="qd-pkg-header-list-price qd-pkg-member-value">
-              <input
-                className="qd-grid-input qd-grid-input-discount"
-                type="number"
-                min="0"
-                step="0.01"
-                value={packageList}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                  const next = Math.max(0, parseFloat(e.target.value) || 0);
-                  updateDraftLineField(line.id, 'list_price', next);
-                }}
-              />
+            <span className="qd-pkg-header-list-price qd-pkg-member-value qd-line-price-value">
+              <span className={`qd-currency-input-wrap${isListEditing ? ' qd-currency-input-wrap--editing' : ''}`} onClick={(e) => e.stopPropagation()}>
+                {isListEditing && <span className="qd-currency-input-symbol" aria-hidden>$</span>}
+                <input
+                  className={`qd-grid-input qd-grid-input-discount${isListEditing ? ' qd-grid-input-currency' : ''}`}
+                  type="text"
+                  inputMode="decimal"
+                  value={isListEditing ? currencyInputDrafts[listPriceKey] : displayCurrencyValue(packageList)}
+                  onFocus={() => {
+                    setCurrencyInputDrafts((prev) => ({ ...prev, [listPriceKey]: formatCurrencyForEdit(packageList) }));
+                  }}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const next = parseCurrencyFromInput(raw);
+                    setCurrencyInputDrafts((prev) => ({ ...prev, [listPriceKey]: raw }));
+                    updateDraftLineField(line.id, 'list_price', next);
+                  }}
+                  onBlur={(e) => {
+                    const next = parseCurrencyFromInput(e.target.value);
+                    updateDraftLineField(line.id, 'list_price', next);
+                    setCurrencyInputDrafts((prev) => {
+                      const clone = { ...prev };
+                      delete clone[listPriceKey];
+                      return clone;
+                    });
+                  }}
+                />
+              </span>
             </span>
-            <span className="qd-pkg-header-discount">
-              <input
-                className="qd-grid-input qd-grid-input-discount"
-                type="number"
-                min="0"
-                step="0.01"
-                value={line.discount_amount ?? 0}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                  const next = Math.max(0, parseFloat(e.target.value) || 0);
-                  const synced = syncDiscountFromAmount(packageList, next);
-                  updateDraftLine(line.id, synced);
-                }}
-              />
+            <span className="qd-pkg-header-discount qd-line-price-value">
+              <span className={`qd-currency-input-wrap${isDiscountEditing ? ' qd-currency-input-wrap--editing' : ''}`} onClick={(e) => e.stopPropagation()}>
+                {isDiscountEditing && <span className="qd-currency-input-symbol" aria-hidden>$</span>}
+                <input
+                  className={`qd-grid-input qd-grid-input-discount${isDiscountEditing ? ' qd-grid-input-currency' : ''}`}
+                  type="text"
+                  inputMode="decimal"
+                  value={isDiscountEditing ? currencyInputDrafts[discountKey] : displayCurrencyValue(line.discount_amount ?? 0)}
+                  onFocus={() => {
+                    const current = typeof line.discount_amount === 'number' && Number.isFinite(line.discount_amount) ? line.discount_amount : 0;
+                    setCurrencyInputDrafts((prev) => ({ ...prev, [discountKey]: formatCurrencyForEdit(current) }));
+                  }}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const next = parseCurrencyFromInput(raw);
+                    setCurrencyInputDrafts((prev) => ({ ...prev, [discountKey]: raw }));
+                    const synced = syncDiscountFromAmount(packageList, next);
+                    updateDraftLine(line.id, synced);
+                  }}
+                  onBlur={(e) => {
+                    const next = parseCurrencyFromInput(e.target.value);
+                    const synced = syncDiscountFromAmount(packageList, next);
+                    updateDraftLine(line.id, synced);
+                    setCurrencyInputDrafts((prev) => {
+                      const clone = { ...prev };
+                      delete clone[discountKey];
+                      return clone;
+                    });
+                  }}
+                />
+              </span>
             </span>
-            <span className="qd-pkg-header-net-price">
-              <input
-                className="qd-grid-input qd-grid-input-discount"
-                type="number"
-                min="0"
-                step="0.01"
-                value={packageNet}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                  const nextNet = Math.max(0, parseFloat(e.target.value) || 0);
-                  const synced = syncDiscountFromAmount(packageList, Math.max(0, packageList - nextNet));
-                  updateDraftLine(line.id, synced);
-                }}
-              />
+            <span className="qd-pkg-header-net-price qd-line-price-value">
+              <span className={`qd-currency-input-wrap${isNetEditing ? ' qd-currency-input-wrap--editing' : ''}`} onClick={(e) => e.stopPropagation()}>
+                {isNetEditing && <span className="qd-currency-input-symbol" aria-hidden>$</span>}
+                <input
+                  className={`qd-grid-input qd-grid-input-discount${isNetEditing ? ' qd-grid-input-currency' : ''}`}
+                  type="text"
+                  inputMode="decimal"
+                  value={isNetEditing ? currencyInputDrafts[netKey] : displayCurrencyValue(packageNet)}
+                  onFocus={() => {
+                    setCurrencyInputDrafts((prev) => ({ ...prev, [netKey]: formatCurrencyForEdit(packageNet) }));
+                  }}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const nextNet = parseCurrencyFromInput(raw);
+                    setCurrencyInputDrafts((prev) => ({ ...prev, [netKey]: raw }));
+                    const synced = syncDiscountFromAmount(packageList, Math.max(0, packageList - nextNet));
+                    updateDraftLine(line.id, synced);
+                  }}
+                  onBlur={(e) => {
+                    const nextNet = parseCurrencyFromInput(e.target.value);
+                    const synced = syncDiscountFromAmount(packageList, Math.max(0, packageList - nextNet));
+                    updateDraftLine(line.id, synced);
+                    setCurrencyInputDrafts((prev) => {
+                      const clone = { ...prev };
+                      delete clone[netKey];
+                      return clone;
+                    });
+                  }}
+                />
+              </span>
             </span>
-            <span className="qd-pkg-header-amount">{displayCurrencyValue(packageAmount)}</span>
+            <span className="qd-pkg-header-amount qd-line-price-value">{displayCurrencyValue(packageAmount)}</span>
           </div>
           {expanded && subs.length > 0 && (
             <div className="qd-pkg-members">
               {subs.map((sub) => {
-                const included = isCommerciallyIncludedLine(sub);
-                const ext = calcLineExtended(sub);
-                const listPriceValue = sub.list_price;
-                const netPriceValue = sub.net_price ?? sub.list_price;
-                const amountValue = sub.net_price ?? sub.list_price;
                 return (
                   <div key={sub.id} className="qd-pkg-member-row qd-pkg-member-row-edit">
                     <span className="qd-pkg-member-name">
@@ -612,11 +736,11 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                         <button type="button" className="qd-line-icon-btn" aria-label={`Remove ${sub.product_name}`} onClick={() => removeDraftLine(sub.id)}>×</button>
                       </span>
                     </span>
-                    <span className="qd-pkg-member-qty-value">{renderPackageQtyInput(sub, included)}</span>
-                    <span className="qd-pkg-member-list-price qd-pkg-member-value">{included ? '' : displayCurrencyOrBlank(listPriceValue)}</span>
+                    <span className="qd-pkg-member-qty-value">{renderPackageQtyInput(sub)}</span>
+                    <span className="qd-pkg-member-list-price qd-pkg-member-value" />
                     <span className="qd-pkg-member-discount qd-pkg-member-value" />
-                    <span className="qd-pkg-member-net-price qd-pkg-member-value">{included ? '' : displayCurrencyOrBlank(netPriceValue)}</span>
-                    <span className="qd-pkg-member-amount qd-pkg-member-value">{included ? '' : displayCurrencyOrBlank(amountValue == null || amountValue === '' ? null : ext)}</span>
+                    <span className="qd-pkg-member-net-price qd-pkg-member-value" />
+                    <span className="qd-pkg-member-amount qd-pkg-member-value" />
                   </div>
                 );
               })}
@@ -946,6 +1070,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                           const expanded = !collapsedPkgs.has(line.id);
                           const packageList = getPackageProductAmount(line);
                           const pkgAmount = getPackageNetAmount(line, packageList);
+                          const packageDisplay = getPackageDisplayPricing(line);
                           return (
                             <div key={line.id} className="qd-pkg-block">
                               <div className="qd-pkg-header" onClick={() => togglePackage(line.id)}>
@@ -955,17 +1080,17 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                                   <span className="pkg-badge">PKG</span>
                                 </div>
                                 <span className="qd-pkg-header-qty" />
-                                <span className="qd-pkg-header-list-price" />
-                                <span className="qd-pkg-header-discount" />
-                                <span className="qd-pkg-header-net-price" />
-                                <span className="qd-pkg-header-amount">{displayCurrencyValue(pkgAmount)}</span>
+                                <span className="qd-pkg-header-list-price qd-line-price-value">{displayCurrencyValue(packageDisplay.listPrice)}</span>
+                                <span className="qd-pkg-header-discount qd-line-price-value">{displayCurrencyValue(packageDisplay.discount)}</span>
+                                <span className="qd-pkg-header-net-price qd-line-price-value">{displayCurrencyValue(packageDisplay.netPrice)}</span>
+                                <span className="qd-pkg-header-amount qd-line-price-value">{displayCurrencyValue(pkgAmount)}</span>
                               </div>
                               {expanded && subs.length > 0 && (
                                 <div className="qd-pkg-members">
                                   {subs.map((sub) => (
                                     <div key={sub.id} className="qd-pkg-member-row">
                                       <span className="cell-name qd-pkg-member-name">{sub.product_name}</span>
-                                      <span className="qd-pkg-member-qty-value">{sub.quantity > 1 ? fmtQty(sub.quantity) : ''}</span>
+                                      <span className="qd-pkg-member-qty-value">{isEntitlementLine(sub) ? fmtQty(sub.quantity ?? 1) : ''}</span>
                                       <span className="qd-pkg-member-list-price" />
                                       <span className="qd-pkg-member-discount" />
                                       <span className="qd-pkg-member-net-price" />

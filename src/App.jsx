@@ -88,6 +88,11 @@ export default function App() {
   const [confirm, setConfirm] = useState(null);
   const [activeQuote, setActiveQuote] = useState(null);
 
+  const activeQuoteRecord = useMemo(
+    () => (activeQuote ? quotes.find((q) => q.id === activeQuote.id) || activeQuote : null),
+    [quotes, activeQuote],
+  );
+
   // Product CRUD
   const saveProd = (p) => {
     setProducts((prev) => {
@@ -385,7 +390,7 @@ export default function App() {
         )}
 
         {/* Quotes Page */}
-        {page === 'quotes' && !activeQuote && (
+        {page === 'quotes' && !activeQuoteRecord && (
           <>
             <div className="page-header">
               <div className="page-label">Deal Management</div>
@@ -428,10 +433,10 @@ export default function App() {
         )}
 
         {/* Quote Detail */}
-        {page === 'quotes' && activeQuote && (
+        {page === 'quotes' && activeQuoteRecord && (
           <QuoteDetail
-            key={activeQuote.id}
-            quote={activeQuote}
+            key={activeQuoteRecord.id}
+            quote={activeQuoteRecord}
             products={products}
             pricebooks={pricebooks}
             settings={settings}
