@@ -1,6 +1,6 @@
 // Netlify Deal Studio — Quote Data Model (Phase 3)
 
-import { genId, getProductCategory, UNIT_LABELS, isBundleProduct } from './catalog';
+import { genId, getProductCategory, getProductPackageComponents, UNIT_LABELS, isBundleProduct } from './catalog';
 
 export const QUOTE_STATUSES = ['draft', 'sent', 'draft_revision', 'ready_to_submit', 'pending_approval', 'approved', 'rejected', 'converted', 'archived'];
 export const TERM_OPTIONS = [12, 24, 36];
@@ -74,6 +74,32 @@ export const getEffectiveLineQuantity = (line) => {
   return Number.isFinite(qty) && qty > 0 ? qty : 1;
 };
 
+export const getPackageComponentSection = (line) => {
+  if (line?.package_section === 'platform' || line?.package_section === 'support' || line?.package_section === 'entitlement') {
+    return line.package_section;
+  }
+  const fallback = getProductCategory({ category: line?.product_type });
+  if (fallback === 'support') return 'support';
+  if (fallback === 'entitlements') return 'entitlement';
+  return 'platform';
+};
+
+export const isPackageComponentQtyVisible = (line) => {
+  if (!line?.parent_line_id) return true;
+  const section = getPackageComponentSection(line);
+  const behavior = line.qty_behavior || (section === 'entitlement' ? 'editable' : 'hidden');
+  if (section !== 'entitlement') return false;
+  return behavior !== 'hidden';
+};
+
+export const isPackageComponentQtyEditable = (line) => {
+  if (!isPackageComponentQtyVisible(line)) return false;
+  const behavior = line.qty_behavior || 'editable';
+  if (behavior !== 'editable') return false;
+  const mode = line.quote_edit_mode || 'editable_qty';
+  return mode === 'editable_qty' || mode === 'editable_qty_and_price';
+};
+
 export const emptyLineItem = (product, listPrice) => {
   const unitType = getUnitType(product);
   const price = listPrice ?? product.default_price?.amount ?? 0;
@@ -124,8 +150,15 @@ export const emptyPackageLine = (product) => {
 export const emptySubLineItem = (memberProduct, member, parentLineId, listPrice) => {
   const unitType = member.unit_type || getUnitType(memberProduct);
   const price = listPrice ?? member.list_price ?? memberProduct.default_price?.amount ?? 0;
-  const qty = getProductCategory(memberProduct) === 'support' ? 1 : (member.qty || member.default_quantity || 1);
-  const included = member.price_behavior === 'included';
+  const section = member.section || (getProductCategory(memberProduct) === 'support'
+    ? 'support'
+    : getProductCategory(memberProduct) === 'entitlements'
+      ? 'entitlement'
+      : 'platform');
+  const defaultQty = member.default_qty ?? member.qty ?? member.default_quantity;
+  const qty = section === 'support' ? 1 : (defaultQty || 1);
+  const priceBehavior = member.price_behavior || (member.pricing_display === 'row_level' ? 'related' : 'included');
+  const included = priceBehavior !== 'related';
   const discPct = member.price_behavior === 'discounted' ? (member.discount_percent || 0) : 0;
   const effectivePrice = included ? 0 : price;
   const synced = included ? { discount_percent: 0, discount_amount: 0, net_price: 0 }
@@ -141,7 +174,16 @@ export const emptySubLineItem = (memberProduct, member, parentLineId, listPrice)
     unit_type: unitType,
     group_id: null,
     parent_line_id: parentLineId,
-    price_behavior: member.price_behavior || 'included',
+    price_behavior: priceBehavior,
+    package_component_id: member.id || null,
+    package_section: section,
+    qty_behavior: member.qty_behavior || (section === 'entitlement' ? 'editable' : 'hidden'),
+    pricing_display: member.pricing_display || 'package_only',
+    quote_edit_mode: member.quote_edit_mode || (section === 'entitlement' ? 'editable_qty' : 'read_only'),
+    min_qty: member.min_qty ?? null,
+    max_qty: member.max_qty ?? null,
+    is_required: typeof member.is_required === 'boolean' ? member.is_required : false,
+    is_default_selected: typeof member.is_default_selected === 'boolean' ? member.is_default_selected : true,
     name_editable: !!memberProduct.config?.edit_name,
     terms: memberProduct.terms || '',
     quantity: qty,
@@ -149,6 +191,11 @@ export const emptySubLineItem = (memberProduct, member, parentLineId, listPrice)
     ...synced,
     sort_order: member.sort_order || 0,
   };
+};
+
+export const getPackageProductComponents = (product, products = []) => {
+  const productMap = new Map((products || []).map((item) => [item.id, item]));
+  return getProductPackageComponents(product, productMap);
 };
 
 // Internal sync that doesn't depend on round2 being defined later
@@ -243,9 +290,23 @@ export const calcQuoteTotals = (quote) => {
   const annual = monthly * 12;
   const tcv = monthly * term;
 
+  // List totals for effective discount display (line + quote discounts combined).
+  const listMonthly = lines.reduce((sum, line) => {
+    const quantity = getEffectiveLineQuantity(line);
+    const listPrice = typeof line.list_price === 'number' && Number.isFinite(line.list_price)
+      ? line.list_price
+      : (typeof line.net_price === 'number' && Number.isFinite(line.net_price) ? line.net_price : 0);
+    return sum + (quantity * Math.max(0, listPrice));
+  }, 0);
+  const listAnnual = listMonthly * 12;
+  const effectiveDiscountPercent = listMonthly > 0
+    ? round2(((listMonthly - monthly) / listMonthly) * 100)
+    : 0;
+
   return {
     monthly, annual, tcv,
     preDiscountMonthly, preDiscountAnnual, preDiscountTcv,
+    listMonthly, listAnnual, effectiveDiscountPercent,
     hasQuoteDiscount: hd > 0,
   };
 };

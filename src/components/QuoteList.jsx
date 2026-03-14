@@ -39,10 +39,10 @@ export default function QuoteList({ quotes, onNew, onOpen, onDupe, onDelete }) {
         <div className="quote-summary-row quote-summary-header" role="row">
           <div className="quote-summary-cell" role="columnheader">QUOTE</div>
           <div className="quote-summary-cell" role="columnheader">CUSTOMER</div>
+          <div className="quote-summary-cell" role="columnheader">STATUS</div>
           <div className="quote-summary-cell quote-summary-money" role="columnheader">MRR</div>
           <div className="quote-summary-cell quote-summary-money" role="columnheader">ARR</div>
           <div className="quote-summary-cell" role="columnheader">TERM</div>
-          <div className="quote-summary-cell" role="columnheader">STATUS</div>
         </div>
         <div className="quote-summary-body" role="rowgroup">
           {quotes.map((q) => {
@@ -57,6 +57,9 @@ export default function QuoteList({ quotes, onNew, onOpen, onDupe, onDelete }) {
                 <div className="quote-summary-cell quote-summary-customer" role="cell">
                   {q.customer_name || '\u2014'}
                 </div>
+                <div className="quote-summary-cell" role="cell">
+                  <span className="quote-summary-status-chip">{meta.label}</span>
+                </div>
                 <div className="quote-summary-cell quote-summary-money quote-summary-money-value" role="cell">
                   {formatCurrency(totals.monthly)}
                 </div>
@@ -65,9 +68,6 @@ export default function QuoteList({ quotes, onNew, onOpen, onDupe, onDelete }) {
                 </div>
                 <div className="quote-summary-cell quote-summary-term" role="cell">
                   {formatTerm(q.term_months)}
-                </div>
-                <div className="quote-summary-cell" role="cell">
-                  <span className="quote-summary-status-chip">{meta.label}</span>
                 </div>
               </div>
             );
