@@ -90,8 +90,10 @@ export const emptyLineItem = (product, listPrice) => {
   };
 };
 
-// Package parent line — container with no price of its own
-export const emptyPackageLine = (product) => ({
+// Package parent line uses package-level pricing as the source of truth.
+export const emptyPackageLine = (product) => {
+  const price = product?.default_price?.amount ?? 0;
+  return ({
   id: genId(),
   product_id: product.id,
   product_name: product.name,
@@ -103,12 +105,13 @@ export const emptyPackageLine = (product) => ({
   name_editable: !!product.config?.edit_name,
   terms: product.terms || '',
   quantity: 0,
-  list_price: 0,
+  list_price: price,
   discount_percent: 0,
   discount_amount: 0,
-  net_price: 0,
+  net_price: price,
   sort_order: 0,
-});
+  });
+};
 
 // Sub-line item for a bundle member (supports both old and new member schemas)
 export const emptySubLineItem = (memberProduct, member, parentLineId, listPrice) => {

@@ -322,7 +322,7 @@ export default function App() {
                   <span>▾</span>
                 </span>
               </div>
-              <button className="btn-primary btn-product-add" onClick={() => setModal({ type: 'product' })}>
+              <button className="btn-primary btn-quote-add" onClick={() => setModal({ type: 'product' })}>
                 Add Product
               </button>
             </div>
