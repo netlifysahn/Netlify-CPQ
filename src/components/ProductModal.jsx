@@ -149,7 +149,8 @@ export default function ProductModal({ product, products, onSave, onClose }) {
     }
   })();
 
-  const isPackage = isBundleProduct(f) || getProductCategory(f) === 'bundle';
+  const isBasePackage = getProductCategory(f) === 'bundle';
+  const isPackage = isBundleProduct(f) || isBasePackage;
   const isSeatProduct = isSeatLikeProduct(f);
   const isConcurrentBuildsProduct = isConcurrentBuildsLikeProduct(f);
   const isStepperProduct = isSeatProduct || isConcurrentBuildsProduct;
@@ -299,6 +300,22 @@ export default function ProductModal({ product, products, onSave, onClose }) {
     });
   };
 
+  const updateEntitlementDefaultQty = (index, rawValue) => {
+    setF((prev) => {
+      const packageComponents = [...(prev.package_components || [])];
+      const component = packageComponents[index];
+      if (!component || component.section !== 'entitlement') return prev;
+      if (rawValue === '') {
+        packageComponents[index] = { ...component, default_qty: '' };
+        return { ...prev, package_components: packageComponents };
+      }
+      const parsed = parseInt(rawValue, 10);
+      if (!Number.isFinite(parsed)) return prev;
+      packageComponents[index] = { ...component, default_qty: parsed };
+      return { ...prev, package_components: packageComponents };
+    });
+  };
+
   const removeMember = (index) => {
     setF((prev) => {
       const packageComponents = [...(prev.package_components || [])];
@@ -388,7 +405,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className={`modal modal-theme-products product-modal ${isPackage ? 'product-modal-base-package' : ''}`} onClick={(e) => e.stopPropagation()}>
+      <div className={`modal modal-theme-products product-modal ${isPackage ? 'product-modal-base-package' : ''} ${isBasePackage ? 'product-modal-base-package-category' : ''}`.trim()} onClick={(e) => e.stopPropagation()}>
         <div className="modal-title">{product ? 'Edit Product' : 'New Product'}</div>
 
         <div className="modal-section">
@@ -580,14 +597,16 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                             return (
                               <div key={`${member.component_product_id}_${index}`} className="pkg-entitlement-card">
                                 <div className="pkg-entitlement-card-top">
-                                  <div className="pkg-cell-handle pkg-entitlement-handle">
-                                    <span className="pkg-drag-handle" title="Reordering coming soon" aria-hidden="true">
-                                      <i className="fa-solid fa-grip-vertical fa-fw" />
-                                    </span>
-                                  </div>
-                                  <div className="pkg-product-cell-stack pkg-entitlement-product">
-                                    <span className="pkg-member-name">{referencedProduct?.name || 'Unknown'}</span>
-                                    <span className="pkg-member-sku pkg-entitlement-sku">{memberSku || '\u00A0'}</span>
+                                  <div className="pkg-entitlement-card-header-main">
+                                    <div className="pkg-cell-handle pkg-entitlement-handle">
+                                      <span className="pkg-drag-handle" title="Reordering coming soon" aria-hidden="true">
+                                        <i className="fa-solid fa-grip-vertical fa-fw" />
+                                      </span>
+                                    </div>
+                                    <div className="pkg-product-cell-stack pkg-entitlement-product">
+                                      <span className="pkg-member-name">{referencedProduct?.name || 'Unknown'}</span>
+                                      <span className="pkg-member-sku pkg-entitlement-sku">{memberSku || '\u00A0'}</span>
+                                    </div>
                                   </div>
                                   <button type="button" className="pkg-remove-btn" onClick={() => removeMember(index)} title="Delete">
                                     <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
@@ -603,7 +622,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                                         type="number"
                                         min="1"
                                         value={member.default_qty ?? ''}
-                                        onChange={(e) => updateMember(index, 'default_qty', e.target.value)}
+                                        onChange={(e) => updateEntitlementDefaultQty(index, e.target.value)}
                                       />
                                     </div>
                                     <div className="field pkg-entitlement-qty-field">
