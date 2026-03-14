@@ -16,6 +16,10 @@ export const TERM_BEHAVIORS = ['included', 'excluded'];
 export const CONFIGURATION_METHODS = ['none', 'bundle'];
 export const BUNDLE_PRICING_MODES = ['header_only', 'header_plus_members', 'members_only'];
 export const MEMBER_PRICE_BEHAVIORS = ['included', 'discounted', 'related'];
+export const PACKAGE_SECTIONS = ['platform', 'support', 'entitlement'];
+export const PACKAGE_QTY_BEHAVIORS = ['hidden', 'fixed', 'editable'];
+export const PACKAGE_PRICING_DISPLAYS = ['hidden', 'package_only', 'row_level'];
+export const PACKAGE_QUOTE_EDIT_MODES = ['read_only', 'editable_qty', 'editable_price', 'editable_qty_and_price'];
 
 export const TYPE_COLORS = {
   platform: '#5cbbf6',
@@ -86,6 +90,7 @@ export const emptyProduct = () => ({
   configuration_method: 'none',
   bundle_pricing: 'header_only',
   print_members: true,
+  package_components: [],
   members: [],
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
@@ -102,6 +107,133 @@ export const emptyBundleMember = (productId = '') => ({
 });
 
 export const isBundleProduct = (product) => product?.configuration_method === 'bundle';
+
+const normalizeSection = (value) => {
+  if (value === 'platform' || value === 'support' || value === 'entitlement') return value;
+  if (value === 'entitlements') return 'entitlement';
+  return null;
+};
+
+const inferSectionFromProduct = (productOrCategory) => {
+  const category = typeof productOrCategory === 'string'
+    ? productOrCategory
+    : getProductCategory(productOrCategory);
+  if (category === 'support') return 'support';
+  if (category === 'entitlements') return 'entitlement';
+  return 'platform';
+};
+
+const defaultComponentConfigBySection = {
+  platform: {
+    default_qty: null,
+    min_qty: null,
+    max_qty: null,
+    qty_behavior: 'hidden',
+    pricing_display: 'package_only',
+    quote_edit_mode: 'read_only',
+  },
+  support: {
+    default_qty: 1,
+    min_qty: 1,
+    max_qty: 1,
+    qty_behavior: 'hidden',
+    pricing_display: 'package_only',
+    quote_edit_mode: 'read_only',
+  },
+  entitlement: {
+    default_qty: 1,
+    min_qty: 1,
+    max_qty: null,
+    qty_behavior: 'editable',
+    pricing_display: 'package_only',
+    quote_edit_mode: 'editable_qty',
+  },
+};
+
+const parseNullableNumber = (value, fallback = null) => {
+  if (value === '' || value == null) return fallback;
+  const next = Number(value);
+  return Number.isFinite(next) ? next : fallback;
+};
+
+export const normalizePackageComponent = (component, referencedProduct, index = 0, packageId = '') => {
+  const inferredSection = inferSectionFromProduct(referencedProduct || component);
+  const section = normalizeSection(component?.section) || inferredSection;
+  const defaults = defaultComponentConfigBySection[section];
+  const defaultQty = parseNullableNumber(
+    component?.default_qty ?? component?.default_quantity ?? component?.qty,
+    defaults.default_qty,
+  );
+  const minQty = parseNullableNumber(component?.min_qty, defaults.min_qty);
+  const maxQty = parseNullableNumber(component?.max_qty, defaults.max_qty);
+  const qtyBehavior = PACKAGE_QTY_BEHAVIORS.includes(component?.qty_behavior)
+    ? component.qty_behavior
+    : defaults.qty_behavior;
+  const pricingDisplay = PACKAGE_PRICING_DISPLAYS.includes(component?.pricing_display)
+    ? component.pricing_display
+    : (component?.price_behavior === 'related' ? 'row_level' : defaults.pricing_display);
+  const quoteEditMode = PACKAGE_QUOTE_EDIT_MODES.includes(component?.quote_edit_mode)
+    ? component.quote_edit_mode
+    : defaults.quote_edit_mode;
+  const sortOrder = parseNullableNumber(component?.sort_order, index + 1) ?? (index + 1);
+  const componentProductId = component?.component_product_id || component?.product_id || '';
+  const isIncluded = typeof component?.is_included === 'boolean' ? component.is_included : true;
+  return {
+    id: component?.id || genId(),
+    package_product_id: component?.package_product_id || packageId || '',
+    component_product_id: componentProductId,
+    section,
+    is_included: isIncluded,
+    sort_order: Math.max(1, Math.trunc(sortOrder)),
+    default_qty: defaultQty,
+    min_qty: minQty,
+    max_qty: maxQty,
+    qty_behavior: qtyBehavior,
+    pricing_display: pricingDisplay,
+    quote_edit_mode: quoteEditMode,
+    is_required: typeof component?.is_required === 'boolean' ? component.is_required : Boolean(component?.required),
+    is_default_selected: typeof component?.is_default_selected === 'boolean' ? component.is_default_selected : true,
+    notes: component?.notes ?? null,
+  };
+};
+
+export const getProductPackageComponents = (product, productMap = null) => {
+  const source = Array.isArray(product?.package_components) && product.package_components.length > 0
+    ? product.package_components
+    : Array.isArray(product?.members) && product.members.length > 0
+      ? product.members
+      : Array.isArray(product?.components)
+        ? product.components
+        : [];
+  return source
+    .map((component, index) => {
+      const productId = component?.component_product_id || component?.product_id;
+      const ref = productId && productMap ? productMap.get(productId) : null;
+      const normalized = normalizePackageComponent(component, ref, index, product?.id);
+      if (!normalized.component_product_id) return null;
+      return normalized;
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.sort_order - b.sort_order);
+};
+
+export const packageComponentToLegacyMember = (component, referencedProduct, index = 0) => {
+  const qty = Math.max(1, parseNullableNumber(component?.default_qty, 1) || 1);
+  const listPrice = parseNumber(referencedProduct?.default_price?.amount ?? 0, 0);
+  const pricingDisplay = component?.pricing_display || 'package_only';
+  return {
+    product_id: component.component_product_id,
+    name: referencedProduct?.name || '',
+    sku: referencedProduct?.sku || '',
+    qty,
+    default_quantity: qty,
+    unit_type: referencedProduct?.default_price?.unit || 'flat',
+    price_behavior: pricingDisplay === 'row_level' ? 'related' : 'included',
+    list_price: listPrice,
+    sort_order: component?.sort_order || index + 1,
+    section: component?.section || inferSectionFromProduct(referencedProduct),
+  };
+};
 
 const parseNumber = (value, fallback = 0) => {
   const next = parseFloat(value);

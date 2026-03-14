@@ -1,5 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import {
+  PACKAGE_PRICING_DISPLAYS,
+  PACKAGE_QTY_BEHAVIORS,
+  PACKAGE_QUOTE_EDIT_MODES,
   PRICE_UNITS,
   PRICING_METHODS,
   PRODUCT_TYPES,
@@ -8,7 +11,9 @@ import {
   UNIT_LABELS,
   emptyProduct,
   getProductCategory,
+  getProductPackageComponents,
   isBundleProduct,
+  packageComponentToLegacyMember,
 } from '../data/catalog';
 import {
   formatIntegerForEdit,
@@ -17,6 +22,22 @@ import {
 } from '../utils/numberFormat';
 
 const PILL_COLORS = ['blue', 'green', 'amber', 'purple', 'teal'];
+const QTY_BEHAVIOR_OPTIONS = [
+  { value: 'hidden', label: 'Hidden' },
+  { value: 'fixed', label: 'Fixed' },
+  { value: 'editable', label: 'Editable' },
+];
+const QUOTE_EDIT_OPTIONS = [
+  { value: 'read_only', label: 'Locked' },
+  { value: 'editable_qty', label: 'Qty Editable' },
+  { value: 'editable_price', label: 'Price Editable' },
+  { value: 'editable_qty_and_price', label: 'Qty + Price Editable' },
+];
+const PRICING_DISPLAY_OPTIONS = [
+  { value: 'package_only', label: 'Package Only' },
+  { value: 'row_level', label: 'Row Level' },
+  { value: 'hidden', label: 'Hidden' },
+];
 
 function getPillColor(index) {
   return PILL_COLORS[index % PILL_COLORS.length];
@@ -24,14 +45,13 @@ function getPillColor(index) {
 
 function coerceProduct(product) {
   const next = { ...(product || emptyProduct()) };
-  const existingComponents = Array.isArray(next.components) ? next.components : [];
-  const existingMembers = Array.isArray(next.members) ? next.members : [];
   next.category = getProductCategory(next);
   next.type = next.category;
   if (!next.configuration_method) next.configuration_method = 'none';
   if (!next.bundle_pricing) next.bundle_pricing = 'header_only';
   if (typeof next.print_members !== 'boolean') next.print_members = true;
-  next.members = existingMembers.length > 0 ? existingMembers : existingComponents;
+  next.package_components = getProductPackageComponents(next);
+  next.members = Array.isArray(next.members) ? next.members : [];
   if (!Array.isArray(next.components)) next.components = [];
   return next;
 }
@@ -135,50 +155,45 @@ export default function ProductModal({ product, products, onSave, onClose }) {
   const isStepperProduct = isSeatProduct || isConcurrentBuildsProduct;
   const isCreditProduct = !isConcurrentBuildsProduct && isCreditLikeProduct(f);
   const productMap = useMemo(() => new Map((products || []).map((p) => [p.id, p])), [products]);
-  const COMPONENT_CARD_ORDER = ['platform', 'support', 'entitlements'];
-  const COMPONENT_CARD_LABELS = { platform: 'Platform', support: 'Support', entitlements: 'Entitlements' };
+  const COMPONENT_CARD_ORDER = ['platform', 'support', 'entitlement'];
+  const COMPONENT_CARD_LABELS = { platform: 'Platform', support: 'Support', entitlement: 'Entitlements' };
+  const COMPONENT_ADD_LABELS = { platform: 'Add Platform', support: 'Add Support', entitlement: 'Add Entitlement' };
+  const COMPONENT_EMPTY_LABELS = { platform: 'No platform items yet', support: 'No support tier selected.', entitlement: 'No entitlement items yet' };
 
   const productsByCategory = useMemo(() => {
-    const grouped = { platform: [], support: [], entitlements: [] };
+    const grouped = { platform: [], support: [], entitlement: [] };
     (products || []).forEach((p) => {
       if (p.id === f.id || isBundleProduct(p) || getProductCategory(p) === 'bundle') return;
       const cat = getProductCategory(p);
-      if (grouped[cat]) grouped[cat].push(p);
+      if (cat === 'entitlements') {
+        grouped.entitlement.push(p);
+      } else if (grouped[cat]) {
+        grouped[cat].push(p);
+      }
     });
     Object.values(grouped).forEach((list) => list.sort((a, b) => (a.name || '').localeCompare(b.name || '')));
     return grouped;
   }, [products, f.id]);
 
   const membersByCategory = useMemo(() => {
-    const grouped = { platform: [], support: [], entitlements: [] };
-    (f.members || []).forEach((member, index) => {
-      const ref = productMap.get(member.product_id);
-      const cat = ref ? getProductCategory(ref) : 'platform';
-      const normalizedCat = grouped[cat] ? cat : 'platform';
-      grouped[normalizedCat].push({ ...member, _index: index });
+    const grouped = { platform: [], support: [], entitlement: [] };
+    (f.package_components || []).forEach((component, index) => {
+      const normalizedCat = grouped[component.section] ? component.section : 'platform';
+      grouped[normalizedCat].push({ ...component, _index: index });
     });
     return grouped;
-  }, [f.members, productMap]);
-
-  const creditProducts = useMemo(() =>
-    (products || []).filter((p) => isCreditLikeProduct(p)),
-  [products]);
+  }, [f.package_components]);
 
   const swapMember = (index, newProductId) => {
     const newProd = productMap.get(newProductId);
     if (!newProd) return;
     setF((prev) => {
-      const members = [...(prev.members || [])];
-      members[index] = {
-        ...members[index],
-        product_id: newProductId,
-        name: newProd.name,
-        sku: newProd.sku,
-        unit_type: newProd.default_price?.unit || 'flat',
-        list_price: parseFloat(newProd.default_price?.amount) || 0,
-        price_behavior: 'included',
+      const components = [...(prev.package_components || [])];
+      components[index] = {
+        ...components[index],
+        component_product_id: newProductId,
       };
-      return { ...prev, members };
+      return { ...prev, package_components: components };
     });
   };
 
@@ -186,16 +201,41 @@ export default function ProductModal({ product, products, onSave, onClose }) {
     const prod = productMap.get(productId);
     if (!prod) return;
     if (category === 'support') {
-      const existingIdx = (f.members || []).findIndex((m) => {
-        const ref = productMap.get(m.product_id);
-        return ref && getProductCategory(ref) === 'support';
+      setF((prev) => {
+        const existingComponents = [...(prev.package_components || [])];
+        const existingIdx = existingComponents.findIndex((component) => component.section === 'support');
+        let packageComponents;
+        if (existingIdx >= 0) {
+          packageComponents = existingComponents
+            .map((component, idx) => (idx === existingIdx ? { ...component, component_product_id: productId } : component))
+            .filter((component, idx) => component.section !== 'support' || idx === existingIdx);
+        } else {
+          packageComponents = [...existingComponents, {
+            id: `pc_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+            package_product_id: prev.id,
+            component_product_id: productId,
+            section: 'support',
+            is_included: true,
+            sort_order: existingComponents.length + 1,
+            default_qty: 1,
+            min_qty: 1,
+            max_qty: 1,
+            qty_behavior: 'hidden',
+            pricing_display: 'package_only',
+            quote_edit_mode: 'read_only',
+            is_required: false,
+            is_default_selected: true,
+            notes: null,
+          }];
+        }
+        return {
+          ...prev,
+          package_components: packageComponents.map((component, index) => ({ ...component, sort_order: index + 1 })),
+        };
       });
-      if (existingIdx >= 0) {
-        swapMember(existingIdx, productId);
-        return;
-      }
+      return;
     }
-    addMember(prod);
+    addMember(prod, category);
   };
 
   const categoryOptions = useMemo(() => {
@@ -211,45 +251,61 @@ export default function ProductModal({ product, products, onSave, onClose }) {
     return values;
   }, [f, products]);
 
-  const addMember = (productOrId) => {
+  const addMember = (productOrId, forcedSection = null) => {
     const productId = typeof productOrId === 'string' ? productOrId : productOrId?.id;
     const prod = typeof productOrId === 'string' ? productMap.get(productId) : productOrId;
     if (!prod) return;
+    const inferredSection = getProductCategory(prod) === 'support'
+      ? 'support'
+      : getProductCategory(prod) === 'entitlements'
+        ? 'entitlement'
+        : 'platform';
+    const section = forcedSection || inferredSection;
+    const defaults = section === 'platform'
+      ? { default_qty: null, min_qty: null, max_qty: null, qty_behavior: 'hidden', quote_edit_mode: 'read_only' }
+      : section === 'support'
+        ? { default_qty: 1, min_qty: 1, max_qty: 1, qty_behavior: 'hidden', quote_edit_mode: 'read_only' }
+        : { default_qty: 1, min_qty: 1, max_qty: null, qty_behavior: 'editable', quote_edit_mode: 'editable_qty' };
     setF((prev) => ({
       ...prev,
-      members: [...(prev.members || []), {
-        product_id: productId,
-        name: prod.name,
-        sku: prod.sku,
-        qty: 1,
-        default_quantity: 1,
-        unit_type: prod.default_price?.unit || 'flat',
-        price_behavior: 'included',
-        list_price: parseFloat(prod.default_price?.amount) || 0,
-        sort_order: (prev.members || []).length + 1,
-        _category: getProductCategory(prod),
+      package_components: [...(prev.package_components || []), {
+        id: `pc_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+        package_product_id: prev.id,
+        component_product_id: productId,
+        section,
+        is_included: true,
+        sort_order: (prev.package_components || []).length + 1,
+        default_qty: defaults.default_qty,
+        min_qty: defaults.min_qty,
+        max_qty: defaults.max_qty,
+        qty_behavior: defaults.qty_behavior,
+        pricing_display: 'package_only',
+        quote_edit_mode: defaults.quote_edit_mode,
+        is_required: false,
+        is_default_selected: true,
+        notes: null,
       }],
     }));
   };
 
   const updateMember = (index, key, value) => {
     setF((prev) => {
-      const members = [...(prev.members || [])];
-      const nextValue = key === 'qty' ? Math.max(1, parseNumber(value, 1)) : value;
-      const member = { ...members[index], [key]: nextValue };
-      if (key === 'qty') member.default_quantity = nextValue;
-      members[index] = member;
-      return { ...prev, members };
+      const packageComponents = [...(prev.package_components || [])];
+      const nextValue = ['default_qty', 'min_qty', 'max_qty', 'sort_order'].includes(key)
+        ? (value === null ? null : Math.max(1, parseNumber(value, 1)))
+        : value;
+      packageComponents[index] = { ...packageComponents[index], [key]: nextValue };
+      return { ...prev, package_components: packageComponents };
     });
   };
 
   const removeMember = (index) => {
     setF((prev) => {
-      const members = [...(prev.members || [])];
-      members.splice(index, 1);
+      const packageComponents = [...(prev.package_components || [])];
+      packageComponents.splice(index, 1);
       return {
         ...prev,
-        members: members.map((member, i) => ({ ...member, sort_order: i + 1 })),
+        package_components: packageComponents.map((component, i) => ({ ...component, sort_order: i + 1 })),
       };
     });
   };
@@ -281,20 +337,34 @@ export default function ProductModal({ product, products, onSave, onClose }) {
       entitlements = '{}';
     }
 
-    const normalizedMembers = (f.members || []).map((member, index) => {
-      const referencedProduct = productMap.get(member.product_id);
-      const qty = Math.max(1, parseNumber(member.qty ?? member.default_quantity, 1));
-      return {
-      product_id: member.product_id,
-      name: member.name || referencedProduct?.name || '',
-      sku: member.sku || referencedProduct?.sku || '',
-      qty,
-      default_quantity: qty,
-      unit_type: member.unit_type || referencedProduct?.default_price?.unit || 'flat',
-      price_behavior: member.price_behavior || 'included',
-      list_price: parseNumber(member.list_price ?? referencedProduct?.default_price?.amount, 0),
-      sort_order: index + 1,
-    };
+    const normalizedPackageComponents = (f.package_components || [])
+      .map((component, index) => {
+        const referencedProduct = productMap.get(component.component_product_id);
+        if (!referencedProduct) return null;
+        const section = component.section === 'entitlement' ? 'entitlement' : (component.section || 'platform');
+        return {
+          ...component,
+          package_product_id: f.id,
+          component_product_id: component.component_product_id,
+          section,
+          is_included: typeof component.is_included === 'boolean' ? component.is_included : true,
+          sort_order: Math.max(1, parseInt(component.sort_order, 10) || (index + 1)),
+          default_qty: component.default_qty == null ? null : Math.max(1, parseInt(component.default_qty, 10) || 1),
+          min_qty: component.min_qty == null ? null : Math.max(1, parseInt(component.min_qty, 10) || 1),
+          max_qty: component.max_qty == null ? null : Math.max(1, parseInt(component.max_qty, 10) || 1),
+          qty_behavior: PACKAGE_QTY_BEHAVIORS.includes(component.qty_behavior) ? component.qty_behavior : 'hidden',
+          pricing_display: PACKAGE_PRICING_DISPLAYS.includes(component.pricing_display) ? component.pricing_display : 'package_only',
+          quote_edit_mode: PACKAGE_QUOTE_EDIT_MODES.includes(component.quote_edit_mode) ? component.quote_edit_mode : 'read_only',
+          is_required: Boolean(component.is_required),
+          is_default_selected: typeof component.is_default_selected === 'boolean' ? component.is_default_selected : true,
+          notes: component.notes ?? null,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.sort_order - b.sort_order);
+    const normalizedMembers = normalizedPackageComponents.map((component, index) => {
+      const referencedProduct = productMap.get(component.component_product_id);
+      return packageComponentToLegacyMember(component, referencedProduct, index);
     });
 
     onSave({
@@ -310,6 +380,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
         max_quantity: parseInt(f.config.max_quantity, 10) || 999,
       },
       configuration_method: isPackage ? 'bundle' : 'none',
+      package_components: isPackage ? normalizedPackageComponents : [],
       members: isPackage ? normalizedMembers : [],
       components: isPackage ? normalizedMembers : [],
     });
@@ -317,7 +388,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal modal-theme-products product-modal" onClick={(e) => e.stopPropagation()}>
+      <div className={`modal modal-theme-products product-modal ${isPackage ? 'product-modal-base-package' : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-title">{product ? 'Edit Product' : 'New Product'}</div>
 
         <div className="modal-section">
@@ -425,189 +496,6 @@ export default function ProductModal({ product, products, onSave, onClose }) {
           </div>
         </div>
 
-        {isPackage && (
-          <div className="modal-section">
-            <button
-              type="button"
-              className="modal-section-label modal-section-toggle"
-              onClick={() => toggleSection(COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS)}
-              aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS]}
-            >
-              <span>Package Components</span>
-              <span>{openSections[COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS] ? '▾' : '▸'}</span>
-            </button>
-
-            <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS] ? 'is-open' : ''}`}>
-              <div className="pkg-components pkg-components-categorized">
-                {COMPONENT_CARD_ORDER.map((category) => {
-                  const catMembers = membersByCategory[category] || [];
-                  const catLabel = COMPONENT_CARD_LABELS[category];
-                  const catProducts = productsByCategory[category] || [];
-                  const isSupportCategory = category === 'support';
-
-                  return (
-                    <div key={category} className="pkg-category-card">
-                      <div className="pkg-category-card-header">
-                        <span className="pkg-category-card-title">{catLabel}</span>
-                        {isSupportCategory && catMembers.length === 0 && catProducts.length > 0 && (
-                          <select
-                            className="field-select pkg-category-picker"
-                            value=""
-                            onChange={(e) => {
-                              if (e.target.value) addMemberFromCategory(category, e.target.value);
-                            }}
-                          >
-                            <option value="">Select Support Level</option>
-                            {catProducts.map((p) => (
-                              <option key={p.id} value={p.id}>{p.sku ? `${p.name} (${p.sku})` : p.name}</option>
-                            ))}
-                          </select>
-                        )}
-                        {!isSupportCategory && catProducts.length > 0 && (
-                          <select
-                            className="field-select pkg-category-picker"
-                            value=""
-                            onChange={(e) => {
-                              if (e.target.value) addMemberFromCategory(category, e.target.value);
-                            }}
-                          >
-                            <option value="">{`Add ${catLabel}`}</option>
-                            {catProducts
-                              .filter((p) => !catMembers.some((m) => m.product_id === p.id))
-                              .map((p) => (
-                                <option key={p.id} value={p.id}>{p.sku ? `${p.name} (${p.sku})` : p.name}</option>
-                              ))}
-                          </select>
-                        )}
-                      </div>
-                      <table className="pkg-components-table">
-                        <thead>
-                          <tr>
-                            <th>Product</th>
-                            <th>SKU</th>
-                            <th style={{ width: 80, minWidth: 80 }}>Qty</th>
-                            <th style={{ width: 100, minWidth: 100 }}>Behavior</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {catMembers.length > 0 ? catMembers.map((member) => {
-                            const index = member._index;
-                            const referencedProduct = productMap.get(member.product_id);
-                            const isConcurrentBuildsMember = isConcurrentBuildsLikeProduct({
-                              ...referencedProduct,
-                              ...member,
-                              unit_type: member.unit_type || referencedProduct?.default_price?.unit,
-                            });
-                            const isCreditMember = !isConcurrentBuildsMember && isCreditLikeProduct({
-                              ...referencedProduct,
-                              ...member,
-                              unit_type: member.unit_type || referencedProduct?.default_price?.unit,
-                            });
-                            const isSeatMember = isSeatLikeProduct({
-                              ...referencedProduct,
-                              ...member,
-                              unit_type: member.unit_type || referencedProduct?.default_price?.unit,
-                            });
-                            const seatStepperClass = (isSeatMember || isConcurrentBuildsMember) ? 'number-stepper-seat' : '';
-                            const memberQtyKey = `member:${index}:qty`;
-                            const currentQty = parsePositiveIntegerInput(member.qty ?? member.default_quantity, 1, 1);
-                            const isEditingCreditQty = Object.prototype.hasOwnProperty.call(creditInputDrafts, memberQtyKey);
-                            const qtyLocked = isSupportCategory;
-
-                            return (
-                              <tr key={`${member.product_id}_${index}`}>
-                                <td className="pkg-cell-product">
-                                  {isSupportCategory ? (
-                                    <select
-                                      className="field-select pkg-inline-select"
-                                      value={member.product_id}
-                                      onChange={(e) => {
-                                        if (e.target.value) swapMember(index, e.target.value);
-                                        else removeMember(index);
-                                      }}
-                                    >
-                                      <option value="">No Support</option>
-                                      {catProducts.map((p) => (
-                                        <option key={p.id} value={p.id}>{p.sku ? `${p.name} (${p.sku})` : p.name}</option>
-                                      ))}
-                                    </select>
-                                  ) : isCreditMember && creditProducts.length > 1 ? (
-                                    <select
-                                      className="field-select pkg-inline-select"
-                                      value={member.product_id}
-                                      onChange={(e) => {
-                                        if (e.target.value) swapMember(index, e.target.value);
-                                      }}
-                                    >
-                                      {creditProducts.map((p) => (
-                                        <option key={p.id} value={p.id}>{p.sku ? `${p.name} (${p.sku})` : p.name}</option>
-                                      ))}
-                                    </select>
-                                  ) : (
-                                    <span className="pkg-member-name">{member.name || referencedProduct?.name || 'Unknown'}</span>
-                                  )}
-                                  <button type="button" className="pkg-remove-btn" onClick={() => removeMember(index)} title="Remove">
-                                    <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
-                                  </button>
-                                </td>
-                                <td className="cell-sku">{member.sku || referencedProduct?.sku || ''}</td>
-                                <td>
-                                  {qtyLocked ? (
-                                    <span className="cell-locked">1</span>
-                                  ) : (
-                                    <input
-                                      className={`field-input ${seatStepperClass}`.trim()}
-                                      type={isCreditMember ? 'text' : 'number'}
-                                      inputMode={isCreditMember ? 'numeric' : undefined}
-                                      min="1"
-                                      step="1"
-                                      value={isCreditMember
-                                        ? (isEditingCreditQty ? creditInputDrafts[memberQtyKey] : formatIntegerWithCommas(currentQty, 1))
-                                        : currentQty}
-                                      onFocus={() => {
-                                        if (!isCreditMember) return;
-                                        setCreditInputDrafts((prev) => ({ ...prev, [memberQtyKey]: formatIntegerForEdit(currentQty, 1, 1) }));
-                                      }}
-                                      onChange={(e) => {
-                                        const raw = e.target.value;
-                                        if (isCreditMember) setCreditInputDrafts((prev) => ({ ...prev, [memberQtyKey]: raw }));
-                                        updateMember(index, 'qty', parsePositiveIntegerInput(raw, 1, 1));
-                                      }}
-                                      onBlur={(e) => {
-                                        if (!isCreditMember) return;
-                                        updateMember(index, 'qty', parsePositiveIntegerInput(e.target.value, 1, 1));
-                                        setCreditInputDrafts((prev) => {
-                                          const clone = { ...prev };
-                                          delete clone[memberQtyKey];
-                                          return clone;
-                                        });
-                                      }}
-                                      style={{ width: '100%', padding: '4px 6px', textAlign: 'center' }}
-                                    />
-                                  )}
-                                </td>
-                                <td><span className="pkg-behavior-included">Included</span></td>
-                              </tr>
-                            );
-                          }) : (
-                            <tr>
-                              <td colSpan="4" className="pkg-empty-row">
-                                {catProducts.length > 0
-                                  ? `No ${catLabel.toLowerCase()} components selected`
-                                  : `No ${catLabel.toLowerCase()} SKUs available`}
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="modal-section">
           <button
             type="button"
@@ -636,6 +524,290 @@ export default function ProductModal({ product, products, onSave, onClose }) {
             </div>
           </div>
         </div>
+
+        {isPackage && (
+          <div className="modal-section">
+            <button
+              type="button"
+              className="modal-section-label modal-section-toggle"
+              onClick={() => toggleSection(COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS)}
+              aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS]}
+            >
+              <span>Package Components</span>
+              <span>{openSections[COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS] ? '▾' : '▸'}</span>
+            </button>
+
+            <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS] ? 'is-open' : ''}`}>
+              <div className="pkg-components-helper">
+                Define what is included in this package and how components behave in quotes.
+              </div>
+              <div className="pkg-components pkg-components-categorized">
+                {COMPONENT_CARD_ORDER.map((category) => {
+                  const membersForCategory = membersByCategory[category] || [];
+                  const catMembers = category === 'support' ? membersForCategory.slice(0, 1) : membersForCategory;
+                  const catLabel = COMPONENT_CARD_LABELS[category];
+                  const catProducts = productsByCategory[category] || [];
+                  const addLabel = COMPONENT_ADD_LABELS[category];
+                  const emptyLabel = COMPONENT_EMPTY_LABELS[category];
+
+                  return (
+                    <div key={category} className={`pkg-category-card pkg-category-card-${category}`}>
+                      <div className="pkg-category-card-header">
+                        <span className="pkg-category-card-title">{catLabel}</span>
+                        <select
+                          className="field-select pkg-category-picker"
+                          value=""
+                          onChange={(e) => {
+                            if (e.target.value) addMemberFromCategory(category, e.target.value);
+                          }}
+                          disabled={catProducts.length === 0}
+                        >
+                          <option value="">{addLabel}</option>
+                          {catProducts
+                            .filter((p) => category === 'support' || !catMembers.some((m) => m.component_product_id === p.id))
+                            .map((p) => (
+                              <option key={p.id} value={p.id}>{p.sku ? `${p.name} (${p.sku})` : p.name}</option>
+                            ))}
+                        </select>
+                      </div>
+                      {category === 'entitlement' ? (
+                        <div className="pkg-entitlement-list">
+                          {catMembers.length > 0 ? catMembers.map((member) => {
+                            const index = member._index;
+                            const referencedProduct = productMap.get(member.component_product_id);
+                            const memberSku = referencedProduct?.sku || '';
+
+                            return (
+                              <div key={`${member.component_product_id}_${index}`} className="pkg-entitlement-card">
+                                <div className="pkg-entitlement-card-top">
+                                  <div className="pkg-cell-handle pkg-entitlement-handle">
+                                    <span className="pkg-drag-handle" title="Reordering coming soon" aria-hidden="true">
+                                      <i className="fa-solid fa-grip-vertical fa-fw" />
+                                    </span>
+                                  </div>
+                                  <div className="pkg-product-cell-stack pkg-entitlement-product">
+                                    <span className="pkg-member-name">{referencedProduct?.name || 'Unknown'}</span>
+                                    <span className="pkg-member-sku pkg-entitlement-sku">{memberSku || '\u00A0'}</span>
+                                  </div>
+                                  <button type="button" className="pkg-remove-btn" onClick={() => removeMember(index)} title="Delete">
+                                    <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
+                                  </button>
+                                </div>
+
+                                <div className="pkg-entitlement-field-rows">
+                                  <div className="pkg-entitlement-fields-row pkg-entitlement-fields-row--qty">
+                                    <div className="field pkg-entitlement-qty-field">
+                                      <label className="field-label">Default Qty</label>
+                                      <input
+                                        className="field-input pkg-inline-number"
+                                        type="number"
+                                        min="1"
+                                        value={member.default_qty ?? ''}
+                                        onChange={(e) => updateMember(index, 'default_qty', e.target.value)}
+                                      />
+                                    </div>
+                                    <div className="field pkg-entitlement-qty-field">
+                                      <label className="field-label">Min Qty</label>
+                                      <input
+                                        className="field-input pkg-inline-number"
+                                        type="number"
+                                        min="1"
+                                        value={member.min_qty ?? ''}
+                                        onChange={(e) => updateMember(index, 'min_qty', e.target.value)}
+                                      />
+                                    </div>
+                                    <div className="field pkg-entitlement-qty-field">
+                                      <label className="field-label">Max Qty</label>
+                                      <input
+                                        className="field-input pkg-inline-number"
+                                        type="number"
+                                        min="1"
+                                        value={member.max_qty ?? ''}
+                                        onChange={(e) => updateMember(index, 'max_qty', e.target.value)}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="pkg-entitlement-fields-row">
+                                    <div className="field">
+                                      <label className="field-label">Qty Behavior</label>
+                                      <select
+                                        className="field-select pkg-inline-select"
+                                        value={member.qty_behavior || 'editable'}
+                                        onChange={(e) => updateMember(index, 'qty_behavior', e.target.value)}
+                                      >
+                                        {QTY_BEHAVIOR_OPTIONS.map((opt) => (
+                                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    <div className="field">
+                                      <label className="field-label">Quote Editability</label>
+                                      <select
+                                        className="field-select pkg-inline-select"
+                                        value={member.quote_edit_mode || 'editable_qty'}
+                                        onChange={(e) => updateMember(index, 'quote_edit_mode', e.target.value)}
+                                      >
+                                        {QUOTE_EDIT_OPTIONS.map((opt) => (
+                                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    <div className="field">
+                                      <label className="field-label">Pricing Display</label>
+                                      <select
+                                        className="field-select pkg-inline-select"
+                                        value={member.pricing_display || 'package_only'}
+                                        onChange={(e) => updateMember(index, 'pricing_display', e.target.value)}
+                                      >
+                                        {PRICING_DISPLAY_OPTIONS.map((opt) => (
+                                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }) : (
+                            <div className="pkg-empty-row pkg-empty-card-row">{emptyLabel}</div>
+                          )}
+                        </div>
+                      ) : (
+                        <table className="pkg-components-table">
+                          <thead>
+                            {category === 'platform' && (
+                              <tr>
+                                <th className="pkg-col-handle" aria-label="Reorder" />
+                                <th>Product</th>
+                                <th>Quote Editability</th>
+                                <th>Pricing Display</th>
+                                <th className="pkg-col-delete" aria-label="Remove" />
+                              </tr>
+                            )}
+                            {category === 'support' && (
+                              <tr>
+                                <th>Product</th>
+                                <th>Quote Editability</th>
+                                <th>Pricing Display</th>
+                              </tr>
+                            )}
+                          </thead>
+                          <tbody>
+                            {catMembers.length > 0 ? catMembers.map((member) => {
+                              const index = member._index;
+                              const referencedProduct = productMap.get(member.component_product_id);
+                              const memberSku = referencedProduct?.sku || '';
+
+                              return (
+                                <tr key={`${member.component_product_id}_${index}`}>
+                                  {category !== 'support' && (
+                                    <td className="pkg-cell-handle">
+                                      <span className="pkg-drag-handle" title="Reordering coming soon" aria-hidden="true">
+                                        <i className="fa-solid fa-grip-vertical fa-fw" />
+                                      </span>
+                                    </td>
+                                  )}
+                                  <td className="pkg-cell-product">
+                                    {category === 'support' ? (
+                                      <div className="pkg-product-cell-stack">
+                                        <select
+                                          className="field-select pkg-inline-select"
+                                          value={member.component_product_id}
+                                          onChange={(e) => {
+                                            if (e.target.value) swapMember(index, e.target.value);
+                                          }}
+                                        >
+                                          {catProducts.map((p) => (
+                                            <option key={p.id} value={p.id}>{p.sku ? `${p.name} (${p.sku})` : p.name}</option>
+                                          ))}
+                                        </select>
+                                        {memberSku && <span className="pkg-member-sku">{memberSku}</span>}
+                                      </div>
+                                    ) : (
+                                      <div className="pkg-product-cell-stack">
+                                        <span className="pkg-member-name">{referencedProduct?.name || 'Unknown'}</span>
+                                        {memberSku && <span className="pkg-member-sku">{memberSku}</span>}
+                                      </div>
+                                    )}
+                                  </td>
+                                  {category === 'platform' && (
+                                    <>
+                                      <td>
+                                        <select
+                                          className="field-select pkg-inline-select"
+                                          value={member.quote_edit_mode || 'read_only'}
+                                          onChange={(e) => updateMember(index, 'quote_edit_mode', e.target.value)}
+                                        >
+                                          {QUOTE_EDIT_OPTIONS.map((opt) => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                          ))}
+                                        </select>
+                                      </td>
+                                      <td>
+                                        <select
+                                          className="field-select pkg-inline-select"
+                                          value={member.pricing_display || 'package_only'}
+                                          onChange={(e) => updateMember(index, 'pricing_display', e.target.value)}
+                                        >
+                                          {PRICING_DISPLAY_OPTIONS.map((opt) => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                          ))}
+                                        </select>
+                                      </td>
+                                    </>
+                                  )}
+                                  {category === 'support' && (
+                                    <>
+                                      <td>
+                                        <select
+                                          className="field-select pkg-inline-select"
+                                          value={member.quote_edit_mode || 'read_only'}
+                                          onChange={(e) => updateMember(index, 'quote_edit_mode', e.target.value)}
+                                        >
+                                          {QUOTE_EDIT_OPTIONS.map((opt) => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                          ))}
+                                        </select>
+                                      </td>
+                                      <td>
+                                        <select
+                                          className="field-select pkg-inline-select"
+                                          value={member.pricing_display || 'package_only'}
+                                          onChange={(e) => updateMember(index, 'pricing_display', e.target.value)}
+                                        >
+                                          {PRICING_DISPLAY_OPTIONS.map((opt) => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                          ))}
+                                        </select>
+                                      </td>
+                                    </>
+                                  )}
+                                  {category !== 'support' && (
+                                    <td className="pkg-cell-delete">
+                                      <button type="button" className="pkg-remove-btn" onClick={() => removeMember(index)} title="Delete">
+                                        <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
+                                      </button>
+                                    </td>
+                                  )}
+                                </tr>
+                              );
+                            }) : (
+                              <tr>
+                                <td colSpan={category === 'platform' ? 5 : 3} className="pkg-empty-row">
+                                  {emptyLabel}
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="modal-section">
           <button
@@ -709,122 +881,124 @@ export default function ProductModal({ product, products, onSave, onClose }) {
               </div>
             </div>
 
-            <div className="grid-3">
-              <div className="field">
-                <label className="field-label">Default Qty</label>
-                <input
-                  className={`field-input ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
-                  type={isCreditProduct ? 'text' : 'number'}
-                  inputMode={isCreditProduct ? 'numeric' : undefined}
-                  value={isCreditProduct
-                    ? (Object.prototype.hasOwnProperty.call(creditInputDrafts, 'config:default_quantity')
-                      ? creditInputDrafts['config:default_quantity']
-                      : formatIntegerWithCommas(parsePositiveIntegerInput(f.config.default_quantity, 1, 1), 1))
-                    : f.config.default_quantity}
-                  onFocus={() => {
-                    if (!isCreditProduct) return;
-                    setCreditInputDrafts((prev) => ({
-                      ...prev,
-                      'config:default_quantity': formatIntegerForEdit(f.config.default_quantity, 1, 1),
-                    }));
-                  }}
-                  onChange={(e) => {
-                    if (!isCreditProduct) {
-                      sc('default_quantity', e.target.value);
-                      return;
-                    }
-                    const raw = e.target.value;
-                    setCreditInputDrafts((prev) => ({ ...prev, 'config:default_quantity': raw }));
-                    sc('default_quantity', parsePositiveIntegerInput(raw, 1, 1));
-                  }}
-                  onBlur={(e) => {
-                    if (!isCreditProduct) return;
-                    sc('default_quantity', parsePositiveIntegerInput(e.target.value, 1, 1));
-                    setCreditInputDrafts((prev) => {
-                      const clone = { ...prev };
-                      delete clone['config:default_quantity'];
-                      return clone;
-                    });
-                  }}
-                />
+            {!isPackage && (
+              <div className="grid-3">
+                <div className="field">
+                  <label className="field-label">Default Qty</label>
+                  <input
+                    className={`field-input ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
+                    type={isCreditProduct ? 'text' : 'number'}
+                    inputMode={isCreditProduct ? 'numeric' : undefined}
+                    value={isCreditProduct
+                      ? (Object.prototype.hasOwnProperty.call(creditInputDrafts, 'config:default_quantity')
+                        ? creditInputDrafts['config:default_quantity']
+                        : formatIntegerWithCommas(parsePositiveIntegerInput(f.config.default_quantity, 1, 1), 1))
+                      : f.config.default_quantity}
+                    onFocus={() => {
+                      if (!isCreditProduct) return;
+                      setCreditInputDrafts((prev) => ({
+                        ...prev,
+                        'config:default_quantity': formatIntegerForEdit(f.config.default_quantity, 1, 1),
+                      }));
+                    }}
+                    onChange={(e) => {
+                      if (!isCreditProduct) {
+                        sc('default_quantity', e.target.value);
+                        return;
+                      }
+                      const raw = e.target.value;
+                      setCreditInputDrafts((prev) => ({ ...prev, 'config:default_quantity': raw }));
+                      sc('default_quantity', parsePositiveIntegerInput(raw, 1, 1));
+                    }}
+                    onBlur={(e) => {
+                      if (!isCreditProduct) return;
+                      sc('default_quantity', parsePositiveIntegerInput(e.target.value, 1, 1));
+                      setCreditInputDrafts((prev) => {
+                        const clone = { ...prev };
+                        delete clone['config:default_quantity'];
+                        return clone;
+                      });
+                    }}
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label">Min Qty</label>
+                  <input
+                    className={`field-input ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
+                    type={isCreditProduct ? 'text' : 'number'}
+                    inputMode={isCreditProduct ? 'numeric' : undefined}
+                    value={isCreditProduct
+                      ? (Object.prototype.hasOwnProperty.call(creditInputDrafts, 'config:min_quantity')
+                        ? creditInputDrafts['config:min_quantity']
+                        : formatIntegerWithCommas(parsePositiveIntegerInput(f.config.min_quantity, 1, 1), 1))
+                      : f.config.min_quantity}
+                    onFocus={() => {
+                      if (!isCreditProduct) return;
+                      setCreditInputDrafts((prev) => ({
+                        ...prev,
+                        'config:min_quantity': formatIntegerForEdit(f.config.min_quantity, 1, 1),
+                      }));
+                    }}
+                    onChange={(e) => {
+                      if (!isCreditProduct) {
+                        sc('min_quantity', e.target.value);
+                        return;
+                      }
+                      const raw = e.target.value;
+                      setCreditInputDrafts((prev) => ({ ...prev, 'config:min_quantity': raw }));
+                      sc('min_quantity', parsePositiveIntegerInput(raw, 1, 1));
+                    }}
+                    onBlur={(e) => {
+                      if (!isCreditProduct) return;
+                      sc('min_quantity', parsePositiveIntegerInput(e.target.value, 1, 1));
+                      setCreditInputDrafts((prev) => {
+                        const clone = { ...prev };
+                        delete clone['config:min_quantity'];
+                        return clone;
+                      });
+                    }}
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label">Max Qty</label>
+                  <input
+                    className={`field-input ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
+                    type={isCreditProduct ? 'text' : 'number'}
+                    inputMode={isCreditProduct ? 'numeric' : undefined}
+                    value={isCreditProduct
+                      ? (Object.prototype.hasOwnProperty.call(creditInputDrafts, 'config:max_quantity')
+                        ? creditInputDrafts['config:max_quantity']
+                        : formatIntegerWithCommas(parsePositiveIntegerInput(f.config.max_quantity, 1, 1), 1))
+                      : f.config.max_quantity}
+                    onFocus={() => {
+                      if (!isCreditProduct) return;
+                      setCreditInputDrafts((prev) => ({
+                        ...prev,
+                        'config:max_quantity': formatIntegerForEdit(f.config.max_quantity, 1, 1),
+                      }));
+                    }}
+                    onChange={(e) => {
+                      if (!isCreditProduct) {
+                        sc('max_quantity', e.target.value);
+                        return;
+                      }
+                      const raw = e.target.value;
+                      setCreditInputDrafts((prev) => ({ ...prev, 'config:max_quantity': raw }));
+                      sc('max_quantity', parsePositiveIntegerInput(raw, 1, 1));
+                    }}
+                    onBlur={(e) => {
+                      if (!isCreditProduct) return;
+                      sc('max_quantity', parsePositiveIntegerInput(e.target.value, 1, 1));
+                      setCreditInputDrafts((prev) => {
+                        const clone = { ...prev };
+                        delete clone['config:max_quantity'];
+                        return clone;
+                      });
+                    }}
+                  />
+                </div>
               </div>
-              <div className="field">
-                <label className="field-label">Min Qty</label>
-                <input
-                  className={`field-input ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
-                  type={isCreditProduct ? 'text' : 'number'}
-                  inputMode={isCreditProduct ? 'numeric' : undefined}
-                  value={isCreditProduct
-                    ? (Object.prototype.hasOwnProperty.call(creditInputDrafts, 'config:min_quantity')
-                      ? creditInputDrafts['config:min_quantity']
-                      : formatIntegerWithCommas(parsePositiveIntegerInput(f.config.min_quantity, 1, 1), 1))
-                    : f.config.min_quantity}
-                  onFocus={() => {
-                    if (!isCreditProduct) return;
-                    setCreditInputDrafts((prev) => ({
-                      ...prev,
-                      'config:min_quantity': formatIntegerForEdit(f.config.min_quantity, 1, 1),
-                    }));
-                  }}
-                  onChange={(e) => {
-                    if (!isCreditProduct) {
-                      sc('min_quantity', e.target.value);
-                      return;
-                    }
-                    const raw = e.target.value;
-                    setCreditInputDrafts((prev) => ({ ...prev, 'config:min_quantity': raw }));
-                    sc('min_quantity', parsePositiveIntegerInput(raw, 1, 1));
-                  }}
-                  onBlur={(e) => {
-                    if (!isCreditProduct) return;
-                    sc('min_quantity', parsePositiveIntegerInput(e.target.value, 1, 1));
-                    setCreditInputDrafts((prev) => {
-                      const clone = { ...prev };
-                      delete clone['config:min_quantity'];
-                      return clone;
-                    });
-                  }}
-                />
-              </div>
-              <div className="field">
-                <label className="field-label">Max Qty</label>
-                <input
-                  className={`field-input ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
-                  type={isCreditProduct ? 'text' : 'number'}
-                  inputMode={isCreditProduct ? 'numeric' : undefined}
-                  value={isCreditProduct
-                    ? (Object.prototype.hasOwnProperty.call(creditInputDrafts, 'config:max_quantity')
-                      ? creditInputDrafts['config:max_quantity']
-                      : formatIntegerWithCommas(parsePositiveIntegerInput(f.config.max_quantity, 1, 1), 1))
-                    : f.config.max_quantity}
-                  onFocus={() => {
-                    if (!isCreditProduct) return;
-                    setCreditInputDrafts((prev) => ({
-                      ...prev,
-                      'config:max_quantity': formatIntegerForEdit(f.config.max_quantity, 1, 1),
-                    }));
-                  }}
-                  onChange={(e) => {
-                    if (!isCreditProduct) {
-                      sc('max_quantity', e.target.value);
-                      return;
-                    }
-                    const raw = e.target.value;
-                    setCreditInputDrafts((prev) => ({ ...prev, 'config:max_quantity': raw }));
-                    sc('max_quantity', parsePositiveIntegerInput(raw, 1, 1));
-                  }}
-                  onBlur={(e) => {
-                    if (!isCreditProduct) return;
-                    sc('max_quantity', parsePositiveIntegerInput(e.target.value, 1, 1));
-                    setCreditInputDrafts((prev) => {
-                      const clone = { ...prev };
-                      delete clone['config:max_quantity'];
-                      return clone;
-                    });
-                  }}
-                />
-              </div>
-            </div>
+            )}
 
             <div className="checkbox-row">
               <input type="checkbox" checked={f.config.edit_name} onChange={(e) => sc('edit_name', e.target.checked)} id="editName" />
