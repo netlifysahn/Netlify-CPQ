@@ -60,6 +60,15 @@
   --text-body-sm: 0.875rem;
   --text-label: 0.6875rem;
   --text-micro: 0.625rem;
+  --card-label-font-family: 'Poppins', sans-serif;
+  --card-label-font-size: 11px;
+  --card-label-font-weight: 600;
+  --card-label-letter-spacing: 0.08em;
+  --card-label-text-transform: uppercase;
+  --card-label-color: #778089;
+  --card-label-header-min-height: 44px;
+  --card-label-header-padding-y: 14px;
+  --card-label-header-padding-x: 20px;
 
   /* Spacing — from Athena */
   --space-xs: 4px;
@@ -381,7 +390,7 @@
 }
 
 .page-label {
-  font-family: 'Roboto Mono', monospace;
+  font-family: 'Poppins', sans-serif;
   font-weight: 500;
   font-size: 11px;
   text-transform: uppercase;
@@ -1313,15 +1322,15 @@
 }
 
 .modal-section-label {
-  font-family: 'Roboto Mono', var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--teal);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  margin-bottom: 16px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-family: var(--card-label-font-family);
+  font-size: var(--card-label-font-size);
+  font-weight: var(--card-label-font-weight);
+  color: var(--card-label-color);
+  text-transform: var(--card-label-text-transform);
+  letter-spacing: var(--card-label-letter-spacing);
+  margin-bottom: 0;
+  min-height: var(--card-label-header-min-height);
+  padding: var(--card-label-header-padding-y) var(--card-label-header-padding-x);
   display: flex;
   align-items: center;
 }
@@ -1332,8 +1341,7 @@
   gap: 8px;
   border: 0;
   background: transparent;
-  padding-left: 0;
-  padding-right: 0;
+  padding: var(--card-label-header-padding-y) var(--card-label-header-padding-x);
   cursor: pointer;
   text-align: left;
 }
@@ -1341,6 +1349,18 @@
 .modal-section-label i {
   font-size: 11px;
   opacity: 0.6;
+}
+
+.modal-section-label > span:first-child {
+  line-height: 1;
+}
+
+.modal-section-label > span:last-child {
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .modal-section-content {
@@ -1497,7 +1517,7 @@
 }
 
 .expanded-label {
-  font-family: var(--font-mono);
+  font-family: var(--card-label-font-family);
   font-size: 10px;
   font-weight: 700;
   color: var(--teal);
@@ -1552,7 +1572,7 @@
 }
 
 .price-preview-label {
-  font-family: var(--font-mono);
+  font-family: var(--card-label-font-family);
   font-size: 10px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.45);
@@ -1716,7 +1736,7 @@ tr.drag-over {
   display: inline-block;
   margin-left: 8px;
   padding: 2px 6px;
-  font-family: 'Roboto Mono', monospace;
+  font-family: 'Poppins', sans-serif;
   font-size: 8px;
   font-weight: 500;
   letter-spacing: 0.06em;
@@ -2233,6 +2253,14 @@ tr.drag-over {
 /* ─── Quote Detail ───────────────────────────────────────── */
 
 .quote-detail {
+  --qd-col-product: calc((2.8 / 8.3) * 100%);
+  --qd-col-qty: calc((0.9 / 8.3) * 100%);
+  --qd-col-pricing: calc((1.15 / 8.3) * 100%);
+  --qd-col-list-price: var(--qd-col-pricing);
+  --qd-col-discount: var(--qd-col-pricing);
+  --qd-col-net-price: var(--qd-col-pricing);
+  --qd-col-amount: var(--qd-col-pricing);
+  --qd-shared-grid-columns: 2.8fr 0.9fr 1.15fr 1.15fr 1.15fr 1.15fr;
   max-width: 100%;
 }
 
@@ -2265,13 +2293,14 @@ tr.drag-over {
 }
 
 .qd-customer-section-label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--teal);
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
+  font-family: var(--card-label-font-family);
+  font-size: var(--card-label-font-size);
+  font-weight: var(--card-label-font-weight);
+  color: var(--card-label-color);
+  text-transform: var(--card-label-text-transform);
+  letter-spacing: var(--card-label-letter-spacing);
   margin-bottom: 6px;
+  line-height: 1;
 }
 
 .qd-customer-field {
@@ -2353,7 +2382,7 @@ tr.drag-over {
 }
 
 .qd-quote-number {
-  font-family: 'Roboto Mono', monospace;
+  font-family: 'Poppins', sans-serif;
   font-size: 11px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.30);
@@ -2426,7 +2455,9 @@ tr.drag-over {
   background: none;
   border: none;
   color: #FBB13D;
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
   padding: 6px 8px;
   height: 36px;
   width: 36px;
@@ -2589,10 +2620,10 @@ tr.drag-over {
 }
 
 .pkg-members-label {
-  font-family: var(--font-mono);
+  font-family: var(--card-label-font-family);
   font-size: 10px;
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--card-label-color);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
@@ -2603,8 +2634,9 @@ tr.drag-over {
 }
 
 .pkg-sub-product .cell-name {
-  font-size: 13px;
-  color: #4b5563;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-strong);
 }
 
 .line-row-sub td {
@@ -2639,36 +2671,42 @@ tr.drag-over {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding: var(--card-label-header-padding-y) var(--card-label-header-padding-x);
+  min-height: var(--card-label-header-min-height);
 }
 
 .qd-category-card-title {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #374151;
+  display: block;
+  font-family: var(--card-label-font-family);
+  font-size: var(--card-label-font-size);
+  font-weight: var(--card-label-font-weight);
+  line-height: 1;
+  letter-spacing: var(--card-label-letter-spacing);
+  text-transform: var(--card-label-text-transform);
+  color: var(--card-label-color);
 }
 
-.qd-category-badge {
-  display: inline-block;
-  font-family: 'Roboto Mono', monospace;
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 2px 8px;
-  border-radius: 4px;
+.qd-detail-card-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.qd-detail-card-chevron {
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1;
 }
 
 .qd-category-card .line-table td {
   padding: 12px 12px;
 }
 
+.qd-category-card .line-table th:first-child {
+  padding-left: 28px;
+}
+
 .qd-category-card .line-td-product {
-  padding-left: 20px !important;
+  padding-left: 28px !important;
 }
 
 /* Package block inside bundle card */
@@ -2679,11 +2717,65 @@ tr.drag-over {
   border-bottom: none;
 }
 
-.qd-pkg-header {
-  display: flex;
+.qd-pkg-table-head {
+  display: grid;
+  grid-template-columns: var(--qd-shared-grid-columns);
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.qd-pkg-col-product,
+.qd-pkg-col-qty,
+.qd-pkg-col-list-price,
+.qd-pkg-col-discount,
+.qd-pkg-col-net-price,
+.qd-pkg-col-amount {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  line-height: 1.2;
+  padding: 10px 12px;
+}
+
+.qd-pkg-col-product {
+  grid-column: 1;
+  text-align: left;
+  padding-left: 28px;
+}
+
+.qd-pkg-col-qty {
+  grid-column: 2;
+  text-align: center;
+}
+
+.qd-pkg-col-list-price {
+  grid-column: 3;
+  text-align: right;
+}
+
+.qd-pkg-col-discount {
+  grid-column: 4;
+  text-align: right;
+}
+
+.qd-pkg-col-net-price {
+  grid-column: 5;
+  text-align: right;
+}
+
+.qd-pkg-col-amount {
+  grid-column: 6;
+  text-align: right;
+  padding-right: 28px;
+}
+
+.qd-pkg-header {
+  display: grid;
+  grid-template-columns: var(--qd-shared-grid-columns);
+  align-items: center;
   cursor: pointer;
   font-size: 14px;
 }
@@ -2691,28 +2783,103 @@ tr.drag-over {
   background: rgba(0, 0, 0, 0.015);
 }
 
+.qd-pkg-header-main {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 12px 12px 28px;
+}
+
+.qd-pkg-header-qty {
+  grid-column: 2;
+  padding: 12px;
+}
+
+.qd-pkg-header-list-price {
+  grid-column: 3;
+  padding: 12px;
+}
+
+.qd-pkg-header-discount {
+  grid-column: 4;
+  padding: 12px;
+}
+
+.qd-pkg-header-net-price {
+  grid-column: 5;
+  padding: 12px;
+}
+
+.qd-pkg-header-amount {
+  grid-column: 6;
+  padding: 12px 28px 12px 12px;
+  text-align: right;
+}
+
+.qd-pkg-name {
+  margin: 0;
+}
+
+.qd-pkg-toggle {
+  font-size: 11px;
+  color: #9ca3af;
+  line-height: 1;
+}
+
 .qd-pkg-members {
-  padding: 0 20px 12px 44px;
+  padding: 0 0 12px;
 }
 
 .qd-pkg-member-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: var(--qd-shared-grid-columns);
   align-items: center;
-  gap: 12px;
   padding: 4px 0;
-  font-size: 13px;
-  color: #6b7280;
 }
 
 .qd-pkg-member-name {
+  grid-column: 1;
+  position: relative;
+  padding-left: 52px;
+  font-family: var(--font-body);
+  font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-strong);
 }
 
-.qd-pkg-member-qty {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 11px;
-  color: #9ca3af;
+.qd-pkg-member-name::before {
+  content: none;
+  position: absolute;
+  left: 28px;
+  color: #6b7280;
+}
+
+.qd-pkg-member-qty-value {
+  grid-column: 2;
+  justify-self: center;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-strong);
+}
+
+.qd-pkg-member-list-price {
+  grid-column: 3;
+}
+
+.qd-pkg-member-discount {
+  grid-column: 4;
+}
+
+.qd-pkg-member-net-price {
+  grid-column: 5;
+}
+
+.qd-pkg-member-amount {
+  grid-column: 6;
+  justify-self: end;
+  padding-right: 28px;
 }
 
 .line-editor-header {
@@ -2723,7 +2890,7 @@ tr.drag-over {
 }
 
 .line-editor-title {
-  font-family: var(--font-mono);
+  font-family: var(--card-label-font-family);
   font-size: 10px;
   font-weight: 700;
   color: var(--teal);
@@ -2748,9 +2915,77 @@ tr.drag-over {
   table-layout: fixed;
 }
 
+.quote-detail .qd-category-card .line-table col.qd-col-product {
+  width: var(--qd-col-product);
+}
+
+.quote-detail .qd-category-card .line-table col.qd-col-qty {
+  width: var(--qd-col-qty);
+}
+
+.quote-detail .qd-category-card .line-table col.qd-col-list-price,
+.quote-detail .qd-category-card .line-table col.qd-col-discount,
+.quote-detail .qd-category-card .line-table col.qd-col-net-price,
+.quote-detail .qd-category-card .line-table col.qd-col-amount {
+  width: var(--qd-col-pricing);
+}
+
 .line-table th {
   font-size: 9px;
   padding: 10px 12px;
+  background: #fff;
+}
+
+/* Quote detail card table column alignment map. */
+.quote-detail .qd-category-card .line-table .qd-col-product {
+  text-align: left;
+}
+
+.quote-detail .qd-category-card .line-table .qd-col-qty {
+  text-align: center;
+}
+
+.quote-detail .qd-category-card .line-table .qd-col-discount,
+.quote-detail .qd-category-card .line-table .qd-col-list-price,
+.quote-detail .qd-category-card .line-table .qd-col-net-price,
+.quote-detail .qd-category-card .line-table .qd-col-amount {
+  text-align: right;
+}
+
+.quote-detail .qd-category-card .line-table .qd-col-amount {
+  padding-right: 28px;
+}
+
+.quote-detail .qd-category-card .line-table .qd-col-list-price,
+.quote-detail .qd-category-card .line-table .qd-col-discount,
+.quote-detail .qd-category-card .line-table .qd-col-net-price,
+.quote-detail .qd-category-card .line-table .qd-col-amount,
+.quote-detail .qd-pkg-col-list-price,
+.quote-detail .qd-pkg-col-discount,
+.quote-detail .qd-pkg-col-net-price,
+.quote-detail .qd-pkg-col-amount {
+  white-space: nowrap;
+}
+
+/* Keep quote detail card table headers visually flush with the white card. */
+.quote-detail .qd-category-card .line-table thead,
+.quote-detail .qd-category-card .line-table thead tr,
+.quote-detail .qd-category-card .line-table thead th {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  fill: transparent !important;
+  box-shadow: none !important;
+}
+
+.quote-detail .qd-category-card .line-table thead::before,
+.quote-detail .qd-category-card .line-table thead::after,
+.quote-detail .qd-category-card .line-table thead tr::before,
+.quote-detail .qd-category-card .line-table thead tr::after,
+.quote-detail .qd-category-card .line-table thead th::before,
+.quote-detail .qd-category-card .line-table thead th::after {
+  content: none !important;
+  background: none !important;
 }
 
 .line-table td {
@@ -2814,8 +3049,9 @@ tr.drag-over {
   padding-left: 8px !important;
 }
 .line-row-package .cell-name {
-  font-weight: 700;
   font-size: 14px;
+  font-weight: 500;
+  color: var(--text-strong);
 }
 
 /* Component count pill on package row */
@@ -2837,7 +3073,9 @@ tr.drag-over {
 
 /* Sub-line row */
 .line-row-sub .cell-name {
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-strong);
 }
 .line-row-sub .cell-sku {
   font-size: 11px;
@@ -4037,7 +4275,7 @@ tr.drag-over {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   margin-bottom: 16px;
-  font-family: 'Roboto Mono', monospace;
+  font-family: 'Poppins', sans-serif;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -4277,8 +4515,7 @@ tr.drag-over {
 }
 
 .modal-section-label {
-  color: var(--text-secondary, #374151);
-  border-bottom-color: var(--border);
+  color: var(--card-label-color);
 }
 
 .modal::-webkit-scrollbar-thumb {
@@ -4665,8 +4902,9 @@ tr.drag-over {
 }
 
 .qd-view-lines-card .line-row-sub .qd-view-sub-product .cell-name {
-  font-size: 13px;
-  color: var(--text-secondary, #374151);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-strong);
 }
 
 .qd-view-lines-card .line-row-package td {
@@ -4688,8 +4926,9 @@ tr.drag-over {
 }
 
 .pkg-sub-product .cell-name {
-  font-size: 13px;
-  color: var(--text-secondary, #374151);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-strong);
 }
 
 .qd-line-footer-actions {
@@ -4773,7 +5012,7 @@ tr.drag-over {
 }
 
 .qd-customer-section-label {
-  color: var(--text-secondary, #374151);
+  color: var(--card-label-color);
 }
 
 .qd-customer-company {
@@ -5148,7 +5387,7 @@ tr.drag-over {
 
 .main-content.section-settings {
   --page-cta: #382AA4;
-  --page-cta-hover: #30248c;
+  --page-cta-hover: #775CE7;
 }
 
 .main-content.section-settings .settings-action-btn {
@@ -5196,11 +5435,12 @@ tr.drag-over {
 }
 
 .main-content.section-settings .settings-card-icon-btn {
-  color: var(--text-tertiary);
-  transition: color 150ms ease;
+  color: #9ca3af;
+  transition: color 0.15s ease, transform 0.15s ease;
 }
 
 .main-content.section-settings .settings-card-icon-btn i {
+  color: inherit;
   transform: scale(1);
   transition: transform 0.15s ease, color 0.15s ease;
 }
@@ -5209,5 +5449,295 @@ tr.drag-over {
 .main-content.section-settings .settings-card-icon-btn:active i,
 .main-content.section-settings .settings-card-icon-btn:focus-visible i {
   color: #382AA4;
-  transform: scale(1.1);
+  transform: scale(1.08);
+}
+
+.main-content.section-settings .settings-terms-card {
+  height: 260px;
+}
+
+.main-content.section-settings .settings-section-label-row {
+  display: flex;
+  align-items: center;
+  min-height: var(--card-label-header-min-height);
+  margin-bottom: 16px;
+}
+
+.main-content.section-settings .settings-terms-card-header {
+  flex-shrink: 0;
+}
+
+.main-content.section-settings .settings-terms-card-body {
+  flex: 1;
+  min-height: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(17, 24, 39, 0.22) transparent;
+}
+
+.main-content.section-settings .settings-terms-card-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.main-content.section-settings .settings-terms-card-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.main-content.section-settings .settings-terms-card-body::-webkit-scrollbar-thumb {
+  background-color: rgba(17, 24, 39, 0.22);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.main-content.section-settings .settings-terms-card-body:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(17, 24, 39, 0.34);
+}
+
+.main-content.section-settings .settings-terms-card-textarea {
+  min-height: 100%;
+  resize: none;
+}
+
+/* Quote detail edit mode keeps the exact same line-item grid and only swaps fields for inputs. */
+.quote-detail--editing .qd-edit-product-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.quote-detail--editing .qd-edit-product-cell-sub {
+  min-width: 0;
+}
+
+.quote-detail--editing .qd-line-icon-btn {
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.quote-detail--editing .line-table tbody tr:hover .qd-line-icon-btn,
+.quote-detail--editing .qd-pkg-header:hover .qd-line-icon-btn,
+.quote-detail--editing .qd-pkg-member-row:hover .qd-line-icon-btn {
+  opacity: 1;
+}
+
+.quote-detail--editing .qd-line-icon-btn:hover {
+  color: #dc2626;
+}
+
+.quote-detail--editing .qd-grid-input {
+  height: 28px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  background: #ffffff;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-strong);
+  padding: 4px 8px;
+  box-sizing: border-box;
+}
+
+.quote-detail--editing .qd-grid-input:focus {
+  outline: none;
+  border-color: #FBB13D;
+}
+
+.quote-detail--editing .qd-grid-input-qty {
+  width: 56px;
+  text-align: center;
+}
+
+.quote-detail--editing .qd-grid-input-qty-credits {
+  width: 96px;
+}
+
+.quote-detail--editing .qd-col-qty .qd-grid-input-qty,
+.quote-detail--editing .qd-pkg-member-qty-value .qd-grid-input-qty {
+  margin: 0 auto;
+}
+
+.quote-detail--editing .qd-grid-input-discount {
+  width: 92px;
+  text-align: right;
+}
+
+.quote-detail--editing .qd-col-discount .qd-grid-input-discount {
+  margin-left: auto;
+}
+
+.quote-detail--editing .qd-pkg-member-row-edit {
+  align-items: center;
+}
+
+.quote-detail--editing .qd-pkg-member-list-price,
+.quote-detail--editing .qd-pkg-member-discount,
+.quote-detail--editing .qd-pkg-member-net-price {
+  justify-self: end;
+  padding-right: 12px;
+  text-align: right;
+}
+
+.quote-detail--editing .qd-pkg-member-name::before {
+  content: none;
+}
+
+.quote-detail--editing .qd-pkg-header-list-price,
+.quote-detail--editing .qd-pkg-header-discount,
+.quote-detail--editing .qd-pkg-header-net-price,
+.quote-detail--editing .qd-pkg-header-amount {
+  justify-self: end;
+  text-align: right;
+}
+
+.quote-detail--editing .qd-pkg-header-list-price .qd-grid-input,
+.quote-detail--editing .qd-pkg-header-discount .qd-grid-input,
+.quote-detail--editing .qd-pkg-header-net-price .qd-grid-input,
+.quote-detail--editing .qd-pkg-header-amount .qd-grid-input {
+  margin-left: auto;
+}
+
+.quote-detail--editing .qd-pkg-member-amount {
+  text-align: right;
+}
+
+.quote-detail--editing .qd-pkg-member-discount .qd-grid-input-discount {
+  margin-left: auto;
+}
+
+.quote-detail--editing .qd-pkg-add-row {
+  padding: 0 0 12px 28px;
+}
+
+/* Remove edit wrapper panel so only category cards render as cards (matches view mode). */
+.quote-detail--editing .qd-lines-card {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.qd-lines-page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.qd-lines-section--editing {
+  margin-top: 20px;
+}
+
+.qd-lines-page-actions .btn-primary:not(.btn-quote-add) {
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #374151;
+}
+
+.qd-lines-page-actions .btn-primary:not(.btn-quote-add):hover {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* CTA size normalization: align primary/secondary actions to toolbar input controls. */
+.btn-primary,
+.btn-secondary,
+.btn-save,
+.btn-cancel,
+.btn-destructive,
+.btn-product-add,
+.btn-quote-add,
+.empty-state-cta,
+.edit-empty-cta,
+.qd-edit-lines-btn.qd-edit-lines-btn,
+.qd-action-btn,
+.settings-action-btn,
+.picker-v2-footer .btn-primary,
+.qd-line-footer-actions .btn-primary {
+  height: 36px;
+  padding: 0 16px;
+  line-height: 1;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  border-radius: 6px;
+}
+
+.btn-quote-add {
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+.settings-action-btn {
+  padding: 0 16px !important;
+}
+
+.btn-primary i,
+.btn-secondary i,
+.btn-save i,
+.btn-cancel i,
+.btn-destructive i,
+.btn-product-add i,
+.btn-quote-add i,
+.empty-state-cta i,
+.edit-empty-cta i,
+.qd-edit-lines-btn.qd-edit-lines-btn i,
+.qd-action-btn i,
+.settings-action-btn i,
+.btn-primary svg,
+.btn-secondary svg,
+.btn-save svg,
+.btn-cancel svg,
+.btn-destructive svg,
+.btn-product-add svg,
+.btn-quote-add svg,
+.empty-state-cta svg,
+.edit-empty-cta svg,
+.qd-edit-lines-btn.qd-edit-lines-btn svg,
+.qd-action-btn svg,
+.settings-action-btn svg {
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+/* Standard numeric input control behavior:
+   hide steppers by default, opt in only for seat/user/license quantity inputs. */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"].number-stepper-seat {
+  -moz-appearance: auto;
+  appearance: auto;
+}
+
+input[type="number"].number-stepper-seat::-webkit-outer-spin-button,
+input[type="number"].number-stepper-seat::-webkit-inner-spin-button {
+  -webkit-appearance: auto;
+  margin: 0;
 }

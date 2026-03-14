@@ -201,13 +201,14 @@ export default function Settings({ settings, onSave }) {
       </div>
 
       <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
-        <div style={{ fontFamily: "'Roboto Mono', monospace", fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9ca3af', marginBottom: '20px' }}>
-          Terms & Conditions
+        <div className="settings-section-label-row">
+          <div className="qd-category-card-title">Terms & Conditions</div>
         </div>
 
         {sections.map((section, index) => (
           <div
             key={section.id}
+            className="settings-terms-card"
             draggable={dragArmedIndex === index}
             onDragStart={(event) => handleDragStart(index, event)}
             onDrag={(event) => handleDrag(event)}
@@ -229,10 +230,12 @@ export default function Settings({ settings, onSave }) {
               opacity: draggedSectionId === section.id ? 0 : 1,
               position: 'relative',
               zIndex: draggedSectionId === section.id ? 0 : 1,
+              display: 'flex',
+              flexDirection: 'column',
               transition: 'box-shadow 150ms ease, border-color 150ms ease, opacity 120ms ease',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+            <div className="settings-terms-card-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
               <input
                 type="text"
                 value={section.title}
@@ -247,6 +250,16 @@ export default function Settings({ settings, onSave }) {
               />
               <button
                 type="button"
+                onClick={() => remove(index)}
+                className="settings-card-icon-btn"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', padding: '4px 8px' }}
+                title="Delete section"
+                aria-label="Delete section"
+              >
+                <i className="fa-solid fa-trash fa-fw fa-sm" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
                 onMouseDown={() => setDragArmedIndex(index)}
                 onMouseUp={() => setDragArmedIndex(null)}
                 className="settings-card-icon-btn"
@@ -256,39 +269,28 @@ export default function Settings({ settings, onSave }) {
               >
                 <i className="fa-solid fa-grip-vertical fa-fw fa-sm" aria-hidden="true" />
               </button>
-              <button
-                type="button"
-                onClick={() => remove(index)}
-                className="settings-card-icon-btn"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', padding: '4px 8px' }}
-                title="Delete section"
-                aria-label="Delete section"
-              >
-                <i className="fa-solid fa-trash fa-fw fa-sm" aria-hidden="true" />
-              </button>
             </div>
-            <textarea
-              value={section.body}
-              onChange={(e) => update(index, 'body', e.target.value)}
-              onBlur={flushAutosave}
-              placeholder="Section body text..."
-              rows={4}
-              style={{
-                width: '100%', fontFamily: "'Mulish', sans-serif", fontSize: '13px', fontWeight: 400, lineHeight: '1.6',
-                border: 'none', borderRadius: 0, padding: 0,
-                outline: 'none', resize: 'vertical', background: 'transparent', boxSizing: 'border-box', appearance: 'none',
-              }}
-              onInput={(e) => {
-                e.target.style.height = 'auto';
-                e.target.style.height = Math.max(e.target.scrollHeight, 80) + 'px';
-              }}
-            />
+            <div className="settings-terms-card-body">
+              <textarea
+                className="settings-terms-card-textarea"
+                value={section.body}
+                onChange={(e) => update(index, 'body', e.target.value)}
+                onBlur={flushAutosave}
+                placeholder="Section body text..."
+                rows={4}
+                style={{
+                  width: '100%', fontFamily: "'Mulish', sans-serif", fontSize: '13px', fontWeight: 400, lineHeight: '1.6',
+                  border: 'none', borderRadius: 0, padding: 0,
+                  outline: 'none', background: 'transparent', boxSizing: 'border-box', appearance: 'none',
+                }}
+              />
+            </div>
           </div>
         ))}
 
         <div style={{ display: 'flex', marginTop: '16px' }}>
           <button
-            className="settings-action-btn settings-action-btn-outline"
+            className="settings-action-btn settings-action-btn-solid"
             onClick={addSection}
             style={{
               border: '1px solid', borderRadius: '6px',

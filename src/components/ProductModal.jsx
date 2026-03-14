@@ -37,6 +37,20 @@ function parseNumber(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+const SEAT_INPUT_PATTERN = /\b(seat|seats|user|users|license|licenses)\b/i;
+
+function isSeatLikeProduct(product) {
+  if (!product) return false;
+  const type = String(product.type || product.category || '').toLowerCase();
+  const name = String(product.name || '');
+  const sku = String(product.sku || '');
+  const unitType = String(product.default_price?.unit || product.unit_type || '').toLowerCase();
+  return type === 'seats'
+    || unitType === 'per_member'
+    || SEAT_INPUT_PATTERN.test(name)
+    || SEAT_INPUT_PATTERN.test(sku);
+}
+
 const COLLAPSIBLE_SECTION_KEYS = {
   BASIC_INFO: 'basicInfo',
   PRICING: 'pricing',
@@ -91,6 +105,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
   })();
 
   const isPackage = isBundleProduct(f) || getProductCategory(f) === 'bundle';
+  const isSeatProduct = isSeatLikeProduct(f);
   const productMap = useMemo(() => new Map((products || []).map((p) => [p.id, p])), [products]);
   const nonBundleProducts = useMemo(() => {
     const selectedIds = new Set((f.members || []).map((m) => m.product_id));
@@ -352,13 +367,20 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {(f.members || []).map((member, index) => (
-                        <tr key={`${member.product_id}_${index}`}>
+                      {(f.members || []).map((member, index) => {
+                        const referencedProduct = productMap.get(member.product_id);
+                        const seatStepperClass = isSeatLikeProduct({
+                          ...referencedProduct,
+                          ...member,
+                          unit_type: member.unit_type || referencedProduct?.default_price?.unit,
+                        }) ? 'number-stepper-seat' : '';
+                        return (
+                          <tr key={`${member.product_id}_${index}`}>
                           <td>{member.name || productMap.get(member.product_id)?.name || 'Unknown'}</td>
                           <td className="cell-sku">{member.sku || productMap.get(member.product_id)?.sku || ''}</td>
                           <td>
                             <input
-                              className="field-input"
+                              className={`field-input ${seatStepperClass}`.trim()}
                               type="number"
                               min="1"
                               step="1"
@@ -383,8 +405,9 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                               Remove
                             </button>
                           </td>
-                        </tr>
-                      ))}
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}
@@ -507,15 +530,15 @@ export default function ProductModal({ product, products, onSave, onClose }) {
             <div className="grid-3">
               <div className="field">
                 <label className="field-label">Default Qty</label>
-                <input className="field-input" type="number" value={f.config.default_quantity} onChange={(e) => sc('default_quantity', e.target.value)} />
+                <input className={`field-input ${isSeatProduct ? 'number-stepper-seat' : ''}`.trim()} type="number" value={f.config.default_quantity} onChange={(e) => sc('default_quantity', e.target.value)} />
               </div>
               <div className="field">
                 <label className="field-label">Min Qty</label>
-                <input className="field-input" type="number" value={f.config.min_quantity} onChange={(e) => sc('min_quantity', e.target.value)} />
+                <input className={`field-input ${isSeatProduct ? 'number-stepper-seat' : ''}`.trim()} type="number" value={f.config.min_quantity} onChange={(e) => sc('min_quantity', e.target.value)} />
               </div>
               <div className="field">
                 <label className="field-label">Max Qty</label>
-                <input className="field-input" type="number" value={f.config.max_quantity} onChange={(e) => sc('max_quantity', e.target.value)} />
+                <input className={`field-input ${isSeatProduct ? 'number-stepper-seat' : ''}`.trim()} type="number" value={f.config.max_quantity} onChange={(e) => sc('max_quantity', e.target.value)} />
               </div>
             </div>
 
