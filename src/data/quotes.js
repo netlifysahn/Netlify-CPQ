@@ -69,7 +69,7 @@ export const getUnitLabel = (unitType) => UNIT_LABELS[unitType] || unitType || '
 
 export const getEffectiveLineQuantity = (line) => {
   if (!line) return 1;
-  if (line.product_type === 'support' || line.product_type === 'addon') return 1;
+  if (line.product_type === 'support') return 1;
   const qty = Number(line.quantity);
   return Number.isFinite(qty) && qty > 0 ? qty : 1;
 };
