@@ -2662,7 +2662,7 @@ tr.drag-over {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .qd-category-card-header {
@@ -2671,6 +2671,7 @@ tr.drag-over {
   justify-content: space-between;
   padding: var(--card-label-header-padding-y) var(--card-label-header-padding-x);
   min-height: var(--card-label-header-min-height);
+  border-radius: 12px 12px 0 0;
 }
 
 .qd-category-card-title {
@@ -5549,6 +5550,27 @@ tr.drag-over {
   color: #dc2626;
 }
 
+.quote-detail--editing .qd-line-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.quote-detail--editing .qd-line-icon-btn-visible {
+  opacity: 1;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.quote-detail--editing .qd-line-icon-btn-visible:hover {
+  color: #374151;
+}
+
+.quote-detail--editing .qd-line-icon-btn-visible[title="Delete row"]:hover {
+  color: #dc2626;
+}
+
 .quote-detail--editing .qd-grid-input {
   height: 28px;
   border: 1px solid rgba(0, 0, 0, 0.12);
@@ -5563,6 +5585,114 @@ tr.drag-over {
   box-sizing: border-box;
 }
 
+.quote-detail--editing .qd-grid-select {
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  font-weight: 500;
+  padding-right: 24px;
+  cursor: pointer;
+}
+
+.quote-detail--editing .qd-edit-product-cell .qd-grid-select {
+  flex: 1;
+}
+
+.quote-detail--editing .qd-category-picker-row {
+  padding: 12px 24px 0;
+}
+
+.quote-detail--editing .qd-multi-picker {
+  position: relative;
+  max-width: 360px;
+}
+
+.quote-detail--editing .qd-multi-picker-summary {
+  display: flex;
+  align-items: center;
+  list-style: none;
+}
+
+.quote-detail--editing .qd-multi-picker-summary::-webkit-details-marker {
+  display: none;
+}
+
+.quote-detail--editing .qd-multi-picker-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: min(420px, 72vw);
+  z-index: 9999;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.14);
+  display: flex;
+  flex-direction: column;
+  max-height: 300px;
+}
+
+.quote-detail--editing .qd-multi-picker-options {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 8px;
+  flex: 1 1 auto;
+}
+
+.quote-detail--editing .qd-multi-picker-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #111827;
+  cursor: pointer;
+}
+
+.quote-detail--editing .qd-multi-picker-option:hover {
+  background: rgba(17, 24, 39, 0.05);
+}
+
+.quote-detail--editing .qd-multi-picker-option input {
+  margin: 0;
+}
+
+.quote-detail--editing .qd-multi-picker-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  flex: 0 0 auto;
+  position: sticky;
+  bottom: 0;
+  border-radius: 0 0 8px 8px;
+}
+
+.quote-detail--editing .qd-multi-picker-apply-btn {
+  border: 1px solid rgba(46, 81, 237, 0.45);
+  background: #2e51ed;
+  color: #ffffff;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 6px 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.quote-detail--editing .qd-multi-picker-apply-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.quote-detail--editing .cell-muted {
+  color: #6b7280;
+  font-size: 13px;
+}
+
 .quote-detail--editing .qd-grid-input:focus {
   outline: none;
   border-color: #FBB13D;
@@ -5573,17 +5703,71 @@ tr.drag-over {
   text-align: center;
 }
 
-.quote-detail--editing .qd-grid-input-qty-stepper {
+.quote-detail--editing .qd-grid-qty-control {
+  display: inline-flex;
+  align-items: center;
+}
+
+.quote-detail--editing .qd-grid-qty-control--aligned {
   width: 96px;
+  justify-content: flex-end;
+}
+
+.quote-detail--editing .qd-grid-qty-control--stepper {
+  gap: 4px;
+}
+
+.quote-detail--editing .qd-grid-input-qty-stepper {
+  width: 72px;
 }
 
 .quote-detail--editing .qd-grid-input-qty-credits {
   width: 96px;
 }
 
-.quote-detail--editing .qd-col-qty .qd-grid-input-qty,
-.quote-detail--editing .qd-pkg-member-qty-value .qd-grid-input-qty {
-  margin: 0 auto;
+.quote-detail--editing .qd-grid-qty-stepper {
+  width: 20px;
+  height: 28px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.quote-detail--editing .qd-grid-qty-stepper-btn {
+  height: 50%;
+  border: none;
+  background: #ffffff;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.quote-detail--editing .qd-grid-qty-stepper-btn + .qd-grid-qty-stepper-btn {
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.quote-detail--editing .qd-grid-qty-stepper-btn:hover {
+  background: #f8fafc;
+}
+
+.quote-detail--editing .qd-grid-qty-stepper-btn:focus-visible {
+  outline: 1px solid #FBB13D;
+  outline-offset: -1px;
+}
+
+.quote-detail--editing .qd-grid-qty-stepper-icon {
+  font-size: 8px;
+  line-height: 1;
+}
+
+.quote-detail--editing .qd-col-qty .qd-grid-qty-control--aligned,
+.quote-detail--editing .qd-pkg-member-qty-value .qd-grid-qty-control--aligned {
+  margin-left: auto;
 }
 
 .quote-detail--editing .qd-grid-input-discount {
@@ -5646,6 +5830,14 @@ tr.drag-over {
 .quote-detail--editing .qd-pkg-header-net-price .qd-grid-input,
 .quote-detail--editing .qd-pkg-header-amount .qd-grid-input {
   margin-left: auto;
+}
+
+.quote-detail--editing .qd-pkg-header-main .qd-grid-select {
+  max-width: 320px;
+}
+
+.quote-detail--editing .qd-pkg-header-empty {
+  cursor: default;
 }
 
 .quote-detail--editing .qd-pkg-member-amount {

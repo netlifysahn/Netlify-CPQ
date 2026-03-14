@@ -1,19 +1,18 @@
 import React, { useState, useRef, useEffect, useMemo, Component } from 'react';
 import {
-  calcQuoteTotals, calcLineExtended, calcLineMonthly,
-  fmtCurrency, STATUS_META, emptyLineItem, emptyGroup,
+  calcQuoteTotals, calcLineExtended,
+  fmtCurrency, STATUS_META, emptyLineItem,
   emptyPackageLine, emptySubLineItem,
   syncDiscountFromPercent, syncDiscountFromAmount,
   isIncluded, getEffectiveLineQuantity,
 } from '../data/quotes';
-import { isBundleProduct, TYPE_LABELS, getProductCategory } from '../data/catalog';
+import { isBundleProduct, TYPE_LABELS, getProductCategory, genId } from '../data/catalog';
 import { generateQuotePDF } from '../utils/generateQuotePDF';
 import {
   formatIntegerForEdit,
   formatIntegerWithCommas,
   parsePositiveIntegerInput,
 } from '../utils/numberFormat';
-import ProductPicker from './ProductPicker';
 
 class QuoteDetailErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { error: null }; }
@@ -126,10 +125,25 @@ const fmtQty = (v) => {
 
 const CARD_ORDER_WITH_PACKAGE = ['bundle', 'support', 'addon', 'entitlements'];
 const CARD_ORDER_NO_PACKAGE = ['platform', 'entitlements', 'support', 'addon'];
+const MULTI_SELECT_CATEGORIES = new Set(['platform', 'entitlements', 'addon']);
 
-const getCategoryCardLabel = (category, hasPackage) => {
-  if (category === 'entitlements' && hasPackage) return 'Additional Entitlements';
+const getCategoryCardLabel = (category, hasActiveBasePackage) => {
+  if (category === 'entitlements' && hasActiveBasePackage) return 'Additional Entitlements';
   return TYPE_LABELS[category] || category;
+};
+
+const getMultiSelectPlaceholder = (category, cardLabel) => {
+  if (category === 'entitlements' && cardLabel === 'Additional Entitlements') return 'Select Additional Entitlement';
+  if (category === 'addon') return 'Select Platform Add-On';
+  return 'Select SKU';
+};
+
+const setsEqual = (a, b) => {
+  if (a.size !== b.size) return false;
+  for (const value of a) {
+    if (!b.has(value)) return false;
+  }
+  return true;
 };
 
 const DC_LABEL_STYLE = { fontSize: '14px', color: '#0f172a', fontWeight: 500, fontFamily: "'Mulish', sans-serif", marginBottom: '6px' };
@@ -213,14 +227,10 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     setQ(normalizeQuote(quote));
   }, [quote, mode]);
   const [draft, setDraft] = useState(null);
-  const [showPicker, setShowPicker] = useState(false);
   const [confirm, setConfirm] = useState(null);
-  const [showGroupModal, setShowGroupModal] = useState(false);
-  const [groupName, setGroupName] = useState('');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [collapsedPkgs, setCollapsedPkgs] = useState(new Set());
   const [detailCards, setDetailCards] = useState({ customer: false, term: false, billing: false, terms_conditions: false, overage: true, activity: false });
-  const [addingToPackageId, setAddingToPackageId] = useState(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [feedbackModal, setFeedbackModal] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
@@ -229,6 +239,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const [toast, setToast] = useState(null);
   const [currencyInputDrafts, setCurrencyInputDrafts] = useState({});
   const [quantityInputDrafts, setQuantityInputDrafts] = useState({});
+  const [multiPickerDrafts, setMultiPickerDrafts] = useState({});
   const moreRef = useRef(null);
   const prevTotalsRef = useRef(null);
   const [pulseKey, setPulseKey] = useState(0);
@@ -246,6 +257,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     if (mode !== 'edit') {
       setCurrencyInputDrafts({});
       setQuantityInputDrafts({});
+      setMultiPickerDrafts({});
     }
   }, [mode]);
 
@@ -297,19 +309,37 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     return (pricebooks || []).find((pb) => pb.id === q.pricebook_id) || null;
   };
 
-  const availableProducts = (() => {
+  const getPriceOverride = (productId) => {
+    const pb = getSelectedPricebook();
+    const entry = pb?.entries?.find((e) => e.product_id === productId);
+    return entry?.price_override != null ? entry.price_override : undefined;
+  };
+
+  const availableProducts = useMemo(() => {
     const pb = getSelectedPricebook();
     if (!pb || !pb.entries?.length) return products;
     const pbProductIds = new Set(pb.entries.map((e) => e.product_id));
     return products.filter((p) => pbProductIds.has(p.id));
-  })();
+  }, [products, pricebooks, q.pricebook_id]);
+
+  const productsByCategory = useMemo(() => {
+    const grouped = {
+      bundle: [],
+      platform: [],
+      entitlements: [],
+      addon: [],
+      support: [],
+    };
+    (availableProducts || []).forEach((product) => {
+      const category = getProductCategory(product);
+      if (!grouped[category]) grouped[category] = [];
+      grouped[category].push(product);
+    });
+    Object.values(grouped).forEach((list) => list.sort((a, b) => (a.name || '').localeCompare(b.name || '')));
+    return grouped;
+  }, [availableProducts]);
 
   const addLineToDraft = (product) => {
-    const pb = getSelectedPricebook();
-    const getPriceOverride = (prodId) => {
-      const entry = pb?.entries?.find((e) => e.product_id === prodId);
-      return entry?.price_override != null ? entry.price_override : undefined;
-    };
     if (isBundleProduct(product) && product.members?.length > 0) {
       const parentLine = emptyPackageLine(product);
       const productMap = new Map((products || []).map((p) => [p.id, p]));
@@ -329,6 +359,119 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     updateDraft((d) => { d.line_items = d.line_items.map((l) => l.id === lineId ? { ...l, ...updates } : l); return d; });
   };
 
+  const clearInlineDraftInputs = (lineId) => {
+    setCurrencyInputDrafts((prev) => {
+      const next = {};
+      Object.keys(prev).forEach((key) => {
+        if (!key.startsWith(`${lineId}:`)) next[key] = prev[key];
+      });
+      return next;
+    });
+    setQuantityInputDrafts((prev) => {
+      const next = { ...prev };
+      delete next[lineId];
+      return next;
+    });
+  };
+
+  const swapDraftLineProduct = (lineId, productId) => {
+    const product = productsById.get(productId);
+    if (!product) return;
+    clearInlineDraftInputs(lineId);
+    updateDraft((d) => {
+      const lineIdx = d.line_items.findIndex((line) => line.id === lineId);
+      if (lineIdx < 0) return d;
+      const currentLine = d.line_items[lineIdx];
+
+      if (currentLine.is_package) {
+        const nextParentBase = emptyPackageLine(product);
+        const nextParent = {
+          ...nextParentBase,
+          id: currentLine.id,
+          sort_order: currentLine.sort_order,
+          group_id: currentLine.group_id ?? null,
+        };
+        const parentPriceOverride = getPriceOverride(product.id);
+        if (typeof parentPriceOverride === 'number' && Number.isFinite(parentPriceOverride)) {
+          nextParent.list_price = parentPriceOverride;
+          nextParent.net_price = parentPriceOverride;
+        }
+
+        const productMap = new Map((products || []).map((p) => [p.id, p]));
+        const nextSubLines = (product.members || [])
+          .filter((member) => productMap.has(member.product_id))
+          .map((member) => emptySubLineItem(productMap.get(member.product_id), member, currentLine.id, getPriceOverride(member.product_id)));
+
+        const withoutCurrentPackage = d.line_items.filter((line) => line.id !== currentLine.id && line.parent_line_id !== currentLine.id);
+        const before = withoutCurrentPackage.slice(0, lineIdx);
+        const after = withoutCurrentPackage.slice(lineIdx);
+        d.line_items = [
+          ...before,
+          { ...nextParent, sort_order: lineIdx },
+          ...nextSubLines.map((line, offset) => ({ ...line, sort_order: lineIdx + 1 + offset })),
+          ...after,
+        ];
+        return d;
+      }
+
+      const nextStandalone = emptyLineItem(product, getPriceOverride(product.id));
+      d.line_items[lineIdx] = {
+        ...nextStandalone,
+        id: currentLine.id,
+        sort_order: currentLine.sort_order,
+        group_id: currentLine.group_id ?? null,
+      };
+      return d;
+    });
+  };
+
+  const addDraftLineFromCategory = (category, productId) => {
+    const topLevelLine = draft?.line_items?.find((line) => !line.parent_line_id && getLineCategory(line) === category);
+    if (topLevelLine) {
+      swapDraftLineProduct(topLevelLine.id, productId);
+      return;
+    }
+    const product = productsById.get(productId);
+    if (!product) return;
+    addLineToDraft(product);
+  };
+
+  const setCategorySelections = (category, selectedProductIds) => {
+    const selected = selectedProductIds instanceof Set ? selectedProductIds : new Set(selectedProductIds);
+    updateDraft((d) => {
+      const nextItems = [];
+      const existingTopLevelByProduct = new Map();
+
+      d.line_items.forEach((line) => {
+        if (line.parent_line_id) {
+          nextItems.push(line);
+          return;
+        }
+        if (getLineCategory(line) !== category) {
+          nextItems.push(line);
+          return;
+        }
+        if (!existingTopLevelByProduct.has(line.product_id)) {
+          existingTopLevelByProduct.set(line.product_id, line);
+        }
+        if (selected.has(line.product_id)) {
+          nextItems.push(line);
+        }
+      });
+
+      selected.forEach((productId) => {
+        if (existingTopLevelByProduct.has(productId)) return;
+        const product = productsById.get(productId);
+        if (!product) return;
+        const line = emptyLineItem(product, getPriceOverride(product.id));
+        nextItems.push({ ...line, sort_order: nextItems.length });
+      });
+
+      d.line_items = nextItems.map((line, index) => ({ ...line, sort_order: index }));
+      return d;
+    });
+  };
+
   const updateDraftLineField = (lineId, field, value) => {
     const line = draft.line_items.find((l) => l.id === lineId);
     if (!line) return;
@@ -338,7 +481,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       updateDraftLine(lineId, { list_price: newList, ...synced });
       return;
     }
-    if (field === 'quantity' && (isSupportLine(line) || isPlatformAddOnLine(line))) {
+    if (field === 'quantity' && isSupportLine(line)) {
       updateDraftLine(lineId, { quantity: 1 });
       return;
     }
@@ -353,33 +496,24 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     updateDraftLine(lineId, synced);
   };
 
-  const addSubComponentToDraft = (product, parentLineId) => {
-    const pb = getSelectedPricebook();
-    const entry = pb?.entries?.find((e) => e.product_id === product.id);
-    const listPrice = entry?.price_override != null ? entry.price_override : undefined;
-    const member = { product_id: product.id, qty: 1, unit_type: product.default_price?.unit || 'flat', list_price: product.default_price?.amount ?? 0 };
-    const subLine = emptySubLineItem(product, member, parentLineId, listPrice);
-    updateDraft((d) => {
-      const parentIdx = d.line_items.findIndex((l) => l.id === parentLineId);
-      let insertIdx = parentIdx + 1;
-      while (insertIdx < d.line_items.length && d.line_items[insertIdx].parent_line_id === parentLineId) insertIdx++;
-      const items = [...d.line_items];
-      items.splice(insertIdx, 0, { ...subLine, sort_order: insertIdx });
-      d.line_items = items;
-      return d;
-    });
-    setAddingToPackageId(null);
-  };
-
   const removeDraftLine = (lineId) => {
     updateDraft((d) => { d.line_items = d.line_items.filter((l) => l.id !== lineId && l.parent_line_id !== lineId); return d; });
   };
 
-  const addDraftGroup = () => {
-    if (!groupName.trim()) return;
-    updateDraft((d) => { d.groups = [...d.groups, { ...emptyGroup(), name: groupName.trim(), sort_order: d.groups.length }]; return d; });
-    setGroupName('');
-    setShowGroupModal(false);
+  const cloneDraftLine = (lineId) => {
+    updateDraft((d) => {
+      const line = d.line_items.find((entry) => entry.id === lineId);
+      if (!line || line.parent_line_id || line.is_package) return d;
+      const product = productsById.get(line.product_id);
+      if (!product) return d;
+      const clone = {
+        ...emptyLineItem(product, getPriceOverride(product.id)),
+        ...line,
+        id: genId(),
+      };
+      d.line_items = [...d.line_items, { ...clone, sort_order: d.line_items.length }];
+      return d;
+    });
   };
 
   const changeStatus = (newStatus) => {
@@ -495,7 +629,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
   const isSupportLine = (line) => getLineCategory(line) === 'support';
   const isEntitlementLine = (line) => getLineCategory(line) === 'entitlements';
-  const isPlatformAddOnLine = (line) => getLineCategory(line) === 'addon';
 
   const cardHeaderStyle = { cursor: 'pointer', userSelect: 'none' };
   const cardBodyStyle = { padding: '4px 24px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' };
@@ -579,50 +712,223 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const renderEditTable = () => {
     if (!draft) return null;
     const items = draft.line_items;
+    const topLevelByCategory = items.filter((line) => !line.parent_line_id).reduce((acc, line) => {
+      const category = line.is_package ? 'bundle' : getLineCategory(line);
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(line);
+      return acc;
+    }, {});
+    const basePackageLine = (topLevelByCategory.bundle || [])[0] || null;
+    const hasActiveBasePackage = !!basePackageLine;
+    const showStandalonePlatformCard = !hasActiveBasePackage;
+    const editCardOrder = showStandalonePlatformCard
+      ? ['bundle', 'platform', 'entitlements', 'support', 'addon']
+      : ['bundle', 'support', 'entitlements', 'addon'];
+    const editCategoryGroups = editCardOrder.map((category) => ({
+      category,
+      label: getCategoryCardLabel(category, hasActiveBasePackage),
+      lines: topLevelByCategory[category] || [],
+    }));
+
+    const getCategorySkuOptions = (category, currentProductId) => {
+      const options = [...(productsByCategory[category] || [])];
+      if (currentProductId && !options.some((product) => product.id === currentProductId)) {
+        const current = productsById.get(currentProductId);
+        if (current) options.unshift(current);
+      }
+      return options;
+    };
+
+    const renderSkuSelect = ({ category, line, onSelect, stopPropagation = false }) => {
+      const options = getCategorySkuOptions(category, line?.product_id);
+      const noneLabel = category === 'bundle'
+        ? 'No Base Package'
+        : category === 'support'
+          ? 'No Support'
+          : 'None';
+      const includeNoneOption = category === 'bundle' || category === 'support';
+      const handleChange = (e) => {
+        const productId = e.target.value;
+        onSelect(productId || null);
+      };
+      return (
+        <select
+          id={line ? `qd-product-select-${line.id}` : undefined}
+          className="qd-grid-input qd-grid-select"
+          value={line?.product_id || ''}
+          onChange={handleChange}
+          onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
+          disabled={options.length === 0}
+        >
+          {includeNoneOption ? (
+            <option value="">{noneLabel}</option>
+          ) : (
+            <option value="">{options.length === 0 ? 'No SKUs available' : 'Select SKU'}</option>
+          )}
+          {options.map((product) => (
+            <option key={product.id} value={product.id}>
+              {product.sku ? `${product.name} (${product.sku})` : product.name}
+            </option>
+          ))}
+        </select>
+      );
+    };
+
+    const renderCategoryMultiSelect = (category, lines, cardLabel) => {
+      const options = getCategorySkuOptions(category, null);
+      const selectedProductIds = new Set((lines || []).map((line) => line.product_id).filter(Boolean));
+      const stagedSelection = multiPickerDrafts[category] ? new Set(multiPickerDrafts[category]) : selectedProductIds;
+      const hasOptions = options.length > 0;
+      const placeholder = getMultiSelectPlaceholder(category, cardLabel);
+      const selectedLabel = selectedProductIds.size > 0 ? `${selectedProductIds.size} selected` : placeholder;
+      const hasPendingChanges = !setsEqual(stagedSelection, selectedProductIds);
+
+      const setPickerDraft = (nextSet) => {
+        setMultiPickerDrafts((prev) => ({ ...prev, [category]: Array.from(nextSet) }));
+      };
+
+      const clearPickerDraft = () => {
+        setMultiPickerDrafts((prev) => {
+          if (!Object.prototype.hasOwnProperty.call(prev, category)) return prev;
+          const next = { ...prev };
+          delete next[category];
+          return next;
+        });
+      };
+
+      const handleApply = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setCategorySelections(category, stagedSelection);
+        clearPickerDraft();
+        const picker = event.currentTarget.closest('.qd-multi-picker');
+        if (picker) picker.open = false;
+      };
+
+      return (
+        <details
+          className="qd-multi-picker"
+          onClick={(e) => e.stopPropagation()}
+          onToggle={(e) => {
+            const isOpen = e.currentTarget.open;
+            if (isOpen) {
+              setPickerDraft(selectedProductIds);
+              return;
+            }
+            clearPickerDraft();
+          }}
+        >
+          <summary className="qd-grid-input qd-grid-select qd-multi-picker-summary">
+            {hasOptions ? selectedLabel : 'No SKUs available'}
+          </summary>
+          {hasOptions && (
+            <div className="qd-multi-picker-menu">
+              <div className="qd-multi-picker-options">
+                {options.map((product) => {
+                  const checked = stagedSelection.has(product.id);
+                  return (
+                    <label key={product.id} className="qd-multi-picker-option">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          const next = new Set(stagedSelection);
+                          if (e.target.checked) next.add(product.id);
+                          else next.delete(product.id);
+                          setPickerDraft(next);
+                        }}
+                      />
+                      <span>{product.sku ? `${product.name} (${product.sku})` : product.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="qd-multi-picker-footer">
+                <button
+                  type="button"
+                  className="qd-multi-picker-apply-btn"
+                  onClick={handleApply}
+                  disabled={!hasPendingChanges}
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          )}
+        </details>
+      );
+    };
+
     const renderQtyInput = (line, included = false, className = '') => {
-      if (isSupportLine(line)) return '';
-      if (isPlatformAddOnLine(line)) return '';
+      if (isSupportLine(line)) return <span className="cell-locked">1</span>;
       if (included) return <span className="cell-locked">1</span>;
-      const hasStepper = isSeatQuantityLine(line) || isConcurrentBuildsQuantityLine(line);
-      const qtyStepperClasses = hasStepper ? 'number-stepper-seat qd-grid-input-qty-stepper' : '';
-      const isCreditLine = isCreditQuantityLine(line);
+      const isConcurrentBuildsLine = isConcurrentBuildsQuantityLine(line);
+      const hasStepper = isSeatQuantityLine(line) || isConcurrentBuildsLine;
+      const qtyStepperClasses = hasStepper ? 'qd-grid-input-qty-stepper' : '';
+      const isCreditLine = !isConcurrentBuildsLine && isCreditQuantityLine(line);
       const qtyCreditClass = isCreditLine ? 'qd-grid-input-qty-credits' : '';
       const qtyInputKey = line.id;
       const isEditingQty = Object.prototype.hasOwnProperty.call(quantityInputDrafts, qtyInputKey);
       const currentQty = getEffectiveLineQuantity(line);
+      const applyQtyDelta = (delta) => {
+        const next = parsePositiveIntegerInput(currentQty + delta, 1, 1);
+        updateDraftLineField(line.id, 'quantity', next);
+      };
       return (
-        <input
-          className={`qd-grid-input qd-grid-input-qty ${qtyStepperClasses} ${qtyCreditClass} ${className}`.trim()}
-          type={isCreditLine ? 'text' : 'number'}
-          inputMode={isCreditLine ? 'numeric' : undefined}
-          min="1"
-          step="1"
-          value={isCreditLine
-            ? (isEditingQty ? quantityInputDrafts[qtyInputKey] : formatIntegerWithCommas(currentQty, 1))
-            : currentQty}
-          onFocus={() => {
-            if (!isCreditLine) return;
-            setQuantityInputDrafts((prev) => ({ ...prev, [qtyInputKey]: formatIntegerForEdit(currentQty, 1, 1) }));
-          }}
-          onChange={(e) => {
-            const raw = e.target.value;
-            if (isCreditLine) {
-              setQuantityInputDrafts((prev) => ({ ...prev, [qtyInputKey]: raw }));
-            }
-            const next = parsePositiveIntegerInput(raw, 1, 1);
-            updateDraftLineField(line.id, 'quantity', next);
-          }}
-          onBlur={(e) => {
-            if (!isCreditLine) return;
-            const next = parsePositiveIntegerInput(e.target.value, 1, 1);
-            updateDraftLineField(line.id, 'quantity', next);
-            setQuantityInputDrafts((prev) => {
-              const clone = { ...prev };
-              delete clone[qtyInputKey];
-              return clone;
-            });
-          }}
-        />
+        <span className={`qd-grid-qty-control${hasStepper || isCreditLine ? ' qd-grid-qty-control--aligned' : ''}${hasStepper ? ' qd-grid-qty-control--stepper' : ''}`}>
+          <input
+            className={`qd-grid-input qd-grid-input-qty ${qtyStepperClasses} ${qtyCreditClass} ${className}`.trim()}
+            type={isCreditLine ? 'text' : 'number'}
+            inputMode={isCreditLine ? 'numeric' : undefined}
+            min="1"
+            step="1"
+            value={isCreditLine
+              ? (isEditingQty ? quantityInputDrafts[qtyInputKey] : formatIntegerWithCommas(currentQty, 1))
+              : currentQty}
+            onFocus={() => {
+              if (!isCreditLine) return;
+              setQuantityInputDrafts((prev) => ({ ...prev, [qtyInputKey]: formatIntegerForEdit(currentQty, 1, 1) }));
+            }}
+            onChange={(e) => {
+              const raw = e.target.value;
+              if (isCreditLine) {
+                setQuantityInputDrafts((prev) => ({ ...prev, [qtyInputKey]: raw }));
+              }
+              const next = parsePositiveIntegerInput(raw, 1, 1);
+              updateDraftLineField(line.id, 'quantity', next);
+            }}
+            onBlur={(e) => {
+              if (!isCreditLine) return;
+              const next = parsePositiveIntegerInput(e.target.value, 1, 1);
+              updateDraftLineField(line.id, 'quantity', next);
+              setQuantityInputDrafts((prev) => {
+                const clone = { ...prev };
+                delete clone[qtyInputKey];
+                return clone;
+              });
+            }}
+          />
+          {hasStepper && (
+            <span className="qd-grid-qty-stepper">
+              <button
+                type="button"
+                className="qd-grid-qty-stepper-btn"
+                onClick={() => applyQtyDelta(1)}
+                aria-label="Increase quantity"
+              >
+                <span className="qd-grid-qty-stepper-icon">▲</span>
+              </button>
+              <button
+                type="button"
+                className="qd-grid-qty-stepper-btn"
+                onClick={() => applyQtyDelta(-1)}
+                aria-label="Decrease quantity"
+              >
+                <span className="qd-grid-qty-stepper-icon">▼</span>
+              </button>
+            </span>
+          )}
+        </span>
       );
     };
 
@@ -668,7 +974,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       );
     };
 
-    const renderEditStandalone = (line) => {
+    const renderEditStandalone = (line, category) => {
       const unitType = line.unit_type || 'flat';
       const included = isIncluded(unitType);
       const extended = calcLineExtended(line);
@@ -676,12 +982,41 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       const key = getCurrencyInputKey(line.id, field);
       const isEditingCurrency = Object.prototype.hasOwnProperty.call(currencyInputDrafts, key);
       const currentValue = typeof line.list_price === 'number' && Number.isFinite(line.list_price) ? line.list_price : 0;
+      const isMultiCategory = MULTI_SELECT_CATEGORIES.has(category);
+      const focusProductSelect = () => {
+        const target = document.getElementById(`qd-product-select-${line.id}`);
+        target?.focus();
+      };
       return (
         <tr key={line.id}>
           <td className="line-td-product qd-col-product">
             <div className="qd-edit-product-cell">
-              <div className="cell-name">{line.product_name}</div>
-              <button type="button" className="qd-line-icon-btn" aria-label={`Remove ${line.product_name}`} onClick={() => removeDraftLine(line.id)}>×</button>
+              {renderSkuSelect({
+                category,
+                line,
+                onSelect: (productId) => {
+                  if (!productId) {
+                    removeDraftLine(line.id);
+                    return;
+                  }
+                  swapDraftLineProduct(line.id, productId);
+                },
+              })}
+              <div className="qd-line-actions">
+                {isMultiCategory && (
+                  <>
+                    <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Edit ${line.product_name}`} title="Edit row" onClick={focusProductSelect}>
+                      <i className="fa-solid fa-pen fa-fw" aria-hidden="true" />
+                    </button>
+                    <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Clone ${line.product_name}`} title="Clone row" onClick={() => cloneDraftLine(line.id)}>
+                      <i className="fa-solid fa-clone fa-fw" aria-hidden="true" />
+                    </button>
+                  </>
+                )}
+                <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Remove ${line.product_name}`} title="Delete row" onClick={() => removeDraftLine(line.id)}>
+                  <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
+                </button>
+              </div>
             </div>
           </td>
           <td className="qd-col-qty">{renderQtyInput(line, included)}</td>
@@ -743,11 +1078,22 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         <div key={line.id} className="qd-pkg-block">
           <div className="qd-pkg-header" onClick={() => togglePackage(line.id)}>
             <div className="qd-pkg-header-main">
-              <span className="cell-name qd-pkg-name">{line.product_name}</span>
+              {renderSkuSelect({
+                category: 'bundle',
+                line,
+                onSelect: (productId) => {
+                  if (!productId) {
+                    removeDraftLine(line.id);
+                    return;
+                  }
+                  swapDraftLineProduct(line.id, productId);
+                },
+                stopPropagation: true,
+              })}
               <span className="qd-pkg-toggle" aria-hidden>{expanded ? '▾' : '▸'}</span>
               <button type="button" className="qd-line-icon-btn" aria-label={`Remove ${line.product_name}`} onClick={(e) => { e.stopPropagation(); removeDraftLine(line.id); }}>×</button>
             </div>
-            <span className="qd-pkg-header-qty" />
+            <span className="qd-pkg-header-qty">1</span>
             <span className="qd-pkg-header-list-price qd-pkg-member-value qd-line-price-value">
               <span className={`qd-currency-input-wrap${isListEditing ? ' qd-currency-input-wrap--editing' : ''}`} onClick={(e) => e.stopPropagation()}>
                 {isListEditing && <span className="qd-currency-input-symbol" aria-hidden>$</span>}
@@ -867,82 +1213,96 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       );
     };
 
-    const editCategoryGroups = groupLinesByCategory(items);
+    const renderEmptyCategoryRow = (category) => (
+      <tr key={`${category}-empty`}>
+        <td className="line-td-product qd-col-product">
+          <div className="qd-edit-product-cell">
+            {MULTI_SELECT_CATEGORIES.has(category)
+              ? <span className="cell-muted">Select one or more SKUs above</span>
+              : renderSkuSelect({ category, line: null, onSelect: (productId) => addDraftLineFromCategory(category, productId) })}
+          </div>
+        </td>
+        <td className="qd-col-qty">{category === 'support' ? <span className="cell-locked">0</span> : ''}</td>
+        <td className="qd-col-list-price">—</td>
+        <td className="qd-col-discount">—</td>
+        <td className="qd-col-net-price">—</td>
+        <td className="qd-col-amount">—</td>
+      </tr>
+    );
+
+    const renderEmptyPackageRow = () => (
+      <div className="qd-pkg-block" key="bundle-empty">
+        <div className="qd-pkg-header qd-pkg-header-empty">
+          <div className="qd-pkg-header-main">
+            {renderSkuSelect({ category: 'bundle', line: null, onSelect: (productId) => addDraftLineFromCategory('bundle', productId) })}
+          </div>
+          <span className="qd-pkg-header-qty">0</span>
+          <span className="qd-pkg-header-list-price qd-line-price-value">—</span>
+          <span className="qd-pkg-header-discount qd-line-price-value">—</span>
+          <span className="qd-pkg-header-net-price qd-line-price-value">—</span>
+          <span className="qd-pkg-header-amount qd-line-price-value">—</span>
+        </div>
+      </div>
+    );
 
     return (
-      <>
-        <div className="qd-lines-card">
-          {items.length === 0 ? (
-            <div className="edit-empty-state">
-              <div className="nomi-scene"><div className="nomi-clip"><img src="/Nomi.svg" alt="Nomi" className="nomi-character" onAnimationEnd={(e) => { e.target.classList.add('nomi-resting'); }} /></div></div>
-              <div className="edit-empty-title">Start building your quote</div>
-              <button className="edit-empty-cta" onClick={() => setShowPicker(true)}>Browse Products</button>
-            </div>
-          ) : (
-            <div className="qd-grouped-cards">
-              {editCategoryGroups.map((group) => (
-                <div key={group.category} className="qd-category-card">
-                  <div className="qd-category-card-header">
-                    <span className="qd-category-card-title">{group.label}</span>
+      <div className="qd-lines-card">
+        <div className="qd-grouped-cards">
+          {editCategoryGroups.map((group) => (
+            <div key={group.category} className="qd-category-card">
+              <div className="qd-category-card-header">
+                <span className="qd-category-card-title">{group.label}</span>
+              </div>
+              {group.category === 'bundle' ? (
+                <div className="qd-pkg-table">
+                  <div className="qd-pkg-table-head">
+                    <span className="qd-pkg-col-product">Product</span>
+                    <span className="qd-pkg-col-qty">Qty</span>
+                    <span className="qd-pkg-col-list-price">List Price</span>
+                    <span className="qd-pkg-col-discount">Discount</span>
+                    <span className="qd-pkg-col-net-price">Net Price</span>
+                    <span className="qd-pkg-col-amount">Amount</span>
                   </div>
-                  {group.category === 'bundle' ? (
-                    <div className="qd-pkg-table">
-                      <div className="qd-pkg-table-head">
-                        <span className="qd-pkg-col-product">Product</span>
-                        <span className="qd-pkg-col-qty">Qty</span>
-                        <span className="qd-pkg-col-list-price">List Price</span>
-                        <span className="qd-pkg-col-discount">Discount</span>
-                        <span className="qd-pkg-col-net-price">Net Price</span>
-                        <span className="qd-pkg-col-amount">Amount</span>
-                      </div>
-                      {group.lines.map((line) => renderEditPackage(line))}
-                    </div>
-                  ) : (
-                    <table className="data-table line-table">
-                      <colgroup>
-                        <col className="qd-col-product" />
-                        <col className="qd-col-qty" />
-                        <col className="qd-col-list-price" />
-                        <col className="qd-col-discount" />
-                        <col className="qd-col-net-price" />
-                        <col className="qd-col-amount" />
-                      </colgroup>
-                      <thead>
-                        <tr>
-                          <th className="qd-col-product">Product</th>
-                          <th className="qd-col-qty">Qty</th>
-                          <th className="qd-col-list-price">List Price</th>
-                          <th className="qd-col-discount">Discount</th>
-                          <th className="qd-col-net-price">Net Price</th>
-                          <th className="qd-col-amount">Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody>{group.lines.map(renderEditStandalone)}</tbody>
-                    </table>
-                  )}
+                  {group.lines.length > 0 ? group.lines.map((line) => renderEditPackage(line)) : renderEmptyPackageRow()}
                 </div>
-              ))}
+              ) : (
+                <>
+                  {MULTI_SELECT_CATEGORIES.has(group.category) && (
+                    <div className="qd-category-picker-row">
+                      {renderCategoryMultiSelect(group.category, group.lines, group.label)}
+                    </div>
+                  )}
+                  <table className="data-table line-table">
+                    <colgroup>
+                      <col className="qd-col-product" />
+                      <col className="qd-col-qty" />
+                      <col className="qd-col-list-price" />
+                      <col className="qd-col-discount" />
+                      <col className="qd-col-net-price" />
+                      <col className="qd-col-amount" />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th className="qd-col-product">Product</th>
+                        <th className="qd-col-qty">Qty</th>
+                        <th className="qd-col-list-price">List Price</th>
+                        <th className="qd-col-discount">Discount</th>
+                        <th className="qd-col-net-price">Net Price</th>
+                        <th className="qd-col-amount">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.lines.length > 0
+                        ? group.lines.map((line) => renderEditStandalone(line, group.category))
+                        : renderEmptyCategoryRow(group.category)}
+                    </tbody>
+                  </table>
+                </>
+              )}
             </div>
-          )}
+          ))}
         </div>
-        {showPicker && <ProductPicker products={availableProducts} onAdd={addLineToDraft} onClose={() => setShowPicker(false)} multiSelect existingProductIds={new Set()} />}
-        {addingToPackageId && <ProductPicker products={availableProducts.filter((p) => !isBundleProduct(p))} onAdd={(product) => addSubComponentToDraft(product, addingToPackageId)} onClose={() => setAddingToPackageId(null)} />}
-        {showGroupModal && (
-          <div className="modal-overlay" onClick={() => { setShowGroupModal(false); setGroupName(''); }}>
-            <div className="modal modal-theme-quotes" style={{ maxWidth: 360 }} onClick={(e) => e.stopPropagation()}>
-              <div className="modal-title">New Group</div>
-              <div className="field">
-                <label className="field-label">Group Name</label>
-                <input className="field-input" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g. Platform Services" autoFocus onKeyDown={(e) => { if (e.key === 'Enter') addDraftGroup(); }} />
-              </div>
-              <div className="modal-actions">
-                <button className="btn-secondary" onClick={() => { setShowGroupModal(false); setGroupName(''); }}>Cancel</button>
-                <button className="btn-save" onClick={addDraftGroup} disabled={!groupName.trim()}>Create Group</button>
-              </div>
-            </div>
-          </div>
-        )}
-      </>
+      </div>
     );
   };
 
@@ -1149,12 +1509,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       </div>
 
       {renderDetailCards(q)}
-
-      {isEditing && (
-        <div className="qd-lines-page-actions">
-          <button className="btn-primary btn-quote-add" onClick={() => setShowPicker(true)}>Add Product</button>
-        </div>
-      )}
 
       <div className={`qd-lines-section${isEditing ? ' qd-lines-section--editing' : ''}`}>
         {isEditing ? renderEditTable() : (

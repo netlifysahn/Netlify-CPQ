@@ -43,6 +43,7 @@ function parseNumber(value, fallback = 0) {
 }
 
 const SEAT_INPUT_PATTERN = /\b(seat|seats|user|users|license|licenses)\b/i;
+const CONCURRENT_BUILDS_INPUT_PATTERN = /\bconcurrent\s*builds?\b/i;
 const CREDIT_INPUT_PATTERN = /\bcredits?\b/i;
 
 function isSeatLikeProduct(product) {
@@ -67,6 +68,13 @@ function isCreditLikeProduct(product) {
     || unitType === 'per_credit'
     || CREDIT_INPUT_PATTERN.test(name)
     || CREDIT_INPUT_PATTERN.test(sku);
+}
+
+function isConcurrentBuildsLikeProduct(product) {
+  if (!product) return false;
+  const name = String(product.name || '');
+  const sku = String(product.sku || '');
+  return CONCURRENT_BUILDS_INPUT_PATTERN.test(name) || sku === 'CC-B';
 }
 
 const COLLAPSIBLE_SECTION_KEYS = {
@@ -125,7 +133,9 @@ export default function ProductModal({ product, products, onSave, onClose }) {
 
   const isPackage = isBundleProduct(f) || getProductCategory(f) === 'bundle';
   const isSeatProduct = isSeatLikeProduct(f);
-  const isCreditProduct = isCreditLikeProduct(f);
+  const isConcurrentBuildsProduct = isConcurrentBuildsLikeProduct(f);
+  const isStepperProduct = isSeatProduct || isConcurrentBuildsProduct;
+  const isCreditProduct = !isConcurrentBuildsProduct && isCreditLikeProduct(f);
   const productMap = useMemo(() => new Map((products || []).map((p) => [p.id, p])), [products]);
   const nonBundleProducts = useMemo(() => {
     const selectedIds = new Set((f.members || []).map((m) => m.product_id));
@@ -393,8 +403,17 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                           ...referencedProduct,
                           ...member,
                           unit_type: member.unit_type || referencedProduct?.default_price?.unit,
+                        }) || isConcurrentBuildsLikeProduct({
+                          ...referencedProduct,
+                          ...member,
+                          unit_type: member.unit_type || referencedProduct?.default_price?.unit,
                         }) ? 'number-stepper-seat' : '';
-                        const isCreditMember = isCreditLikeProduct({
+                        const isConcurrentBuildsMember = isConcurrentBuildsLikeProduct({
+                          ...referencedProduct,
+                          ...member,
+                          unit_type: member.unit_type || referencedProduct?.default_price?.unit,
+                        });
+                        const isCreditMember = !isConcurrentBuildsMember && isCreditLikeProduct({
                           ...referencedProduct,
                           ...member,
                           unit_type: member.unit_type || referencedProduct?.default_price?.unit,
@@ -579,7 +598,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
               <div className="field">
                 <label className="field-label">Default Qty</label>
                 <input
-                  className={`field-input ${isSeatProduct ? 'number-stepper-seat' : ''}`.trim()}
+                  className={`field-input ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
                   type={isCreditProduct ? 'text' : 'number'}
                   inputMode={isCreditProduct ? 'numeric' : undefined}
                   value={isCreditProduct
@@ -617,7 +636,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
               <div className="field">
                 <label className="field-label">Min Qty</label>
                 <input
-                  className={`field-input ${isSeatProduct ? 'number-stepper-seat' : ''}`.trim()}
+                  className={`field-input ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
                   type={isCreditProduct ? 'text' : 'number'}
                   inputMode={isCreditProduct ? 'numeric' : undefined}
                   value={isCreditProduct
@@ -655,7 +674,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
               <div className="field">
                 <label className="field-label">Max Qty</label>
                 <input
-                  className={`field-input ${isSeatProduct ? 'number-stepper-seat' : ''}`.trim()}
+                  className={`field-input ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
                   type={isCreditProduct ? 'text' : 'number'}
                   inputMode={isCreditProduct ? 'numeric' : undefined}
                   value={isCreditProduct
