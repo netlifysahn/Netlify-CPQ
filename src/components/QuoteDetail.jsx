@@ -87,6 +87,37 @@ const displayCurrencyValue = (v) => {
   return fmtCurrency(n);
 };
 
+/**
+ * Classify a package sub-line as either 'included' (informational platform/support)
+ * or 'configuration' (editable entitlement quantities).
+ * Uses the existing getProductCategory logic via the line's product_type.
+ */
+const classifyPackageComponent = (line) => {
+  if (!line) return 'included';
+  const cat = line.product_type
+    ? (() => {
+        const raw = line.product_type.trim().toLowerCase();
+        if (raw === 'seats' || raw === 'credits') return 'entitlements';
+        return raw;
+      })()
+    : 'platform';
+  if (cat === 'entitlements') return 'configuration';
+  return 'included';
+};
+
+const splitPackageComponents = (subs) => {
+  const included = [];
+  const configuration = [];
+  for (const sub of subs) {
+    if (classifyPackageComponent(sub) === 'configuration') {
+      configuration.push(sub);
+    } else {
+      included.push(sub);
+    }
+  }
+  return { included, configuration };
+};
+
 const SEAT_INPUT_PATTERN = /\b(seat|seats|user|users|license|licenses)\b/i;
 
 const isSeatQuantityLine = (line) => {
@@ -1054,6 +1085,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           <td className="qd-col-discount">{renderDiscountInput(line, included)}</td>
           <td className="qd-col-net-price">{included ? '—' : displayCurrency(line.net_price ?? line.list_price ?? 0)}</td>
           <td className="qd-col-amount"><span>{included ? '—' : displayCurrency(extended)}</span></td>
+          <td className="qd-col-annual-price"><span>{included ? '—' : displayCurrency(extended * 12)}</span></td>
         </tr>
       );
     };
@@ -1187,28 +1219,46 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
               </span>
             </span>
             <span className="qd-pkg-header-amount qd-line-price-value">{displayCurrencyValue(packageAmount)}</span>
+            <span className="qd-pkg-header-annual-price qd-line-price-value">{displayCurrencyValue(packageAmount * 12)}</span>
           </div>
-          {expanded && subs.length > 0 && (
-            <div className="qd-pkg-members">
-              {subs.map((sub) => {
-                return (
-                  <div key={sub.id} className="qd-pkg-member-row qd-pkg-member-row-edit">
-                    <span className="qd-pkg-member-name">
-                      <span className="qd-edit-product-cell qd-edit-product-cell-sub">
-                        <span className="cell-name">{sub.product_name}</span>
-                        <button type="button" className="qd-line-icon-btn" aria-label={`Remove ${sub.product_name}`} onClick={() => removeDraftLine(sub.id)}>×</button>
-                      </span>
-                    </span>
-                    <span className="qd-pkg-member-qty-value">{renderPackageQtyInput(sub)}</span>
-                    <span className="qd-pkg-member-list-price qd-pkg-member-value" />
-                    <span className="qd-pkg-member-discount qd-pkg-member-value" />
-                    <span className="qd-pkg-member-net-price qd-pkg-member-value" />
-                    <span className="qd-pkg-member-amount qd-pkg-member-value" />
+          {expanded && subs.length > 0 && (() => {
+            const { included, configuration } = splitPackageComponents(subs);
+            return (
+              <div className="qd-pkg-members">
+                {included.length > 0 && (
+                  <div className="qd-pkg-section">
+                    <div className="qd-pkg-section-label">Included Platform</div>
+                    {included.map((sub) => (
+                      <div key={sub.id} className="qd-pkg-member-row qd-pkg-member-row-edit qd-pkg-member-row--included">
+                        <span className="qd-pkg-member-name">
+                          <span className="qd-edit-product-cell qd-edit-product-cell-sub">
+                            <span className="cell-name">{sub.product_name}</span>
+                            <button type="button" className="qd-line-icon-btn" aria-label={`Remove ${sub.product_name}`} onClick={() => removeDraftLine(sub.id)}>×</button>
+                          </span>
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                );
-              })}
-            </div>
-          )}
+                )}
+                {configuration.length > 0 && (
+                  <div className="qd-pkg-section">
+                    <div className="qd-pkg-section-label">Configuration</div>
+                    {configuration.map((sub) => (
+                      <div key={sub.id} className="qd-pkg-member-row qd-pkg-member-row-edit qd-pkg-member-row--config">
+                        <span className="qd-pkg-member-name">
+                          <span className="qd-edit-product-cell qd-edit-product-cell-sub">
+                            <span className="cell-name">{sub.product_name}</span>
+                            <button type="button" className="qd-line-icon-btn" aria-label={`Remove ${sub.product_name}`} onClick={() => removeDraftLine(sub.id)}>×</button>
+                          </span>
+                        </span>
+                        <span className="qd-pkg-member-qty-value">{renderPackageQtyInput(sub)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       );
     };
@@ -1227,6 +1277,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         <td className="qd-col-discount">—</td>
         <td className="qd-col-net-price">—</td>
         <td className="qd-col-amount">—</td>
+        <td className="qd-col-annual-price">—</td>
       </tr>
     );
 
@@ -1241,6 +1292,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           <span className="qd-pkg-header-discount qd-line-price-value">—</span>
           <span className="qd-pkg-header-net-price qd-line-price-value">—</span>
           <span className="qd-pkg-header-amount qd-line-price-value">—</span>
+          <span className="qd-pkg-header-annual-price qd-line-price-value">—</span>
         </div>
       </div>
     );
@@ -1261,7 +1313,8 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                     <span className="qd-pkg-col-list-price">List Price</span>
                     <span className="qd-pkg-col-discount">Discount</span>
                     <span className="qd-pkg-col-net-price">Net Price</span>
-                    <span className="qd-pkg-col-amount">Amount</span>
+                    <span className="qd-pkg-col-amount">Monthly Price</span>
+                    <span className="qd-pkg-col-annual-price">Annual Price</span>
                   </div>
                   {group.lines.length > 0 ? group.lines.map((line) => renderEditPackage(line)) : renderEmptyPackageRow()}
                 </div>
@@ -1280,6 +1333,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                       <col className="qd-col-discount" />
                       <col className="qd-col-net-price" />
                       <col className="qd-col-amount" />
+                      <col className="qd-col-annual-price" />
                     </colgroup>
                     <thead>
                       <tr>
@@ -1288,7 +1342,8 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                         <th className="qd-col-list-price">List Price</th>
                         <th className="qd-col-discount">Discount</th>
                         <th className="qd-col-net-price">Net Price</th>
-                        <th className="qd-col-amount">Amount</th>
+                        <th className="qd-col-amount">Monthly Price</th>
+                        <th className="qd-col-annual-price">Annual Price</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1534,7 +1589,8 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                           <span className="qd-pkg-col-list-price">List Price</span>
                           <span className="qd-pkg-col-discount">Discount</span>
                           <span className="qd-pkg-col-net-price">Net Price</span>
-                          <span className="qd-pkg-col-amount">Amount</span>
+                          <span className="qd-pkg-col-amount">Monthly Price</span>
+                          <span className="qd-pkg-col-annual-price">Annual Price</span>
                         </div>
                         {group.lines.map((line) => {
                           const subs = getSubLines(q.line_items, line.id);
@@ -1554,21 +1610,36 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                                 <span className="qd-pkg-header-discount qd-line-price-value">{displayCurrencyValue(packageDisplay.discount)}</span>
                                 <span className="qd-pkg-header-net-price qd-line-price-value">{displayCurrencyValue(packageDisplay.netPrice)}</span>
                                 <span className="qd-pkg-header-amount qd-line-price-value">{displayCurrencyValue(pkgAmount)}</span>
+                                <span className="qd-pkg-header-annual-price qd-line-price-value">{displayCurrencyValue(pkgAmount * 12)}</span>
                               </div>
-                              {expanded && subs.length > 0 && (
-                                <div className="qd-pkg-members">
-                                  {subs.map((sub) => (
-                                    <div key={sub.id} className="qd-pkg-member-row">
-                                      <span className="cell-name qd-pkg-member-name">{sub.product_name}</span>
-                                      <span className="qd-pkg-member-qty-value">{isEntitlementLine(sub) ? fmtQty(sub.quantity ?? 1) : ''}</span>
-                                      <span className="qd-pkg-member-list-price" />
-                                      <span className="qd-pkg-member-discount" />
-                                      <span className="qd-pkg-member-net-price" />
-                                      <span className="qd-pkg-member-amount" />
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
+                              {expanded && subs.length > 0 && (() => {
+                                const { included, configuration } = splitPackageComponents(subs);
+                                return (
+                                  <div className="qd-pkg-members">
+                                    {included.length > 0 && (
+                                      <div className="qd-pkg-section">
+                                        <div className="qd-pkg-section-label">Included Platform</div>
+                                        {included.map((sub) => (
+                                          <div key={sub.id} className="qd-pkg-member-row qd-pkg-member-row--included">
+                                            <span className="cell-name qd-pkg-member-name">{sub.product_name}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {configuration.length > 0 && (
+                                      <div className="qd-pkg-section">
+                                        <div className="qd-pkg-section-label">Configuration</div>
+                                        {configuration.map((sub) => (
+                                          <div key={sub.id} className="qd-pkg-member-row qd-pkg-member-row--config">
+                                            <span className="cell-name qd-pkg-member-name">{sub.product_name}</span>
+                                            <span className="qd-pkg-member-qty-value">{fmtQty(sub.quantity ?? 1)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           );
                         })}
@@ -1582,6 +1653,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                           <col className="qd-col-discount" />
                           <col className="qd-col-net-price" />
                           <col className="qd-col-amount" />
+                          <col className="qd-col-annual-price" />
                         </colgroup>
                         <thead>
                           <tr>
@@ -1590,7 +1662,8 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                             <th className="qd-col-list-price">List Price</th>
                             <th className="qd-col-discount">Discount</th>
                             <th className="qd-col-net-price">Net Price</th>
-                            <th className="qd-col-amount">Amount</th>
+                            <th className="qd-col-amount">Monthly Price</th>
+                            <th className="qd-col-annual-price">Annual Price</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1605,6 +1678,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                                 <td className="qd-col-discount">{isIncluded(unitType) ? '' : displayCurrency(line.discount_amount ?? 0)}</td>
                                 <td className="qd-col-net-price">{isIncluded(unitType) ? '—' : displayCurrency(line.net_price ?? line.list_price ?? 0)}</td>
                                 <td className="qd-col-amount"><span>{isIncluded(unitType) ? '—' : displayCurrency(extended)}</span></td>
+                                <td className="qd-col-annual-price"><span>{isIncluded(unitType) ? '—' : displayCurrency(extended * 12)}</span></td>
                               </tr>
                             );
                           })}
