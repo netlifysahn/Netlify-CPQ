@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './styles/app.css';
 import { PRODUCT_TYPES, TYPE_LABELS, genId, getProductCategory, sortProductsByType } from './data/catalog';
 import { genQuoteNumber } from './data/quotes';
@@ -30,6 +30,31 @@ const NAV_ITEMS = [
 const COMING_SOON_META = {
   scope: { icon: 'fa-bullseye', title: 'Scope', label: 'Deal Scope', subtitle: 'Define and manage deal scope for quotes' },
   orders: { icon: 'fa-cart-shopping', title: 'Orders', label: 'Order Management', subtitle: 'Track and manage customer orders' },
+};
+
+const FALLBACK_SETTINGS = {
+  terms: {
+    sections: [],
+  },
+};
+
+const normalizeSettings = (value) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return { ...FALLBACK_SETTINGS };
+  const sections = Array.isArray(value?.terms?.sections)
+    ? value.terms.sections.map((section, index) => ({
+        ...(section && typeof section === 'object' ? section : {}),
+        id: String(section?.id || `term_${index + 1}`),
+        title: typeof section?.title === 'string' ? section.title : '',
+        body: typeof section?.body === 'string' ? section.body : '',
+      }))
+    : [];
+  return {
+    ...value,
+    terms: {
+      ...value.terms,
+      sections,
+    },
+  };
 };
 
 // Always light mode
@@ -77,7 +102,68 @@ export default function App() {
       body: JSON.stringify(quotes),
     }).catch(() => {});
   }, [quotes, quotesLoaded]);
-  const [settings, setSettings] = useState(() => ({ ...seedSettings }));
+  const [settings, setSettings] = useState(() => normalizeSettings(seedSettings));
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [settingsSaveError, setSettingsSaveError] = useState('');
+  const settingsSnapshotRef = useRef(JSON.stringify(normalizeSettings(seedSettings)));
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadSettings = async () => {
+      try {
+        const response = await fetch('/api/settings', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Unable to load settings (${response.status})`);
+        const data = await response.json();
+        const normalized = normalizeSettings(data);
+        if (isCancelled) return;
+        settingsSnapshotRef.current = JSON.stringify(normalized);
+        setSettings(normalized);
+        setSettingsSaveError('');
+      } catch {
+        if (isCancelled) return;
+        const normalized = normalizeSettings(seedSettings);
+        settingsSnapshotRef.current = JSON.stringify(normalized);
+        setSettings(normalized);
+        setSettingsSaveError('Settings could not be loaded from the server. Showing default values until connection is restored.');
+      } finally {
+        if (!isCancelled) setSettingsLoaded(true);
+      }
+    };
+
+    loadSettings();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!settingsLoaded) return;
+
+    const snapshot = JSON.stringify(settings);
+    if (snapshot === settingsSnapshotRef.current) return;
+
+    fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings),
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Unable to save settings (${response.status})`);
+        const saved = normalizeSettings(await response.json());
+        settingsSnapshotRef.current = JSON.stringify(saved);
+        setSettings((prev) => (JSON.stringify(prev) === settingsSnapshotRef.current ? prev : saved));
+        setSettingsSaveError('');
+      })
+      .catch(() => {
+        setSettingsSaveError('Settings could not be saved. Recent edits may not persist until save succeeds.');
+      });
+  }, [settings, settingsLoaded]);
+
+  const saveSettings = useCallback((nextSettings) => {
+    setSettings(normalizeSettings(nextSettings));
+  }, []);
 
   const [search, setSearch] = useState('');
   const [pricebookSearch, setPricebookSearch] = useState('');
@@ -449,7 +535,7 @@ export default function App() {
 
         {/* Settings Page */}
         {page === 'settings' && (
-          <Settings settings={settings} onSave={setSettings} />
+          <Settings settings={settings} onSave={saveSettings} saveError={settingsSaveError} />
         )}
 
         {/* Coming Soon */}

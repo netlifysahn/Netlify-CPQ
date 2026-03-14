@@ -67,6 +67,13 @@ export const isIncluded = (unitType) => unitType === 'included';
 
 export const getUnitLabel = (unitType) => UNIT_LABELS[unitType] || unitType || 'Flat';
 
+export const getEffectiveLineQuantity = (line) => {
+  if (!line) return 1;
+  if (line.product_type === 'support' || line.product_type === 'addon') return 1;
+  const qty = Number(line.quantity);
+  return Number.isFinite(qty) && qty > 0 ? qty : 1;
+};
+
 export const emptyLineItem = (product, listPrice) => {
   const unitType = getUnitType(product);
   const price = listPrice ?? product.default_price?.amount ?? 0;
@@ -117,7 +124,7 @@ export const emptyPackageLine = (product) => {
 export const emptySubLineItem = (memberProduct, member, parentLineId, listPrice) => {
   const unitType = member.unit_type || getUnitType(memberProduct);
   const price = listPrice ?? member.list_price ?? memberProduct.default_price?.amount ?? 0;
-  const qty = member.qty || member.default_quantity || 1;
+  const qty = getProductCategory(memberProduct) === 'support' ? 1 : (member.qty || member.default_quantity || 1);
   const included = member.price_behavior === 'included';
   const discPct = member.price_behavior === 'discounted' ? (member.discount_percent || 0) : 0;
   const effectivePrice = included ? 0 : price;
@@ -186,15 +193,16 @@ const round2 = (v) => Math.round(v * 100) / 100;
 // Line extended total = qty x net price
 // Backward compat: old lines may have sales_price/line_discount instead of net_price
 export const calcLineExtended = (line) => {
+  const quantity = getEffectiveLineQuantity(line);
   if (line.net_price != null) {
-    return (line.quantity || 1) * line.net_price;
+    return quantity * line.net_price;
   }
   // Legacy fallback
   let price = line.sales_price || line.list_price || 0;
   if (line.line_discount > 0) {
     price = price * (1 - line.line_discount / 100);
   }
-  return (line.quantity || 1) * price;
+  return quantity * price;
 };
 
 // Line monthly after quote-level discount

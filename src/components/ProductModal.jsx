@@ -11,6 +11,11 @@ import {
   getProductCategory,
   isBundleProduct,
 } from '../data/catalog';
+import {
+  formatIntegerForEdit,
+  formatIntegerWithCommas,
+  parsePositiveIntegerInput,
+} from '../utils/numberFormat';
 
 const PILL_COLORS = ['blue', 'green', 'amber', 'purple', 'teal'];
 
@@ -38,6 +43,7 @@ function parseNumber(value, fallback = 0) {
 }
 
 const SEAT_INPUT_PATTERN = /\b(seat|seats|user|users|license|licenses)\b/i;
+const CREDIT_INPUT_PATTERN = /\bcredits?\b/i;
 
 function isSeatLikeProduct(product) {
   if (!product) return false;
@@ -49,6 +55,18 @@ function isSeatLikeProduct(product) {
     || unitType === 'per_member'
     || SEAT_INPUT_PATTERN.test(name)
     || SEAT_INPUT_PATTERN.test(sku);
+}
+
+function isCreditLikeProduct(product) {
+  if (!product) return false;
+  const type = String(product.type || product.category || '').toLowerCase();
+  const name = String(product.name || '');
+  const sku = String(product.sku || '');
+  const unitType = String(product.default_price?.unit || product.unit_type || '').toLowerCase();
+  return type === 'credits'
+    || unitType === 'per_credit'
+    || CREDIT_INPUT_PATTERN.test(name)
+    || CREDIT_INPUT_PATTERN.test(sku);
 }
 
 const COLLAPSIBLE_SECTION_KEYS = {
@@ -65,6 +83,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
   const [f, setF] = useState(coerceProduct(product));
   const [jsonError, setJsonError] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [creditInputDrafts, setCreditInputDrafts] = useState({});
   const [openSections, setOpenSections] = useState({
     [COLLAPSIBLE_SECTION_KEYS.BASIC_INFO]: true,
     [COLLAPSIBLE_SECTION_KEYS.PRICING]: true,
@@ -106,6 +125,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
 
   const isPackage = isBundleProduct(f) || getProductCategory(f) === 'bundle';
   const isSeatProduct = isSeatLikeProduct(f);
+  const isCreditProduct = isCreditLikeProduct(f);
   const productMap = useMemo(() => new Map((products || []).map((p) => [p.id, p])), [products]);
   const nonBundleProducts = useMemo(() => {
     const selectedIds = new Set((f.members || []).map((m) => m.product_id));
@@ -374,6 +394,14 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                           ...member,
                           unit_type: member.unit_type || referencedProduct?.default_price?.unit,
                         }) ? 'number-stepper-seat' : '';
+                        const isCreditMember = isCreditLikeProduct({
+                          ...referencedProduct,
+                          ...member,
+                          unit_type: member.unit_type || referencedProduct?.default_price?.unit,
+                        });
+                        const memberQtyKey = `member:${index}:qty`;
+                        const currentQty = parsePositiveIntegerInput(member.qty ?? member.default_quantity, 1, 1);
+                        const isEditingCreditQty = Object.prototype.hasOwnProperty.call(creditInputDrafts, memberQtyKey);
                         return (
                           <tr key={`${member.product_id}_${index}`}>
                           <td>{member.name || productMap.get(member.product_id)?.name || 'Unknown'}</td>
@@ -381,11 +409,31 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                           <td>
                             <input
                               className={`field-input ${seatStepperClass}`.trim()}
-                              type="number"
+                              type={isCreditMember ? 'text' : 'number'}
+                              inputMode={isCreditMember ? 'numeric' : undefined}
                               min="1"
                               step="1"
-                              value={member.qty ?? member.default_quantity ?? 1}
-                              onChange={(e) => updateMember(index, 'qty', e.target.value)}
+                              value={isCreditMember
+                                ? (isEditingCreditQty ? creditInputDrafts[memberQtyKey] : formatIntegerWithCommas(currentQty, 1))
+                                : currentQty}
+                              onFocus={() => {
+                                if (!isCreditMember) return;
+                                setCreditInputDrafts((prev) => ({ ...prev, [memberQtyKey]: formatIntegerForEdit(currentQty, 1, 1) }));
+                              }}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                if (isCreditMember) setCreditInputDrafts((prev) => ({ ...prev, [memberQtyKey]: raw }));
+                                updateMember(index, 'qty', parsePositiveIntegerInput(raw, 1, 1));
+                              }}
+                              onBlur={(e) => {
+                                if (!isCreditMember) return;
+                                updateMember(index, 'qty', parsePositiveIntegerInput(e.target.value, 1, 1));
+                                setCreditInputDrafts((prev) => {
+                                  const clone = { ...prev };
+                                  delete clone[memberQtyKey];
+                                  return clone;
+                                });
+                              }}
                               style={{ width: '100%', padding: '4px 6px', textAlign: 'center' }}
                             />
                           </td>
@@ -530,15 +578,117 @@ export default function ProductModal({ product, products, onSave, onClose }) {
             <div className="grid-3">
               <div className="field">
                 <label className="field-label">Default Qty</label>
-                <input className={`field-input ${isSeatProduct ? 'number-stepper-seat' : ''}`.trim()} type="number" value={f.config.default_quantity} onChange={(e) => sc('default_quantity', e.target.value)} />
+                <input
+                  className={`field-input ${isSeatProduct ? 'number-stepper-seat' : ''}`.trim()}
+                  type={isCreditProduct ? 'text' : 'number'}
+                  inputMode={isCreditProduct ? 'numeric' : undefined}
+                  value={isCreditProduct
+                    ? (Object.prototype.hasOwnProperty.call(creditInputDrafts, 'config:default_quantity')
+                      ? creditInputDrafts['config:default_quantity']
+                      : formatIntegerWithCommas(parsePositiveIntegerInput(f.config.default_quantity, 1, 1), 1))
+                    : f.config.default_quantity}
+                  onFocus={() => {
+                    if (!isCreditProduct) return;
+                    setCreditInputDrafts((prev) => ({
+                      ...prev,
+                      'config:default_quantity': formatIntegerForEdit(f.config.default_quantity, 1, 1),
+                    }));
+                  }}
+                  onChange={(e) => {
+                    if (!isCreditProduct) {
+                      sc('default_quantity', e.target.value);
+                      return;
+                    }
+                    const raw = e.target.value;
+                    setCreditInputDrafts((prev) => ({ ...prev, 'config:default_quantity': raw }));
+                    sc('default_quantity', parsePositiveIntegerInput(raw, 1, 1));
+                  }}
+                  onBlur={(e) => {
+                    if (!isCreditProduct) return;
+                    sc('default_quantity', parsePositiveIntegerInput(e.target.value, 1, 1));
+                    setCreditInputDrafts((prev) => {
+                      const clone = { ...prev };
+                      delete clone['config:default_quantity'];
+                      return clone;
+                    });
+                  }}
+                />
               </div>
               <div className="field">
                 <label className="field-label">Min Qty</label>
-                <input className={`field-input ${isSeatProduct ? 'number-stepper-seat' : ''}`.trim()} type="number" value={f.config.min_quantity} onChange={(e) => sc('min_quantity', e.target.value)} />
+                <input
+                  className={`field-input ${isSeatProduct ? 'number-stepper-seat' : ''}`.trim()}
+                  type={isCreditProduct ? 'text' : 'number'}
+                  inputMode={isCreditProduct ? 'numeric' : undefined}
+                  value={isCreditProduct
+                    ? (Object.prototype.hasOwnProperty.call(creditInputDrafts, 'config:min_quantity')
+                      ? creditInputDrafts['config:min_quantity']
+                      : formatIntegerWithCommas(parsePositiveIntegerInput(f.config.min_quantity, 1, 1), 1))
+                    : f.config.min_quantity}
+                  onFocus={() => {
+                    if (!isCreditProduct) return;
+                    setCreditInputDrafts((prev) => ({
+                      ...prev,
+                      'config:min_quantity': formatIntegerForEdit(f.config.min_quantity, 1, 1),
+                    }));
+                  }}
+                  onChange={(e) => {
+                    if (!isCreditProduct) {
+                      sc('min_quantity', e.target.value);
+                      return;
+                    }
+                    const raw = e.target.value;
+                    setCreditInputDrafts((prev) => ({ ...prev, 'config:min_quantity': raw }));
+                    sc('min_quantity', parsePositiveIntegerInput(raw, 1, 1));
+                  }}
+                  onBlur={(e) => {
+                    if (!isCreditProduct) return;
+                    sc('min_quantity', parsePositiveIntegerInput(e.target.value, 1, 1));
+                    setCreditInputDrafts((prev) => {
+                      const clone = { ...prev };
+                      delete clone['config:min_quantity'];
+                      return clone;
+                    });
+                  }}
+                />
               </div>
               <div className="field">
                 <label className="field-label">Max Qty</label>
-                <input className={`field-input ${isSeatProduct ? 'number-stepper-seat' : ''}`.trim()} type="number" value={f.config.max_quantity} onChange={(e) => sc('max_quantity', e.target.value)} />
+                <input
+                  className={`field-input ${isSeatProduct ? 'number-stepper-seat' : ''}`.trim()}
+                  type={isCreditProduct ? 'text' : 'number'}
+                  inputMode={isCreditProduct ? 'numeric' : undefined}
+                  value={isCreditProduct
+                    ? (Object.prototype.hasOwnProperty.call(creditInputDrafts, 'config:max_quantity')
+                      ? creditInputDrafts['config:max_quantity']
+                      : formatIntegerWithCommas(parsePositiveIntegerInput(f.config.max_quantity, 1, 1), 1))
+                    : f.config.max_quantity}
+                  onFocus={() => {
+                    if (!isCreditProduct) return;
+                    setCreditInputDrafts((prev) => ({
+                      ...prev,
+                      'config:max_quantity': formatIntegerForEdit(f.config.max_quantity, 1, 1),
+                    }));
+                  }}
+                  onChange={(e) => {
+                    if (!isCreditProduct) {
+                      sc('max_quantity', e.target.value);
+                      return;
+                    }
+                    const raw = e.target.value;
+                    setCreditInputDrafts((prev) => ({ ...prev, 'config:max_quantity': raw }));
+                    sc('max_quantity', parsePositiveIntegerInput(raw, 1, 1));
+                  }}
+                  onBlur={(e) => {
+                    if (!isCreditProduct) return;
+                    sc('max_quantity', parsePositiveIntegerInput(e.target.value, 1, 1));
+                    setCreditInputDrafts((prev) => {
+                      const clone = { ...prev };
+                      delete clone['config:max_quantity'];
+                      return clone;
+                    });
+                  }}
+                />
               </div>
             </div>
 

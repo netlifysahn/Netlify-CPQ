@@ -19,6 +19,8 @@
   --teal: #05BDBA;
   --teal-dark: #05BDBA;
   --teal-muted: rgba(5, 189, 186, 0.08);
+  --primary-color: #05BDBA;
+  --primary-color-rgb: 5, 189, 186;
 
   /* Semantic — Netlify brand */
   --blue: #2563eb;
@@ -295,6 +297,8 @@
 .main-content {
   --section-accent: var(--section-products);
   --section-accent-tint: var(--section-products-tint);
+  --primary-color: var(--section-accent);
+  --primary-color-rgb: 5, 189, 186;
   margin-left: var(--sidebar-width);
   flex: 1;
   padding: var(--space-2xl);
@@ -330,26 +334,36 @@
 .main-content.section-products {
   --page-cta: #05BDBA;
   --page-cta-hover: #32E6E2;
+  --primary-color: #05BDBA;
+  --primary-color-rgb: 5, 189, 186;
 }
 
 .main-content.section-pricebooks {
   --page-cta: #05BDBA;
   --page-cta-hover: #32E6E2;
+  --primary-color: #05BDBA;
+  --primary-color-rgb: 5, 189, 186;
 }
 
 .main-content.section-quotes {
   --page-cta: #FBB13D;
   --page-cta-hover: #FACD6F;
+  --primary-color: #FBB13D;
+  --primary-color-rgb: 251, 177, 61;
 }
 
 .main-content.section-scope {
   --page-cta: #FE4E5C;
   --page-cta-hover: #E54552;
+  --primary-color: #FE4E5C;
+  --primary-color-rgb: 254, 78, 92;
 }
 
 .main-content.section-orders {
   --page-cta: #2E51ED;
   --page-cta-hover: #2743c9;
+  --primary-color: #2E51ED;
+  --primary-color-rgb: 46, 81, 237;
 }
 
 .main-content.section-products .btn-product-add,
@@ -1731,23 +1745,6 @@ tr.drag-over {
   box-shadow: inset 0 2px 0 0 var(--teal);
 }
 
-/* PKG badge */
-.pkg-badge {
-  display: inline-block;
-  margin-left: 8px;
-  padding: 2px 6px;
-  font-family: 'Poppins', sans-serif;
-  font-size: 8px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  border-radius: 3px;
-  background: transparent;
-  border: 1px solid #0a0a0a;
-  color: #0a0a0a;
-  vertical-align: middle;
-}
-
 /* Add Component link inside package */
 .pkg-add-component-link {
   background: none;
@@ -2698,6 +2695,28 @@ tr.drag-over {
   line-height: 1;
 }
 
+.qd-terms-textarea {
+  width: 100%;
+  min-height: 120px;
+  max-height: 280px;
+  padding: 10px 12px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.6;
+  color: #1a1a1a;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  outline: none;
+  box-sizing: border-box;
+  resize: vertical;
+  overflow-y: auto;
+}
+
+.qd-terms-textarea:focus {
+  border-color: var(--section-accent);
+}
+
 .qd-category-card .line-table td {
   padding: 12px 12px;
 }
@@ -2847,13 +2866,14 @@ tr.drag-over {
   display: grid;
   grid-template-columns: var(--qd-shared-grid-columns);
   align-items: center;
-  padding: 4px 0;
+  --qd-pkg-component-row-padding-y: 6px;
+  padding: 0;
 }
 
 .qd-pkg-member-name {
   grid-column: 1;
   position: relative;
-  padding-left: 52px;
+  padding: var(--qd-pkg-component-row-padding-y) 0 var(--qd-pkg-component-row-padding-y) 52px;
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
@@ -2869,7 +2889,7 @@ tr.drag-over {
 
 .qd-pkg-member-qty-value {
   grid-column: 2;
-  padding: 4px 12px;
+  padding: var(--qd-pkg-component-row-padding-y) 12px;
   text-align: center;
   font-family: 'Poppins', sans-serif;
   font-size: 13px;
@@ -2879,25 +2899,25 @@ tr.drag-over {
 
 .qd-pkg-member-list-price {
   grid-column: 3;
-  padding: 4px 12px;
+  padding: var(--qd-pkg-component-row-padding-y) 12px;
   text-align: right;
 }
 
 .qd-pkg-member-discount {
   grid-column: 4;
-  padding: 4px 12px;
+  padding: var(--qd-pkg-component-row-padding-y) 12px;
   text-align: right;
 }
 
 .qd-pkg-member-net-price {
   grid-column: 5;
-  padding: 4px 12px;
+  padding: var(--qd-pkg-component-row-padding-y) 12px;
   text-align: right;
 }
 
 .qd-pkg-member-amount {
   grid-column: 6;
-  padding: 4px 28px 4px 12px;
+  padding: var(--qd-pkg-component-row-padding-y) 28px var(--qd-pkg-component-row-padding-y) 12px;
   text-align: right;
 }
 
@@ -4717,12 +4737,6 @@ tr.drag-over {
   color: var(--text-strong);
 }
 
-.pkg-badge {
-  background: transparent;
-  border: 1px solid #0a0a0a;
-  color: #0a0a0a;
-}
-
 .pkg-count-pill {
   color: var(--text-muted);
   border-color: transparent;
@@ -5405,8 +5419,12 @@ tr.drag-over {
 }
 
 .main-content.section-settings {
+  --section-accent: #382AA4;
+  --section-accent-tint: rgba(56, 42, 164, 0.12);
   --page-cta: #382AA4;
   --page-cta-hover: #775CE7;
+  --primary-color: #382AA4;
+  --primary-color-rgb: 56, 42, 164;
 }
 
 .main-content.section-settings .settings-action-btn {
@@ -5472,7 +5490,7 @@ tr.drag-over {
 }
 
 .main-content.section-settings .settings-terms-card {
-  height: 260px;
+  min-height: 220px;
 }
 
 .main-content.section-settings .settings-section-label-row {
@@ -5489,35 +5507,10 @@ tr.drag-over {
 .main-content.section-settings .settings-terms-card-body {
   flex: 1;
   min-height: 0;
-  max-height: 180px;
-  overflow-y: auto;
-  padding-right: 6px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(17, 24, 39, 0.22) transparent;
-}
-
-.main-content.section-settings .settings-terms-card-body::-webkit-scrollbar {
-  width: 8px;
-}
-
-.main-content.section-settings .settings-terms-card-body::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.main-content.section-settings .settings-terms-card-body::-webkit-scrollbar-thumb {
-  background-color: rgba(17, 24, 39, 0.22);
-  border-radius: 8px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-.main-content.section-settings .settings-terms-card-body:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(17, 24, 39, 0.34);
 }
 
 .main-content.section-settings .settings-terms-card-textarea {
-  min-height: 100%;
-  resize: none;
+  margin: 0;
 }
 
 /* Quote detail edit mode keeps the exact same line-item grid and only swaps fields for inputs. */
@@ -5580,6 +5573,10 @@ tr.drag-over {
   text-align: center;
 }
 
+.quote-detail--editing .qd-grid-input-qty-stepper {
+  width: 96px;
+}
+
 .quote-detail--editing .qd-grid-input-qty-credits {
   width: 96px;
 }
@@ -5621,6 +5618,7 @@ tr.drag-over {
 
 .quote-detail--editing .qd-pkg-member-row-edit {
   align-items: center;
+  min-height: calc((var(--qd-pkg-component-row-padding-y) * 2) + 28px);
 }
 
 .quote-detail--editing .qd-pkg-member-list-price,
@@ -5780,4 +5778,275 @@ input[type="number"].number-stepper-seat::-webkit-outer-spin-button,
 input[type="number"].number-stepper-seat::-webkit-inner-spin-button {
   -webkit-appearance: auto;
   margin: 0;
+}
+
+/* Quote Summary table: unify primary row typography */
+.data-table-quotes .cell-name,
+.data-table-quotes .cell-customer,
+.data-table-quotes .cell-amount,
+.data-table-quotes .cell-term,
+.data-table-quotes .status-label {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #1F2937;
+}
+
+/* Filled action buttons -> outlined buttons (global) */
+.btn-save,
+.btn-destructive,
+.btn-product-add,
+.btn-quote-add,
+.empty-state-cta,
+.edit-empty-cta,
+.qd-edit-lines-btn.qd-edit-lines-btn,
+.qd-action-btn-primary,
+.qd-action-btn-teal,
+.picker-v2-footer .btn-primary,
+.main-content.section-settings .settings-action-btn-solid,
+.main-content.section-products .btn-product-add,
+.main-content.section-products .empty-state-cta,
+.main-content.section-pricebooks .btn-product-add,
+.main-content.section-pricebooks .empty-state-cta,
+.main-content.section-pricebooks .btn-primary,
+.main-content.section-quotes .btn-quote-add,
+.main-content.section-quotes .empty-state-cta,
+.main-content.section-scope .btn-primary,
+.main-content.section-scope .empty-state-cta,
+.main-content.section-orders .btn-primary,
+.main-content.section-orders .empty-state-cta {
+  background: transparent !important;
+  border: 1px solid var(--primary-color) !important;
+  color: var(--primary-color) !important;
+  box-shadow: none !important;
+}
+
+.btn-save:hover,
+.btn-destructive:hover,
+.btn-product-add:hover,
+.btn-quote-add:hover,
+.empty-state-cta:hover,
+.edit-empty-cta:hover,
+.qd-edit-lines-btn.qd-edit-lines-btn:hover,
+.qd-action-btn-primary:hover,
+.qd-action-btn-teal:hover,
+.picker-v2-footer .btn-primary:hover,
+.main-content.section-settings .settings-action-btn-solid:hover:not(:disabled),
+.main-content.section-products .btn-product-add:hover,
+.main-content.section-products .empty-state-cta:hover,
+.main-content.section-pricebooks .btn-product-add:hover,
+.main-content.section-pricebooks .empty-state-cta:hover,
+.main-content.section-pricebooks .btn-primary:hover,
+.main-content.section-quotes .btn-quote-add:hover,
+.main-content.section-quotes .empty-state-cta:hover,
+.main-content.section-scope .btn-primary:hover,
+.main-content.section-scope .empty-state-cta:hover,
+.main-content.section-orders .btn-primary:hover,
+.main-content.section-orders .empty-state-cta:hover {
+  background: rgba(var(--primary-color-rgb), 0.08) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+}
+
+.btn-save:active:not(:disabled),
+.btn-destructive:active,
+.btn-product-add:active,
+.btn-quote-add:active,
+.empty-state-cta:active,
+.edit-empty-cta:active,
+.qd-edit-lines-btn.qd-edit-lines-btn:active,
+.qd-action-btn-primary:active,
+.qd-action-btn-teal:active,
+.picker-v2-footer .btn-primary:active,
+.main-content.section-settings .settings-action-btn-solid:active:not(:disabled),
+.main-content.section-products .btn-product-add:active,
+.main-content.section-products .empty-state-cta:active,
+.main-content.section-pricebooks .btn-product-add:active,
+.main-content.section-pricebooks .empty-state-cta:active,
+.main-content.section-pricebooks .btn-primary:active,
+.main-content.section-quotes .btn-quote-add:active,
+.main-content.section-quotes .empty-state-cta:active,
+.main-content.section-scope .btn-primary:active,
+.main-content.section-scope .empty-state-cta:active,
+.main-content.section-orders .btn-primary:active,
+.main-content.section-orders .empty-state-cta:active {
+  background: rgba(var(--primary-color-rgb), 0.15) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+}
+
+/* Quote Summary table refactor */
+.quote-summary-card {
+  overflow-x: hidden;
+}
+
+.quote-summary-table {
+  width: 100%;
+  min-width: 0;
+}
+
+.quote-summary-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.45fr) minmax(160px, 1fr) minmax(106px, 0.68fr) minmax(106px, 0.68fr) minmax(110px, 0.7fr) minmax(92px, 0.62fr);
+  column-gap: 12px;
+  align-items: center;
+}
+
+.quote-summary-header {
+  padding: 14px 20px;
+}
+
+.quote-summary-header .quote-summary-cell {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6B7280;
+}
+
+.quote-summary-body .quote-summary-row {
+  padding: 14px 20px;
+  border-top: 1px solid rgba(17, 24, 39, 0.06);
+}
+
+.quote-summary-data-row {
+  cursor: pointer;
+  transition: background-color 0.16s ease;
+}
+
+.quote-summary-data-row:hover {
+  background: #FAFAFA;
+}
+
+.quote-summary-name {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #1F2937;
+}
+
+.quote-summary-id {
+  font-size: 11px;
+  color: #9CA3AF;
+  margin-top: 1px;
+}
+
+.quote-summary-customer {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #1F2937;
+}
+
+.quote-summary-money {
+  text-align: right;
+}
+
+.quote-summary-row > .quote-summary-cell:nth-child(3) {
+  margin-left: -4px;
+}
+
+.quote-summary-money-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1F2937;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.quote-summary-term {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #1F2937;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.quote-summary-header .quote-summary-cell:nth-child(5) {
+  text-align: right;
+}
+
+.quote-summary-row > .quote-summary-cell:last-child {
+  justify-self: start;
+}
+
+.quote-summary-status-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #F3F4F6;
+  color: #374151;
+  border: 1px solid transparent;
+}
+
+/* Button standardization: typography + outlined reverse-fill hover */
+button {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+:is(
+  .btn-primary,
+  .btn-secondary,
+  .btn-save,
+  .btn-cancel,
+  .btn-destructive,
+  .btn-product-add,
+  .btn-quote-add,
+  .empty-state-cta,
+  .edit-empty-cta,
+  .qd-edit-lines-btn.qd-edit-lines-btn,
+  .qd-action-btn,
+  .qd-action-btn-primary,
+  .qd-action-btn-teal,
+  .qd-status-btn,
+  .settings-action-btn,
+  .settings-action-btn-outline,
+  .settings-action-btn-solid,
+  .picker-v2-footer .btn-primary,
+  .qd-line-footer-actions .btn-primary,
+  .back-btn
+) {
+  background: transparent !important;
+  border: 1px solid var(--primary-color) !important;
+  color: var(--primary-color) !important;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease !important;
+}
+
+:is(
+  .btn-primary,
+  .btn-secondary,
+  .btn-save,
+  .btn-cancel,
+  .btn-destructive,
+  .btn-product-add,
+  .btn-quote-add,
+  .empty-state-cta,
+  .edit-empty-cta,
+  .qd-edit-lines-btn.qd-edit-lines-btn,
+  .qd-action-btn,
+  .qd-action-btn-primary,
+  .qd-action-btn-teal,
+  .qd-status-btn,
+  .settings-action-btn,
+  .settings-action-btn-outline,
+  .settings-action-btn-solid,
+  .picker-v2-footer .btn-primary,
+  .qd-line-footer-actions .btn-primary,
+  .back-btn
+):hover:not(:disabled) {
+  background: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: #ffffff !important;
 }

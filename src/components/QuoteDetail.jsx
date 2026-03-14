@@ -4,10 +4,15 @@ import {
   fmtCurrency, STATUS_META, emptyLineItem, emptyGroup,
   emptyPackageLine, emptySubLineItem,
   syncDiscountFromPercent, syncDiscountFromAmount,
-  isIncluded,
+  isIncluded, getEffectiveLineQuantity,
 } from '../data/quotes';
 import { isBundleProduct, TYPE_LABELS, getProductCategory } from '../data/catalog';
 import { generateQuotePDF } from '../utils/generateQuotePDF';
+import {
+  formatIntegerForEdit,
+  formatIntegerWithCommas,
+  parsePositiveIntegerInput,
+} from '../utils/numberFormat';
 import ProductPicker from './ProductPicker';
 
 class QuoteDetailErrorBoundary extends Component {
@@ -93,6 +98,27 @@ const isSeatQuantityLine = (line) => {
     || SEAT_INPUT_PATTERN.test(name);
 };
 
+const CONCURRENT_BUILDS_INPUT_PATTERN = /\bconcurrent\s*builds?\b/i;
+
+const isConcurrentBuildsQuantityLine = (line) => {
+  if (!line) return false;
+  const name = String(line.product_name || '');
+  const sku = String(line.product_sku || '');
+  return CONCURRENT_BUILDS_INPUT_PATTERN.test(name) || sku === 'CC-B';
+};
+
+const CREDIT_INPUT_PATTERN = /\bcredits?\b/i;
+
+const isCreditQuantityLine = (line) => {
+  if (!line) return false;
+  const name = String(line.product_name || '');
+  const sku = String(line.product_sku || '');
+  return line.unit_type === 'per_credit'
+    || line.product_type === 'credits'
+    || CREDIT_INPUT_PATTERN.test(name)
+    || CREDIT_INPUT_PATTERN.test(sku);
+};
+
 const fmtQty = (v) => {
   const n = typeof v === 'number' && !isNaN(v) ? v : 0;
   return n.toLocaleString('en-US');
@@ -145,20 +171,24 @@ const normalizeQuote = (q) => {
     status: q.status || 'draft',
     term_months: q.term_months || 12,
     header_discount: q.header_discount || 0,
-    line_items: (q.line_items || []).map((l) => ({
-      ...l,
-      unit_type: l.unit_type || 'flat',
-      quantity: l.quantity ?? 1,
-      list_price: l.list_price ?? l.sales_price ?? 0,
-      discount_percent: l.discount_percent ?? 0,
-      discount_amount: l.discount_amount ?? 0,
-      net_price: l.net_price ?? l.list_price ?? l.sales_price ?? 0,
-      product_name: l.product_name || l.name || 'Unknown Product',
-      product_sku: l.product_sku || l.sku || '',
-      is_package: l.is_package || false,
-      parent_line_id: l.parent_line_id || null,
-      price_behavior: l.price_behavior || (l.parent_line_id ? 'included' : undefined),
-    })),
+    line_items: (q.line_items || []).map((l) => {
+      const productType = l.product_type || getProductCategory({ category: l.product_type });
+      return {
+        ...l,
+        unit_type: l.unit_type || 'flat',
+        quantity: getEffectiveLineQuantity({ ...l, product_type: productType }),
+        list_price: l.list_price ?? l.sales_price ?? 0,
+        discount_percent: l.discount_percent ?? 0,
+        discount_amount: l.discount_amount ?? 0,
+        net_price: l.net_price ?? l.list_price ?? l.sales_price ?? 0,
+        product_name: l.product_name || l.name || 'Unknown Product',
+        product_sku: l.product_sku || l.sku || '',
+        product_type: productType,
+        is_package: l.is_package || false,
+        parent_line_id: l.parent_line_id || null,
+        price_behavior: l.price_behavior || (l.parent_line_id ? 'included' : undefined),
+      };
+    }),
     groups: q.groups || [],
     overage_rate_credits: q.overage_rate_credits || '',
     overage_rate_seats: q.overage_rate_seats || '',
@@ -198,6 +228,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const [validationErrors, setValidationErrors] = useState(null);
   const [toast, setToast] = useState(null);
   const [currencyInputDrafts, setCurrencyInputDrafts] = useState({});
+  const [quantityInputDrafts, setQuantityInputDrafts] = useState({});
   const moreRef = useRef(null);
   const prevTotalsRef = useRef(null);
   const [pulseKey, setPulseKey] = useState(0);
@@ -212,7 +243,10 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   }, []);
 
   useEffect(() => {
-    if (mode !== 'edit') setCurrencyInputDrafts({});
+    if (mode !== 'edit') {
+      setCurrencyInputDrafts({});
+      setQuantityInputDrafts({});
+    }
   }, [mode]);
 
   const persistQuote = (fn) => {
@@ -224,9 +258,16 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     });
   };
 
+  const sanitizeSupportQuantities = (lineItems = []) => (
+    lineItems.map((line) => ({
+      ...line,
+      quantity: getEffectiveLineQuantity(line),
+    }))
+  );
+
   const enterEditMode = () => {
     setDraft({
-      line_items: JSON.parse(JSON.stringify(q.line_items)),
+      line_items: sanitizeSupportQuantities(JSON.parse(JSON.stringify(q.line_items))),
       groups: JSON.parse(JSON.stringify(q.groups)),
       header_discount: q.header_discount || 0,
     });
@@ -234,7 +275,13 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   };
 
   const saveEdit = () => {
-    const updated = { ...q, line_items: draft.line_items, groups: draft.groups, header_discount: draft.header_discount, updated_at: new Date().toISOString() };
+    const updated = {
+      ...q,
+      line_items: sanitizeSupportQuantities(draft.line_items),
+      groups: draft.groups,
+      header_discount: draft.header_discount,
+      updated_at: new Date().toISOString(),
+    };
     setQ(updated);
     onSave(updated);
     setDraft(null);
@@ -283,12 +330,16 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   };
 
   const updateDraftLineField = (lineId, field, value) => {
+    const line = draft.line_items.find((l) => l.id === lineId);
+    if (!line) return;
     if (field === 'list_price') {
-      const line = draft.line_items.find((l) => l.id === lineId);
-      if (!line) return;
       const newList = Math.max(0, value);
       const synced = syncDiscountFromPercent(newList, line.discount_percent || 0);
       updateDraftLine(lineId, { list_price: newList, ...synced });
+      return;
+    }
+    if (field === 'quantity' && (isSupportLine(line) || isPlatformAddOnLine(line))) {
+      updateDraftLine(lineId, { quantity: 1 });
       return;
     }
     updateDraftLine(lineId, { [field]: value });
@@ -442,7 +493,9 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     return getProductCategory(product);
   };
 
+  const isSupportLine = (line) => getLineCategory(line) === 'support';
   const isEntitlementLine = (line) => getLineCategory(line) === 'entitlements';
+  const isPlatformAddOnLine = (line) => getLineCategory(line) === 'addon';
 
   const cardHeaderStyle = { cursor: 'pointer', userSelect: 'none' };
   const cardBodyStyle = { padding: '4px 24px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' };
@@ -462,7 +515,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         {detailCards.customer && (
           <div style={cardBodyStyle}>
             <DetailInput label="Customer Name" field="customer_name" value={source.customer_name} placeholder="Company name" span2 onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Address" field="address" value={source.address} placeholder="Street, City, State, ZIP, Country" span2 textarea onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Address" field="address" value={source.address} placeholder="Street, City, State, ZIP, Country" span2 onChange={handleFieldChange} onBlur={handleFieldBlur} />
             <DetailInput label="Primary Contact Name" field="contact_name" value={source.contact_name} placeholder="Full name" onChange={handleFieldChange} onBlur={handleFieldBlur} />
             <DetailInput label="Primary Contact Email" field="contact_email" value={source.contact_email} placeholder="contact@company.com" type="email" onChange={handleFieldChange} onBlur={handleFieldBlur} />
             <DetailInput label="Billing Contact Name" field="billing_contact_name" value={source.billing_contact_name} placeholder="Full name" onChange={handleFieldChange} onBlur={handleFieldBlur} />
@@ -509,8 +562,14 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         </div>
         {detailCards.terms_conditions && (
           <div style={{ padding: '4px 24px 20px' }}>
-            <textarea value={source.terms_conditions || ''} onChange={(e) => handleFieldChange('terms_conditions', e.target.value)} onBlur={(e) => handleFieldBlur('terms_conditions', e.target.value)} placeholder="Add any quote-specific terms or negotiated language here..." rows={4}
-              style={{ width: '100%', fontFamily: "'Mulish', sans-serif", fontSize: '13px', lineHeight: '1.6', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '6px', padding: '10px 12px', outline: 'none', resize: 'vertical', background: '#fff', boxSizing: 'border-box', color: '#1a1a1a' }} />
+            <textarea
+              className="qd-terms-textarea"
+              value={source.terms_conditions || ''}
+              onChange={(e) => handleFieldChange('terms_conditions', e.target.value)}
+              onBlur={(e) => handleFieldBlur('terms_conditions', e.target.value)}
+              placeholder="Add any quote-specific terms or negotiated language here..."
+              rows={4}
+            />
           </div>
         )}
       </div>
@@ -521,18 +580,47 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     if (!draft) return null;
     const items = draft.line_items;
     const renderQtyInput = (line, included = false, className = '') => {
+      if (isSupportLine(line)) return '';
+      if (isPlatformAddOnLine(line)) return '';
       if (included) return <span className="cell-locked">1</span>;
-      const seatStepperClass = isSeatQuantityLine(line) ? 'number-stepper-seat' : '';
+      const hasStepper = isSeatQuantityLine(line) || isConcurrentBuildsQuantityLine(line);
+      const qtyStepperClasses = hasStepper ? 'number-stepper-seat qd-grid-input-qty-stepper' : '';
+      const isCreditLine = isCreditQuantityLine(line);
+      const qtyCreditClass = isCreditLine ? 'qd-grid-input-qty-credits' : '';
+      const qtyInputKey = line.id;
+      const isEditingQty = Object.prototype.hasOwnProperty.call(quantityInputDrafts, qtyInputKey);
+      const currentQty = getEffectiveLineQuantity(line);
       return (
         <input
-          className={`qd-grid-input qd-grid-input-qty ${seatStepperClass} ${className}`.trim()}
-          type="number"
+          className={`qd-grid-input qd-grid-input-qty ${qtyStepperClasses} ${qtyCreditClass} ${className}`.trim()}
+          type={isCreditLine ? 'text' : 'number'}
+          inputMode={isCreditLine ? 'numeric' : undefined}
           min="1"
           step="1"
-          value={line.quantity ?? 1}
+          value={isCreditLine
+            ? (isEditingQty ? quantityInputDrafts[qtyInputKey] : formatIntegerWithCommas(currentQty, 1))
+            : currentQty}
+          onFocus={() => {
+            if (!isCreditLine) return;
+            setQuantityInputDrafts((prev) => ({ ...prev, [qtyInputKey]: formatIntegerForEdit(currentQty, 1, 1) }));
+          }}
           onChange={(e) => {
-            const next = Math.max(1, Math.round(parseFloat(e.target.value) || 1));
+            const raw = e.target.value;
+            if (isCreditLine) {
+              setQuantityInputDrafts((prev) => ({ ...prev, [qtyInputKey]: raw }));
+            }
+            const next = parsePositiveIntegerInput(raw, 1, 1);
             updateDraftLineField(line.id, 'quantity', next);
+          }}
+          onBlur={(e) => {
+            if (!isCreditLine) return;
+            const next = parsePositiveIntegerInput(e.target.value, 1, 1);
+            updateDraftLineField(line.id, 'quantity', next);
+            setQuantityInputDrafts((prev) => {
+              const clone = { ...prev };
+              delete clone[qtyInputKey];
+              return clone;
+            });
           }}
         />
       );
@@ -540,11 +628,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
     const renderPackageQtyInput = (line) => {
       if (!isEntitlementLine(line)) return null;
-      return renderQtyInput(
-        line,
-        false,
-        line.product_name === 'Monthly Credits' ? 'qd-grid-input-qty-credits' : ''
-      );
+      return renderQtyInput(line, false);
     };
 
     const renderDiscountInput = (line, included = false) => {
@@ -588,6 +672,10 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       const unitType = line.unit_type || 'flat';
       const included = isIncluded(unitType);
       const extended = calcLineExtended(line);
+      const field = 'list_price';
+      const key = getCurrencyInputKey(line.id, field);
+      const isEditingCurrency = Object.prototype.hasOwnProperty.call(currencyInputDrafts, key);
+      const currentValue = typeof line.list_price === 'number' && Number.isFinite(line.list_price) ? line.list_price : 0;
       return (
         <tr key={line.id}>
           <td className="line-td-product qd-col-product">
@@ -597,7 +685,37 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
             </div>
           </td>
           <td className="qd-col-qty">{renderQtyInput(line, included)}</td>
-          <td className="qd-col-list-price">{included ? '—' : displayCurrency(line.list_price ?? 0)}</td>
+          <td className="qd-col-list-price">
+            {included ? '—' : (
+              <span className={`qd-currency-input-wrap${isEditingCurrency ? ' qd-currency-input-wrap--editing' : ''}`}>
+                {isEditingCurrency && <span className="qd-currency-input-symbol" aria-hidden>$</span>}
+                <input
+                  className={`qd-grid-input qd-grid-input-discount${isEditingCurrency ? ' qd-grid-input-currency' : ''}`}
+                  type="text"
+                  inputMode="decimal"
+                  value={isEditingCurrency ? currencyInputDrafts[key] : displayCurrencyValue(currentValue)}
+                  onFocus={() => {
+                    setCurrencyInputDrafts((prev) => ({ ...prev, [key]: formatCurrencyForEdit(currentValue) }));
+                  }}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const next = parseCurrencyFromInput(raw);
+                    setCurrencyInputDrafts((prev) => ({ ...prev, [key]: raw }));
+                    updateDraftLineField(line.id, field, next);
+                  }}
+                  onBlur={(e) => {
+                    const next = parseCurrencyFromInput(e.target.value);
+                    updateDraftLineField(line.id, field, next);
+                    setCurrencyInputDrafts((prev) => {
+                      const clone = { ...prev };
+                      delete clone[key];
+                      return clone;
+                    });
+                  }}
+                />
+              </span>
+            )}
+          </td>
           <td className="qd-col-discount">{renderDiscountInput(line, included)}</td>
           <td className="qd-col-net-price">{included ? '—' : displayCurrency(line.net_price ?? line.list_price ?? 0)}</td>
           <td className="qd-col-amount"><span>{included ? '—' : displayCurrency(extended)}</span></td>
@@ -627,7 +745,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
             <div className="qd-pkg-header-main">
               <span className="cell-name qd-pkg-name">{line.product_name}</span>
               <span className="qd-pkg-toggle" aria-hidden>{expanded ? '▾' : '▸'}</span>
-              <span className="pkg-badge">PKG</span>
               <button type="button" className="qd-line-icon-btn" aria-label={`Remove ${line.product_name}`} onClick={(e) => { e.stopPropagation(); removeDraftLine(line.id); }}>×</button>
             </div>
             <span className="qd-pkg-header-qty" />
@@ -1077,7 +1194,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                                 <div className="qd-pkg-header-main">
                                   <span className="cell-name qd-pkg-name">{line.product_name}</span>
                                   <span className="qd-pkg-toggle" aria-hidden>{expanded ? '▾' : '▸'}</span>
-                                  <span className="pkg-badge">PKG</span>
                                 </div>
                                 <span className="qd-pkg-header-qty" />
                                 <span className="qd-pkg-header-list-price qd-line-price-value">{displayCurrencyValue(packageDisplay.listPrice)}</span>
@@ -1130,7 +1246,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                             return (
                               <tr key={line.id}>
                                 <td className="line-td-product qd-col-product"><div className="cell-name">{line.product_name}</div></td>
-                                <td className="qd-col-qty">{line.quantity > 1 ? fmtQty(line.quantity) : ''}</td>
+                                <td className="qd-col-qty">{!isSupportLine(line) && getEffectiveLineQuantity(line) > 1 ? fmtQty(getEffectiveLineQuantity(line)) : ''}</td>
                                 <td className="qd-col-list-price">{isIncluded(unitType) ? '—' : displayCurrency(line.list_price ?? 0)}</td>
                                 <td className="qd-col-discount">{isIncluded(unitType) ? '' : displayCurrency(line.discount_amount ?? 0)}</td>
                                 <td className="qd-col-net-price">{isIncluded(unitType) ? '—' : displayCurrency(line.net_price ?? line.list_price ?? 0)}</td>
