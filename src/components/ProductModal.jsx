@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   PACKAGE_PRICING_DISPLAYS,
   PACKAGE_QTY_BEHAVIORS,
@@ -110,6 +110,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
   const [f, setF] = useState(coerceProduct(product));
   const [jsonError, setJsonError] = useState('');
   const [creditInputDrafts, setCreditInputDrafts] = useState({});
+  const dirtyFieldsRef = useRef(new Set());
   const [openSections, setOpenSections] = useState({
     [COLLAPSIBLE_SECTION_KEYS.BASIC_INFO]: true,
     [COLLAPSIBLE_SECTION_KEYS.PRICING]: true,
@@ -120,9 +121,22 @@ export default function ProductModal({ product, products, onSave, onClose }) {
     [COLLAPSIBLE_SECTION_KEYS.TERMS]: false,
   });
 
-  const s = (k, v) => setF((p) => ({ ...p, [k]: v }));
-  const sp = (k, v) => setF((p) => ({ ...p, default_price: { ...p.default_price, [k]: v } }));
-  const sc = (k, v) => setF((p) => ({ ...p, config: { ...p.config, [k]: v } }));
+  const markDirty = (...paths) => {
+    paths.forEach((path) => dirtyFieldsRef.current.add(path));
+  };
+
+  const s = (k, v) => {
+    markDirty(k);
+    setF((p) => ({ ...p, [k]: v }));
+  };
+  const sp = (k, v) => {
+    markDirty(`default_price.${k}`);
+    setF((p) => ({ ...p, default_price: { ...p.default_price, [k]: v } }));
+  };
+  const sc = (k, v) => {
+    markDirty(`config.${k}`);
+    setF((p) => ({ ...p, config: { ...p.config, [k]: v } }));
+  };
 
   const ok = f.name.trim() && f.sku.trim();
 
@@ -188,6 +202,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
   const swapMember = (index, newProductId) => {
     const newProd = productMap.get(newProductId);
     if (!newProd) return;
+    markDirty('package_components', 'members', 'components');
     setF((prev) => {
       const components = [...(prev.package_components || [])];
       components[index] = {
@@ -201,6 +216,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
   const addMemberFromCategory = (category, productId) => {
     const prod = productMap.get(productId);
     if (!prod) return;
+    markDirty('package_components', 'members', 'components');
     if (category === 'support') {
       setF((prev) => {
         const existingComponents = [...(prev.package_components || [])];
@@ -256,6 +272,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
     const productId = typeof productOrId === 'string' ? productOrId : productOrId?.id;
     const prod = typeof productOrId === 'string' ? productMap.get(productId) : productOrId;
     if (!prod) return;
+    markDirty('package_components', 'members', 'components');
     const inferredSection = getProductCategory(prod) === 'support'
       ? 'support'
       : getProductCategory(prod) === 'entitlements'
@@ -290,6 +307,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
   };
 
   const updateMember = (index, key, value) => {
+    markDirty('package_components', 'members', 'components');
     setF((prev) => {
       const packageComponents = [...(prev.package_components || [])];
       const nextValue = ['default_qty', 'min_qty', 'max_qty', 'sort_order'].includes(key)
@@ -301,6 +319,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
   };
 
   const updateEntitlementDefaultQty = (index, rawValue) => {
+    markDirty('package_components', 'members', 'components');
     setF((prev) => {
       const packageComponents = [...(prev.package_components || [])];
       const component = packageComponents[index];
@@ -317,6 +336,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
   };
 
   const removeMember = (index) => {
+    markDirty('package_components', 'members', 'components');
     setF((prev) => {
       const packageComponents = [...(prev.package_components || [])];
       packageComponents.splice(index, 1);
@@ -332,6 +352,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
   };
 
   const toggleIsPackage = (enabled) => {
+    markDirty('category', 'type', 'configuration_method');
     setF((prev) => ({
       ...prev,
       category: enabled ? 'bundle' : 'platform',
@@ -400,6 +421,8 @@ export default function ProductModal({ product, products, onSave, onClose }) {
       package_components: isPackage ? normalizedPackageComponents : [],
       members: isPackage ? normalizedMembers : [],
       components: isPackage ? normalizedMembers : [],
+      _dirty_fields: Array.from(dirtyFieldsRef.current),
+      _is_edit_mode: Boolean(product),
     });
   };
 
@@ -475,7 +498,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
           </div>
         </div>
 
-        <div className="modal-section">
+        <div className="modal-section modal-section-no-content-divider">
           <button
             type="button"
             className="modal-section-label modal-section-toggle"
@@ -543,7 +566,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
         </div>
 
         {isPackage && (
-          <div className="modal-section">
+          <div className="modal-section modal-section-no-content-divider">
             <button
               type="button"
               className="modal-section-label modal-section-toggle"
@@ -683,6 +706,110 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                                         ))}
                                       </select>
                                     </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }) : (
+                            <div className="pkg-empty-row pkg-empty-card-row">{emptyLabel}</div>
+                          )}
+                        </div>
+                      ) : (category === 'platform' && isBasePackage) ? (
+                        <div className="pkg-platform-list">
+                          {catMembers.length > 0 ? catMembers.map((member) => {
+                            const index = member._index;
+                            const referencedProduct = productMap.get(member.component_product_id);
+                            const memberSku = referencedProduct?.sku || '';
+
+                            return (
+                              <div key={`${member.component_product_id}_${index}`} className="pkg-platform-item">
+                                <div className="pkg-platform-item-top">
+                                  <div className="pkg-platform-item-header-main">
+                                    <div className="pkg-cell-handle pkg-platform-handle">
+                                      <span className="pkg-drag-handle" title="Reordering coming soon" aria-hidden="true">
+                                        <i className="fa-solid fa-grip-vertical fa-fw" />
+                                      </span>
+                                    </div>
+                                    <div className="pkg-product-cell-stack pkg-platform-product">
+                                      <span className="pkg-member-name">{referencedProduct?.name || 'Unknown'}</span>
+                                      <span className="pkg-member-sku pkg-platform-sku">{memberSku || '\u00A0'}</span>
+                                    </div>
+                                  </div>
+                                  <button type="button" className="pkg-remove-btn" onClick={() => removeMember(index)} title="Delete">
+                                    <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
+                                  </button>
+                                </div>
+                                <div className="pkg-platform-field-row">
+                                  <div className="field">
+                                    <label className="field-label">Quote Editability</label>
+                                    <select
+                                      className="field-select pkg-inline-select"
+                                      value={member.quote_edit_mode || 'read_only'}
+                                      onChange={(e) => updateMember(index, 'quote_edit_mode', e.target.value)}
+                                    >
+                                      {QUOTE_EDIT_OPTIONS.map((opt) => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="field">
+                                    <label className="field-label">Pricing Display</label>
+                                    <select
+                                      className="field-select pkg-inline-select"
+                                      value={member.pricing_display || 'package_only'}
+                                      onChange={(e) => updateMember(index, 'pricing_display', e.target.value)}
+                                    >
+                                      {PRICING_DISPLAY_OPTIONS.map((opt) => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }) : (
+                            <div className="pkg-empty-row pkg-empty-card-row">{emptyLabel}</div>
+                          )}
+                        </div>
+                      ) : (category === 'support' && isBasePackage) ? (
+                        <div className="pkg-support-list">
+                          {catMembers.length > 0 ? catMembers.map((member) => {
+                            const index = member._index;
+                            const referencedProduct = productMap.get(member.component_product_id);
+                            const memberSku = referencedProduct?.sku || '';
+
+                            return (
+                              <div key={`${member.component_product_id}_${index}`} className="pkg-support-item">
+                                <div className="pkg-support-item-top">
+                                  <div className="pkg-product-cell-stack pkg-support-product">
+                                    <span className="pkg-member-name">{referencedProduct?.name || 'Unknown'}</span>
+                                    <span className="pkg-member-sku pkg-support-sku">{memberSku || '\u00A0'}</span>
+                                  </div>
+                                </div>
+                                <div className="pkg-support-field-row">
+                                  <div className="field">
+                                    <label className="field-label">Quote Editability</label>
+                                    <select
+                                      className="field-select pkg-inline-select"
+                                      value={member.quote_edit_mode || 'read_only'}
+                                      onChange={(e) => updateMember(index, 'quote_edit_mode', e.target.value)}
+                                    >
+                                      {QUOTE_EDIT_OPTIONS.map((opt) => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="field">
+                                    <label className="field-label">Pricing Display</label>
+                                    <select
+                                      className="field-select pkg-inline-select"
+                                      value={member.pricing_display || 'package_only'}
+                                      onChange={(e) => updateMember(index, 'pricing_display', e.target.value)}
+                                    >
+                                      {PRICING_DISPLAY_OPTIONS.map((opt) => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                      ))}
+                                    </select>
                                   </div>
                                 </div>
                               </div>

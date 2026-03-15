@@ -38,6 +38,29 @@ const FALLBACK_SETTINGS = {
   },
 };
 
+const normalizeCatalog = (value) => ({
+  products: Array.isArray(value?.products) ? value.products : [],
+  pricebooks: Array.isArray(value?.pricebooks) ? value.pricebooks : [],
+  initialized: value?.initialized !== false,
+});
+
+const buildDestructiveCatalogWarning = (details) => {
+  const currentProducts = Number(details?.current?.products ?? 0);
+  const currentPricebooks = Number(details?.current?.pricebooks ?? 0);
+  const incomingProducts = Number(details?.incoming?.products ?? 0);
+  const incomingPricebooks = Number(details?.incoming?.pricebooks ?? 0);
+
+  return [
+    'Warning: This operation will significantly reduce the catalog size.',
+    `Current catalog: ${currentProducts} products / ${currentPricebooks} pricebooks`,
+    `Incoming catalog: ${incomingProducts} products / ${incomingPricebooks} pricebooks`,
+    '',
+    'This may indicate a destructive overwrite.',
+    '',
+    'Confirm to proceed or cancel.',
+  ].join('\n');
+};
+
 const normalizeSettings = (value) => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return { ...FALLBACK_SETTINGS };
   const sections = Array.isArray(value?.terms?.sections)
@@ -57,6 +80,105 @@ const normalizeSettings = (value) => {
   };
 };
 
+const GUARDED_DEFAULTS = {
+  category: 'platform',
+  type: 'platform',
+  configuration_method: 'none',
+  default_term: 12,
+  term_unit: 'month',
+  term_behavior: 'included',
+  default_entitlements: '{}',
+  bundle_pricing: 'header_only',
+  print_members: true,
+  'default_price.amount': 0,
+  'default_price.unit': 'flat',
+  'default_price.pricing_method': 'list',
+  'config.lock_quantity': false,
+  'config.lock_price': false,
+  'config.lock_discount': false,
+  'config.lock_term': false,
+  'config.default_quantity': 1,
+  'config.min_quantity': 1,
+  'config.max_quantity': 999,
+  'config.edit_name': false,
+  'config.default_description': '',
+};
+
+const isPlainObject = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const getPath = (obj, path) =>
+  path.split('.').reduce((acc, key) => (acc == null ? undefined : acc[key]), obj);
+
+const setPath = (obj, path, value) => {
+  const keys = path.split('.');
+  const clone = { ...obj };
+  let node = clone;
+  for (let i = 0; i < keys.length - 1; i += 1) {
+    const key = keys[i];
+    node[key] = isPlainObject(node[key]) ? { ...node[key] } : {};
+    node = node[key];
+  }
+  node[keys[keys.length - 1]] = value;
+  return clone;
+};
+
+const hasDirtyPath = (dirty, path) =>
+  dirty.has(path) || [...dirty].some((entry) => entry.startsWith(`${path}.`) || path.startsWith(`${entry}.`));
+
+const mergeProductForEdit = (existing, incoming, dirtyFields) => {
+  const dirty = new Set(Array.isArray(dirtyFields) ? dirtyFields : []);
+  let merged = {
+    ...existing,
+    ...incoming,
+    default_price: {
+      ...(isPlainObject(existing?.default_price) ? existing.default_price : {}),
+      ...(isPlainObject(incoming?.default_price) ? incoming.default_price : {}),
+    },
+    config: {
+      ...(isPlainObject(existing?.config) ? existing.config : {}),
+      ...(isPlainObject(incoming?.config) ? incoming.config : {}),
+    },
+  };
+
+  ['package_components', 'members', 'components'].forEach((field) => {
+    const nextValue = incoming?.[field];
+    const prevValue = existing?.[field];
+    if (
+      Array.isArray(nextValue)
+      && nextValue.length === 0
+      && Array.isArray(prevValue)
+      && prevValue.length > 0
+      && !hasDirtyPath(dirty, field)
+    ) {
+      merged = { ...merged, [field]: prevValue };
+    }
+  });
+
+  Object.entries(GUARDED_DEFAULTS).forEach(([path, defaultValue]) => {
+    if (hasDirtyPath(dirty, path)) return;
+    const prevValue = getPath(existing, path);
+    const nextValue = getPath(incoming, path);
+    if (nextValue === defaultValue && prevValue !== undefined && prevValue !== nextValue) {
+      merged = setPath(merged, path, prevValue);
+    }
+  });
+
+  Object.keys(incoming || {}).forEach((field) => {
+    if (hasDirtyPath(dirty, field)) return;
+    const nextValue = incoming[field];
+    const prevValue = existing?.[field];
+    if (nextValue == null && prevValue != null) {
+      merged = { ...merged, [field]: prevValue };
+      return;
+    }
+    if (isPlainObject(nextValue) && Object.keys(nextValue).length === 0 && isPlainObject(prevValue) && Object.keys(prevValue).length > 0) {
+      merged = { ...merged, [field]: prevValue };
+    }
+  });
+
+  return merged;
+};
+
 // Always light mode
 function useTheme() {
   useEffect(() => {
@@ -68,11 +190,100 @@ export default function App() {
   useTheme();
   const [page, setPage] = useState('products');
 
-  // ── Data loaded exclusively from static JSON files ──
   const [products, setProducts] = useState(() => [...seedProducts]);
   const [pricebooks, setPricebooks] = useState(() => [...seedPricebooks]);
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
+  const [catalogSaveError, setCatalogSaveError] = useState('');
+  const catalogSnapshotRef = useRef(JSON.stringify({ products: seedProducts, pricebooks: seedPricebooks }));
   const [quotes, setQuotes] = useState([]);
   const [quotesLoaded, setQuotesLoaded] = useState(false);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadCatalog = async () => {
+      try {
+        const response = await fetch('/api/catalog', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Unable to load catalog (${response.status})`);
+        const data = normalizeCatalog(await response.json());
+        const resolved = data.initialized
+          ? { products: data.products, pricebooks: data.pricebooks }
+          : { products: [...seedProducts], pricebooks: [...seedPricebooks] };
+        if (isCancelled) return;
+        catalogSnapshotRef.current = JSON.stringify(resolved);
+        setProducts(resolved.products);
+        setPricebooks(resolved.pricebooks);
+        setCatalogSaveError('');
+      } catch {
+        if (isCancelled) return;
+        const fallback = { products: [...seedProducts], pricebooks: [...seedPricebooks] };
+        catalogSnapshotRef.current = JSON.stringify(fallback);
+        setProducts(fallback.products);
+        setPricebooks(fallback.pricebooks);
+        setCatalogSaveError('Catalog could not be loaded from the server. Showing defaults until connection is restored.');
+      } finally {
+        if (!isCancelled) setCatalogLoaded(true);
+      }
+    };
+
+    loadCatalog();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!catalogLoaded) return;
+    const snapshot = JSON.stringify({ products, pricebooks });
+    if (snapshot === catalogSnapshotRef.current) return;
+
+    const saveCatalog = async () => {
+      const payload = { products, pricebooks };
+
+      const saveOnce = async ({ confirmed } = { confirmed: false }) =>
+        fetch(confirmed ? '/api/catalog?confirm_destructive=1' : '/api/catalog', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(confirmed ? { ...payload, confirm_destructive: true } : payload),
+        });
+
+      try {
+        let response = await saveOnce();
+
+        if (response.status === 409) {
+          let guardDetails = null;
+          try {
+            guardDetails = await response.json();
+          } catch {
+            guardDetails = null;
+          }
+
+          if (guardDetails?.requires_confirmation) {
+            const shouldProceed = window.confirm(buildDestructiveCatalogWarning(guardDetails));
+            if (!shouldProceed) {
+              setCatalogSaveError('Catalog save was cancelled to prevent a potentially destructive overwrite.');
+              return;
+            }
+            response = await saveOnce({ confirmed: true });
+          }
+        }
+
+        if (!response.ok) throw new Error(`Unable to save catalog (${response.status})`);
+
+        const saved = normalizeCatalog(await response.json());
+        const savedSnapshot = JSON.stringify({ products: saved.products, pricebooks: saved.pricebooks });
+        catalogSnapshotRef.current = savedSnapshot;
+        setProducts((prev) => (JSON.stringify(prev) === JSON.stringify(saved.products) ? prev : saved.products));
+        setPricebooks((prev) => (JSON.stringify(prev) === JSON.stringify(saved.pricebooks) ? prev : saved.pricebooks));
+        setCatalogSaveError('');
+      } catch {
+        setCatalogSaveError('Catalog changes could not be saved. Recent product edits may not persist until save succeeds.');
+      }
+    };
+
+    saveCatalog();
+  }, [products, pricebooks, catalogLoaded]);
 
   useEffect(() => {
     fetch('/api/quotes')
@@ -182,8 +393,20 @@ export default function App() {
   // Product CRUD
   const saveProd = (p) => {
     setProducts((prev) => {
-      const i = prev.findIndex((x) => x.id === p.id);
-      return i >= 0 ? prev.map((x) => (x.id === p.id ? { ...p, updated_at: new Date().toISOString() } : x)) : [...prev, p];
+      const incoming = { ...p };
+      const dirtyFields = Array.isArray(incoming._dirty_fields) ? incoming._dirty_fields : [];
+      const isEditMode = Boolean(incoming._is_edit_mode);
+      delete incoming._dirty_fields;
+      delete incoming._is_edit_mode;
+
+      const i = prev.findIndex((x) => x.id === incoming.id);
+      if (i < 0) return [...prev, incoming];
+
+      return prev.map((x) => {
+        if (x.id !== incoming.id) return x;
+        const merged = isEditMode ? mergeProductForEdit(x, incoming, dirtyFields) : { ...x, ...incoming };
+        return { ...merged, updated_at: new Date().toISOString() };
+      });
     });
     setModal(null);
   };
@@ -392,6 +615,7 @@ export default function App() {
               <div className="page-label">Product Catalog</div>
               <h1 className="page-title">Products</h1>
             </div>
+            {catalogSaveError && <div className="settings-save-error">{catalogSaveError}</div>}
 
             <div className="toolbar">
               <div className="search-wrap">
