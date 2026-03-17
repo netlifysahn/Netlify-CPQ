@@ -8,9 +8,11 @@ export default function PricebookDetail({ pricebook, products, onBack, onUpdate 
 
   const productMap = useMemo(() => new Map((products || []).map((product) => [product.id, product])), [products]);
   const entries = Array.isArray(pricebook?.entries) ? pricebook.entries : [];
+  const getOverride = (entry) => (entry?.list_price_override != null ? entry.list_price_override : entry?.price_override);
 
   const getEffectivePrice = (entry) => {
-    if (entry.price_override != null) return entry.price_override;
+    const override = getOverride(entry);
+    if (override != null) return override;
     const product = productMap.get(entry.product_id);
     return product?.default_price?.amount || 0;
   };
@@ -19,7 +21,13 @@ export default function PricebookDetail({ pricebook, products, onBack, onUpdate 
     if (entries.some((e) => e.product_id === product.id)) return;
     onUpdate({
       ...pricebook,
-      entries: [...entries, { product_id: product.id, price_override: null }],
+      entries: [...entries, {
+        product_id: product.id,
+        pricebook_id: pricebook.id,
+        is_active: true,
+        list_price_override: null,
+        price_override: null,
+      }],
       updated_at: new Date().toISOString(),
     });
   };
@@ -38,7 +46,9 @@ export default function PricebookDetail({ pricebook, products, onBack, onUpdate 
     onUpdate({
       ...pricebook,
       entries: entries.map((e) =>
-        e.product_id === productId ? { ...e, price_override: override } : e
+        e.product_id === productId
+          ? { ...e, pricebook_id: pricebook.id, is_active: e?.is_active !== false, list_price_override: override, price_override: override }
+          : e
       ),
       updated_at: new Date().toISOString(),
     });
@@ -47,11 +57,11 @@ export default function PricebookDetail({ pricebook, products, onBack, onUpdate 
   return (
     <div className="pricebook-detail">
       <button className="btn-secondary back-btn" onClick={onBack}>
-        Back to Pricebooks
+        Back to Price Books
       </button>
 
       <div className="page-header">
-        <div className="page-label">Pricebook</div>
+        <div className="page-label">Price Book</div>
         <h1 className="page-title">{pricebook.name}</h1>
         <span className={`status-badge status-badge-inline${pricebook.active ? ' active' : ''}`}>{getPricebookStatus(pricebook)}</span>
       </div>
@@ -70,8 +80,8 @@ export default function PricebookDetail({ pricebook, products, onBack, onUpdate 
           <div className="empty-state">
             <div className="empty-state-numeral">0</div>
             <div className="empty-state-eyebrow">Products</div>
-            <div className="empty-state-title">No products in this pricebook</div>
-            <div className="empty-state-text">Add products to define pricing for this pricebook</div>
+            <div className="empty-state-title">No products in this price book</div>
+            <div className="empty-state-text">Add products to define pricing for this price book</div>
             <button className="empty-state-cta" onClick={() => setShowPicker(true)}>
               Add Product
             </button>
@@ -110,7 +120,7 @@ export default function PricebookDetail({ pricebook, products, onBack, onUpdate 
                           step="0.01"
                           min="0"
                           placeholder="Inherit"
-                          value={entry.price_override != null ? entry.price_override : ''}
+                          value={getOverride(entry) != null ? getOverride(entry) : ''}
                           onChange={(e) => updateOverride(entry.product_id, e.target.value)}
                         />
                       </td>

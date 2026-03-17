@@ -16,14 +16,25 @@ function getDestructiveReasons(current, incoming) {
   const currentPricebookCount = toCount(current?.pricebooks);
   const incomingProductCount = toCount(incoming?.products);
   const incomingPricebookCount = toCount(incoming?.pricebooks);
-  const isBootstrapCatalog = currentProductCount === 0 && currentPricebookCount === 0;
-
-  if (isBootstrapCatalog) return [];
 
   const reasons = [];
 
-  if (incomingProductCount === 0) reasons.push('products_empty');
-  if (incomingPricebookCount === 0) reasons.push('pricebooks_empty');
+  if (incomingProductCount < currentProductCount) {
+    if (incomingProductCount === 0) {
+      reasons.push('products_cleared');
+    } else {
+      reasons.push('products_reduced');
+    }
+  }
+
+  if (incomingPricebookCount < currentPricebookCount) {
+    if (incomingPricebookCount === 0) {
+      reasons.push('pricebooks_cleared');
+    } else {
+      reasons.push('pricebooks_reduced');
+    }
+  }
+
   if (currentProductCount > 0 && incomingProductCount < currentProductCount * 0.5) {
     reasons.push('products_drop_over_50_percent');
   }

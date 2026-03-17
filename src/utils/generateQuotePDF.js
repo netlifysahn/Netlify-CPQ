@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { calcLineExtended, calcQuoteTotals, fmtCurrency, getEffectiveLineQuantity } from '../data/quotes';
+import { isRichTextEmpty, renderRichText, toRichTextHtml } from './richText';
 
 
 const FONT = 'helvetica';
@@ -16,6 +17,7 @@ const C_GOLD = [251, 177, 61];
 const C_LIGHT = [248, 248, 248];
 const MARGIN = 18;
 const INDENT = 4;
+const EXHIBIT_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 function fmtDate(s) {
   if (!s) return '';
@@ -33,6 +35,40 @@ function checkPage(doc, y, needed = 30) {
     return MARGIN;
   }
   return y;
+}
+
+function toExhibitLabel(index) {
+  if (index < 0) return '';
+  let n = index;
+  let suffix = '';
+  while (n >= 0) {
+    suffix = EXHIBIT_CHARS[n % 26] + suffix;
+    n = Math.floor(n / 26) - 1;
+  }
+  return `Exhibit ${suffix}`;
+}
+
+function collectLineTermExhibits(lines = []) {
+  const exhibitEntries = [];
+  const exhibitByLineId = new Map();
+  const exhibitByLineRef = new Map();
+
+  lines.forEach((line) => {
+    const termsHtml = toRichTextHtml(line?.terms || '');
+    if (isRichTextEmpty(termsHtml)) return;
+    const exhibitLabel = toExhibitLabel(exhibitEntries.length);
+    const entry = {
+      line,
+      exhibitLabel,
+      productName: line?.product_name || 'Product',
+      termsHtml,
+    };
+    exhibitEntries.push(entry);
+    if (line?.id) exhibitByLineId.set(line.id, exhibitLabel);
+    exhibitByLineRef.set(line, exhibitLabel);
+  });
+
+  return { exhibitEntries, exhibitByLineId, exhibitByLineRef };
 }
 
 function eyebrow(doc, text, y) {
@@ -89,6 +125,15 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
   const pageWidth = doc.internal.pageSize.getWidth();
   const contentWidth = pageWidth - MARGIN * 2;
   const allLines = quote.line_items || [];
+  const { exhibitEntries, exhibitByLineId, exhibitByLineRef } = collectLineTermExhibits(allLines);
+  const getLineExhibit = (line) => {
+    if (!line) return '';
+    return (line.id && exhibitByLineId.get(line.id)) || exhibitByLineRef.get(line) || '';
+  };
+  const getLineLabel = (line, fallback = line?.product_name || 'Product') => {
+    const exhibit = getLineExhibit(line);
+    return exhibit ? `${fallback} (${exhibit})` : fallback;
+  };
   let y = MARGIN;
 
   // ── DRAFT WATERMARK ──
@@ -219,7 +264,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       doc.setFont(FONT, 'bold');
       doc.setFontSize(12);
       doc.setTextColor(...C_BLACK);
-      doc.text(pkg.product_name, MARGIN + 6, y + 5);
+      doc.text(getLineLabel(pkg), MARGIN + 6, y + 5);
       doc.setFont(FONT, 'normal');
       doc.setFontSize(10);
       doc.setTextColor(...C_MUTED);
@@ -253,7 +298,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
           doc.setTextColor(...C_BLACK);
           const qty = getEffectiveLineQuantity(s);
           const qtyStr = qty > 1 ? ` (${fmtQty(qty)})` : '';
-          doc.text(`${s.product_name}${qtyStr}`, MARGIN + 10, y);
+          doc.text(`${getLineLabel(s)}${qtyStr}`, MARGIN + 10, y);
           y += 5;
         });
         y += 2;
@@ -273,7 +318,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       doc.setFont(FONT, 'bold');
       doc.setFontSize(12);
       doc.setTextColor(...C_BLACK);
-      doc.text(line.product_name, MARGIN + 6, y + 5);
+      doc.text(getLineLabel(line), MARGIN + 6, y + 5);
       doc.setFont(FONT, 'normal');
       doc.setFontSize(10);
       doc.setTextColor(...C_MUTED);
@@ -290,7 +335,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     y = eyebrow(doc, 'Platform Add-Ons', y);
     const addonRows = standaloneAddons.map((l) => {
       const mo = l.net_price || l.list_price || 0;
-      return [l.product_name, fmtCurrency(mo), fmtCurrency(mo * 12)];
+      return [getLineLabel(l), fmtCurrency(mo), fmtCurrency(mo * 12)];
     });
     autoTable(doc, {
       startY: y,
@@ -316,7 +361,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       const annual = isCredit
         ? (l.net_price || l.list_price || 0) * quantity
         : (l.net_price || l.list_price || 0) * quantity * 12;
-      return [l.product_name, fmtQty(quantity), fmtCurrency(l.net_price || l.list_price || 0), fmtCurrency(annual)];
+      return [getLineLabel(l), fmtQty(quantity), fmtCurrency(l.net_price || l.list_price || 0), fmtCurrency(annual)];
     });
     autoTable(doc, {
       startY: y,
@@ -357,6 +402,22 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'center', cellWidth: 40 }, 2: { halign: 'center', cellWidth: 40 } },
     });
     y = doc.lastAutoTable.finalY + 8;
+  }
+
+  const orderFormHeaderTextHtml = toRichTextHtml(settings?.orderFormHeaderText || '');
+  if (!isRichTextEmpty(orderFormHeaderTextHtml)) {
+    y = checkPage(doc, y, 18);
+    y = renderRichText(doc, orderFormHeaderTextHtml, {
+      x: MARGIN,
+      y,
+      maxWidth: contentWidth,
+      fontSize: 9.5,
+      lineHeight: 4.8,
+      paragraphGap: 2,
+      textColor: C_BLACK,
+      beforeLine: (nextY) => checkPage(doc, nextY, 6),
+    });
+    y += 6;
   }
 
   // ── PRICING SUMMARY ──
@@ -423,17 +484,13 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
 
   // ── TERMS & CONDITIONS ──
   const termsSections = settings?.terms?.sections || [];
-  const productTerms = [];
-  const productMap = new Map((products || []).map((p) => [p.id, p]));
-  const seenProds = new Set();
-  allLines.forEach((l) => {
-    if (seenProds.has(l.product_id)) return;
-    seenProds.add(l.product_id);
-    const prod = productMap.get(l.product_id);
-    if (prod?.terms?.trim()) productTerms.push({ name: prod.name, terms: prod.terms.trim() });
-  });
 
-  const hasTerms = termsSections.length > 0 || productTerms.length > 0 || quote.terms_conditions?.trim();
+  const hasSettingsTerms = termsSections.some((section) => {
+    const title = section?.title?.trim();
+    const bodyHtml = toRichTextHtml(section?.body || '');
+    return Boolean(title) || !isRichTextEmpty(bodyHtml);
+  });
+  const hasTerms = hasSettingsTerms || exhibitEntries.length > 0 || quote.terms_conditions?.trim();
   if (hasTerms) {
     doc.addPage();
     y = MARGIN;
@@ -444,33 +501,54 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     y += 10;
 
     termsSections.forEach((section) => {
-      y = checkPage(doc, y, 20);
-      doc.setFont(FONT, 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(...C_BLACK);
-      doc.text(section.title, MARGIN, y);
-      y += 5;
-      if (section.body) {
-        doc.setFont(FONT, 'normal');
-        doc.setFontSize(9);
+      const title = section?.title?.trim() || '';
+      const bodyHtml = toRichTextHtml(section?.body || '');
+      const hasBody = !isRichTextEmpty(bodyHtml);
+      if (!title && !hasBody) return;
+
+      y = checkPage(doc, y, 16);
+      if (title) {
+        doc.setFont(FONT, 'bold');
+        doc.setFontSize(10);
         doc.setTextColor(...C_BLACK);
-        const lines = doc.splitTextToSize(section.body, contentWidth);
-        lines.forEach((l) => { y = checkPage(doc, y, 6); doc.text(l, MARGIN, y); y += 4.5; });
+        doc.text(title, MARGIN, y);
+        y += 5;
+      }
+
+      if (hasBody) {
+        y = renderRichText(doc, bodyHtml, {
+          x: MARGIN,
+          y,
+          maxWidth: contentWidth,
+          fontSize: 9,
+          lineHeight: 4.5,
+          paragraphGap: 2,
+          textColor: C_BLACK,
+          beforeLine: (nextY) => checkPage(doc, nextY, 6),
+        });
         y += 4;
       }
     });
 
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    productTerms.forEach((pt, i) => {
+    exhibitEntries.forEach((entry) => {
       y = checkPage(doc, y, 20);
       doc.setFont(FONT, 'bold');
       doc.setFontSize(10);
       doc.setTextColor(...C_BLACK);
-      doc.text(`Exhibit ${letters[i] || i + 1} \u2014 ${pt.name}`, MARGIN, y);
+      doc.text(`${entry.exhibitLabel} \u2014 ${entry.productName}`, MARGIN, y);
       y += 5;
       doc.setFont(FONT, 'normal');
       doc.setFontSize(9);
-      doc.splitTextToSize(pt.terms, contentWidth).forEach((l) => { y = checkPage(doc, y, 6); doc.text(l, MARGIN, y); y += 4.5; });
+      y = renderRichText(doc, entry.termsHtml, {
+        x: MARGIN,
+        y,
+        maxWidth: contentWidth,
+        fontSize: 9,
+        lineHeight: 4.5,
+        paragraphGap: 2,
+        textColor: C_BLACK,
+        beforeLine: (nextY) => checkPage(doc, nextY, 6),
+      });
       y += 4;
     });
 
@@ -483,7 +561,16 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       y += 5;
       doc.setFont(FONT, 'normal');
       doc.setFontSize(9);
-      doc.splitTextToSize(quote.terms_conditions.trim(), contentWidth).forEach((l) => { y = checkPage(doc, y, 6); doc.text(l, MARGIN, y); y += 4.5; });
+      y = renderRichText(doc, toRichTextHtml(quote.terms_conditions.trim()), {
+        x: MARGIN,
+        y,
+        maxWidth: contentWidth,
+        fontSize: 9,
+        lineHeight: 4.5,
+        paragraphGap: 2,
+        textColor: C_BLACK,
+        beforeLine: (nextY) => checkPage(doc, nextY, 6),
+      });
     }
   }
 
@@ -491,13 +578,21 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
 
   // ── OUTPUT ──
   if (preview) {
-    const dataUri = doc.output('datauristring');
+    const pdfBlob = doc.output('blob');
+    const blobUrl = URL.createObjectURL(pdfBlob);
     const win = window.open('', '_blank');
     if (win) {
+      const title = quote.quote_number || 'Quote';
       win.document.write(
-        `<html><head><title>${quote.quote_number || 'Quote'} Preview</title></head>` +
-        `<body style="margin:0;padding:0"><iframe src="${dataUri}" style="border:none;position:fixed;top:0;left:0;width:100%;height:100%"></iframe></body></html>`
+        `<html><head><title>${title} Preview</title></head>` +
+        `<body style="margin:0;padding:0"><iframe src="${blobUrl}" style="border:none;position:fixed;top:0;left:0;width:100%;height:100%" title="${title} PDF Preview"></iframe></body></html>`
       );
+      win.document.close();
+      win.addEventListener('beforeunload', () => URL.revokeObjectURL(blobUrl), { once: true });
+    } else {
+      // Popup blocked: fall back to opening the object URL directly.
+      window.open(blobUrl, '_blank');
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
     }
   } else {
     const slug = (quote.customer_name || 'quote').replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');

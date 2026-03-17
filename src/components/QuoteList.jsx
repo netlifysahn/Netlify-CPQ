@@ -1,5 +1,6 @@
 import React from 'react';
 import { calcQuoteTotals, STATUS_META } from '../data/quotes';
+import StatusBadge from './StatusBadge';
 
 export default function QuoteList({ quotes, onNew, onOpen, onDupe, onDelete }) {
   if (quotes.length === 0) {
@@ -58,7 +59,7 @@ export default function QuoteList({ quotes, onNew, onOpen, onDupe, onDelete }) {
                   {q.customer_name || '\u2014'}
                 </div>
                 <div className="quote-summary-cell" role="cell">
-                  <span className="quote-summary-status-chip">{meta.label}</span>
+                  <StatusBadge label={meta.label} tone={meta.color} />
                 </div>
                 <div className="quote-summary-cell quote-summary-money quote-summary-money-value" role="cell">
                   {formatCurrency(totals.monthly)}

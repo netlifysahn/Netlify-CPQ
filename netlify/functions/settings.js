@@ -2,6 +2,7 @@ import { getStore } from '@netlify/blobs';
 
 const KEY = 'settings';
 const FALLBACK_SETTINGS = {
+  orderFormHeaderText: '',
   terms: {
     sections: [],
   },
@@ -35,6 +36,7 @@ function normalizeSettings(payload) {
 
   return {
     ...payload,
+    orderFormHeaderText: typeof payload?.orderFormHeaderText === 'string' ? payload.orderFormHeaderText : '',
     terms: {
       ...payload.terms,
       sections,

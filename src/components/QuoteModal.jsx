@@ -232,9 +232,9 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
             </div>
             {activePricebooks.length > 0 && (
               <div className="field">
-                <label className="field-label">Pricebook</label>
+                <label className="field-label">Price Book</label>
                 <select className="field-select" value={f.pricebook_id || ''} onChange={(e) => s('pricebook_id', e.target.value || null)}>
-                  <option value="">No pricebook</option>
+                  <option value="">No price book</option>
                   {activePricebooks.map((pb) => (
                     <option key={pb.id} value={pb.id}>{pb.name}{pb.is_default ? ' (Default)' : ''}</option>
                   ))}

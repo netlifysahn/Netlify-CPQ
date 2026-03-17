@@ -1,12 +1,18 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import { isRichTextEmpty, toRichTextHtml } from '../utils/richText';
 
 const genSectionId = () => `term_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 const AUTOSAVE_DEBOUNCE_MS = 450;
+const normalizeSections = (settings) =>
+  (settings?.terms?.sections || []).map((s) => ({ ...s, body: toRichTextHtml(s?.body || '') }));
+const serializeSettingsDraft = (sections, orderFormHeaderText) =>
+  JSON.stringify({ sections, orderFormHeaderText });
 
 export default function Settings({ settings, onSave, saveError = '' }) {
-  const [sections, setSections] = useState(() =>
-    (settings?.terms?.sections || []).map((s) => ({ ...s }))
-  );
+  const [sections, setSections] = useState(() => normalizeSections(settings));
+  const [orderFormHeaderText, setOrderFormHeaderText] = useState(() => toRichTextHtml(settings?.orderFormHeaderText || ''));
   const [draggedSectionId, setDraggedSectionId] = useState(null);
   const [dragOverSectionId, setDragOverSectionId] = useState(null);
   const [dragArmedIndex, setDragArmedIndex] = useState(null);
@@ -16,10 +22,11 @@ export default function Settings({ settings, onSave, saveError = '' }) {
   const dragOverlayOffsetYRef = useRef(0);
   const autosaveTimerRef = useRef(null);
   const sectionsRef = useRef(sections);
+  const orderFormHeaderTextRef = useRef(orderFormHeaderText);
   const isFirstRenderRef = useRef(true);
   const onSaveRef = useRef(onSave);
   const settingsRef = useRef(settings);
-  const lastSavedSnapshotRef = useRef(JSON.stringify(sections));
+  const lastSavedSnapshotRef = useRef(serializeSettingsDraft(sections, orderFormHeaderText));
 
   useEffect(() => {
     onSaveRef.current = onSave;
@@ -31,22 +38,31 @@ export default function Settings({ settings, onSave, saveError = '' }) {
   }, [sections]);
 
   useEffect(() => {
-    const nextSections = (settings?.terms?.sections || []).map((s) => ({ ...s }));
-    const nextSnapshot = JSON.stringify(nextSections);
-    if (nextSnapshot !== JSON.stringify(sectionsRef.current)) {
+    orderFormHeaderTextRef.current = orderFormHeaderText;
+  }, [orderFormHeaderText]);
+
+  useEffect(() => {
+    const nextSections = normalizeSections(settings);
+    const nextOrderFormHeaderText = toRichTextHtml(settings?.orderFormHeaderText || '');
+    const nextSnapshot = serializeSettingsDraft(nextSections, nextOrderFormHeaderText);
+    const currentSnapshot = serializeSettingsDraft(sectionsRef.current, orderFormHeaderTextRef.current);
+    if (nextSnapshot !== currentSnapshot) {
       setSections(nextSections);
+      setOrderFormHeaderText(nextOrderFormHeaderText);
       sectionsRef.current = nextSections;
+      orderFormHeaderTextRef.current = nextOrderFormHeaderText;
     }
     lastSavedSnapshotRef.current = nextSnapshot;
   }, [settings]);
 
-  const persistSections = useCallback((nextSections) => {
-    const nextSnapshot = JSON.stringify(nextSections);
+  const persistSettingsDraft = useCallback((nextSections, nextOrderFormHeaderText) => {
+    const nextSnapshot = serializeSettingsDraft(nextSections, nextOrderFormHeaderText);
     if (nextSnapshot === lastSavedSnapshotRef.current) return;
     const latestSettings = settingsRef.current;
     if (typeof onSaveRef.current !== 'function') return;
     onSaveRef.current({
       ...latestSettings,
+      orderFormHeaderText: nextOrderFormHeaderText,
       terms: { ...latestSettings?.terms, sections: nextSections },
     });
     lastSavedSnapshotRef.current = nextSnapshot;
@@ -57,8 +73,8 @@ export default function Settings({ settings, onSave, saveError = '' }) {
       clearTimeout(autosaveTimerRef.current);
       autosaveTimerRef.current = null;
     }
-    persistSections(sectionsRef.current);
-  }, [persistSections]);
+    persistSettingsDraft(sectionsRef.current, orderFormHeaderTextRef.current);
+  }, [persistSettingsDraft]);
 
   const queueAutosave = useCallback(() => {
     if (autosaveTimerRef.current) {
@@ -66,9 +82,9 @@ export default function Settings({ settings, onSave, saveError = '' }) {
     }
     autosaveTimerRef.current = setTimeout(() => {
       autosaveTimerRef.current = null;
-      persistSections(sectionsRef.current);
+      persistSettingsDraft(sectionsRef.current, orderFormHeaderTextRef.current);
     }, AUTOSAVE_DEBOUNCE_MS);
-  }, [persistSections]);
+  }, [persistSettingsDraft]);
 
   useEffect(() => {
     if (isFirstRenderRef.current) {
@@ -76,19 +92,36 @@ export default function Settings({ settings, onSave, saveError = '' }) {
       return;
     }
     queueAutosave();
-  }, [sections, queueAutosave]);
+  }, [sections, orderFormHeaderText, queueAutosave]);
 
   useEffect(() => () => {
     if (autosaveTimerRef.current) {
       clearTimeout(autosaveTimerRef.current);
       autosaveTimerRef.current = null;
     }
-    persistSections(sectionsRef.current);
-  }, [persistSections]);
+    persistSettingsDraft(sectionsRef.current, orderFormHeaderTextRef.current);
+  }, [persistSettingsDraft]);
 
   const update = (index, field, value) => {
     setSections((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
   };
+
+  const quillModules = useMemo(
+    () => ({
+      toolbar: [
+        ['bold', 'italic', 'underline'],
+        [{ list: 'bullet' }, { list: 'ordered' }],
+        [{ indent: '-1' }, { indent: '+1' }],
+        ['link'],
+      ],
+    }),
+    [],
+  );
+
+  const quillFormats = useMemo(
+    () => ['bold', 'italic', 'underline', 'list', 'bullet', 'indent', 'link'],
+    [],
+  );
 
   const remove = (index) => {
     setSections((prev) => prev.filter((_, i) => i !== index));
@@ -229,6 +262,33 @@ export default function Settings({ settings, onSave, saveError = '' }) {
           </div>
         )}
         <div className="settings-section-label-row">
+          <div className="qd-category-card-title">Order Form Header Text</div>
+        </div>
+        <div
+          className="settings-terms-card"
+          style={{
+            background: '#FFFFFF',
+            border: '1px solid rgba(0,0,0,0.07)',
+            borderRadius: '8px',
+            padding: '16px',
+            marginBottom: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <div className="settings-terms-card-body">
+            <ReactQuill
+              className="settings-terms-card-editor"
+              value={orderFormHeaderText}
+              onChange={(value) => setOrderFormHeaderText(isRichTextEmpty(value) ? '' : value)}
+              onBlur={flushAutosave}
+              placeholder="Text shown above the pricing table in generated PDFs..."
+              modules={quillModules}
+              formats={quillFormats}
+            />
+          </div>
+        </div>
+        <div className="settings-section-label-row">
           <div className="qd-category-card-title">Terms & Conditions</div>
         </div>
 
@@ -298,13 +358,14 @@ export default function Settings({ settings, onSave, saveError = '' }) {
               </button>
             </div>
             <div className="settings-terms-card-body">
-              <textarea
-                className="qd-terms-textarea settings-terms-card-textarea"
-                value={section.body}
-                onChange={(e) => update(index, 'body', e.target.value)}
+              <ReactQuill
+                className="settings-terms-card-editor"
+                value={section.body || ''}
+                onChange={(value) => update(index, 'body', isRichTextEmpty(value) ? '' : value)}
                 onBlur={flushAutosave}
                 placeholder="Section body text..."
-                rows={4}
+                modules={quillModules}
+                formats={quillFormats}
               />
             </div>
           </div>

@@ -1,17 +1,17 @@
 import React from 'react';
-import { getPricebookStatus } from '../data/pricebooks';
+import StatusBadge from './StatusBadge';
 
 export default function PricebookTable({ pricebooks, onOpen, onEdit, onDelete, onAdd }) {
   if (pricebooks.length === 0) {
     return (
       <div className="empty-state">
         <div className="empty-state-numeral">0</div>
-        <div className="empty-state-eyebrow">Pricebooks</div>
-        <div className="empty-state-title">No pricebooks yet</div>
-        <div className="empty-state-text">Create your first pricebook to get started</div>
+        <div className="empty-state-eyebrow">Price Books</div>
+        <div className="empty-state-title">No price books yet</div>
+        <div className="empty-state-text">Create your first price book to get started</div>
         {onAdd && (
           <button className="empty-state-cta" onClick={onAdd}>
-            Create Pricebook
+            Create Price Book
           </button>
         )}
       </div>
@@ -52,11 +52,10 @@ export default function PricebookTable({ pricebooks, onOpen, onEdit, onDelete, o
               </td>
               <td>
                 <div className="cell-status">
-                  <span className={`status-dot ${pricebook.active ? 'active' : 'inactive'}`} />
-                  <span className="status-label">
-                    {pricebook.active ? 'Active' : 'Inactive'}
-                    {pricebook.active && pricebook.is_default && <span className="status-default-tag"> · Default</span>}
-                  </span>
+                  <StatusBadge
+                    label={pricebook.active ? 'Active' : 'Inactive'}
+                    tone={pricebook.active ? 'teal' : 'grey'}
+                  />
                 </div>
               </td>
               <td className="col-actions">
