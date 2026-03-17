@@ -20,7 +20,7 @@ import seedSettings from './data/settings.json';
 
 const NAV_ITEMS = [
   { key: 'products', label: 'Products' },
-  { key: 'pricebooks', label: 'Pricebooks' },
+  { key: 'pricebooks', label: 'Price Books' },
   { key: 'scope', label: 'Scope' },
   { key: 'quotes', label: 'Quotes' },
   { key: 'orders', label: 'Orders' },
@@ -33,6 +33,7 @@ const COMING_SOON_META = {
 };
 
 const FALLBACK_SETTINGS = {
+  orderFormHeaderText: '',
   terms: {
     sections: [],
   },
@@ -52,8 +53,8 @@ const buildDestructiveCatalogWarning = (details) => {
 
   return [
     'Warning: This operation will significantly reduce the catalog size.',
-    `Current catalog: ${currentProducts} products / ${currentPricebooks} pricebooks`,
-    `Incoming catalog: ${incomingProducts} products / ${incomingPricebooks} pricebooks`,
+    `Current catalog: ${currentProducts} products / ${currentPricebooks} price books`,
+    `Incoming catalog: ${incomingProducts} products / ${incomingPricebooks} price books`,
     '',
     'This may indicate a destructive overwrite.',
     '',
@@ -73,6 +74,7 @@ const normalizeSettings = (value) => {
     : [];
   return {
     ...value,
+    orderFormHeaderText: typeof value?.orderFormHeaderText === 'string' ? value.orderFormHeaderText : '',
     terms: {
       ...value.terms,
       sections,
@@ -124,6 +126,27 @@ const setPath = (obj, path, value) => {
 
 const hasDirtyPath = (dirty, path) =>
   dirty.has(path) || [...dirty].some((entry) => entry.startsWith(`${path}.`) || path.startsWith(`${entry}.`));
+
+const readEntryListPriceOverride = (entry) => {
+  if (entry?.list_price_override != null) return entry.list_price_override;
+  if (entry?.price_override != null) return entry.price_override;
+  return null;
+};
+
+const normalizePricebookEntry = (entry, pricebookId) => {
+  const productId = entry?.product_id ? String(entry.product_id) : '';
+  if (!productId) return null;
+  const listPriceOverride = readEntryListPriceOverride(entry);
+  return {
+    ...entry,
+    product_id: productId,
+    pricebook_id: pricebookId,
+    is_active: entry?.is_active !== false,
+    list_price_override: listPriceOverride,
+    // Keep legacy field for compatibility with older readers.
+    price_override: listPriceOverride,
+  };
+};
 
 const mergeProductForEdit = (existing, incoming, dirtyFields) => {
   const dirty = new Set(Array.isArray(dirtyFields) ? dirtyFields : []);
@@ -391,9 +414,14 @@ export default function App() {
   );
 
   // Product CRUD
-  const saveProd = (p) => {
+  const saveProd = (payload) => {
+    const incomingProduct = payload?.product || payload;
+    const incomingAssignments = Array.isArray(payload?.pricebook_assignments)
+      ? payload.pricebook_assignments
+      : null;
+
     setProducts((prev) => {
-      const incoming = { ...p };
+      const incoming = { ...incomingProduct };
       const dirtyFields = Array.isArray(incoming._dirty_fields) ? incoming._dirty_fields : [];
       const isEditMode = Boolean(incoming._is_edit_mode);
       delete incoming._dirty_fields;
@@ -408,6 +436,64 @@ export default function App() {
         return { ...merged, updated_at: new Date().toISOString() };
       });
     });
+
+    if (incomingAssignments) {
+      const normalizedAssignments = incomingAssignments
+        .map((assignment) => {
+          const pricebookId = String(assignment?.pricebook_id || '');
+          const productId = String(assignment?.product_id || incomingProduct?.id || '');
+          if (!pricebookId || !productId) return null;
+
+          let listPriceOverride = null;
+          if (assignment?.list_price_override !== '' && assignment?.list_price_override != null) {
+            const parsed = Number(assignment.list_price_override);
+            if (Number.isFinite(parsed) && parsed >= 0) listPriceOverride = parsed;
+          }
+
+          return {
+            product_id: productId,
+            pricebook_id: pricebookId,
+            is_active: assignment?.is_active !== false,
+            list_price_override: listPriceOverride,
+          };
+        })
+        .filter(Boolean);
+
+      setPricebooks((prev) => prev.map((pricebook) => {
+        const now = new Date().toISOString();
+        const existingEntries = Array.isArray(pricebook.entries)
+          ? pricebook.entries
+            .map((entry) => normalizePricebookEntry(entry, pricebook.id))
+            .filter(Boolean)
+          : [];
+
+        const productId = String(incomingProduct?.id || '');
+        const existingEntry = existingEntries.find((entry) => entry.product_id === productId) || null;
+        const retainedEntries = existingEntries.filter((entry) => entry.product_id !== productId);
+        const assignment = normalizedAssignments.find((item) => item.pricebook_id === String(pricebook.id));
+        if (!assignment && !existingEntry) return pricebook;
+
+        let nextEntry = null;
+        if (assignment) {
+          nextEntry = normalizePricebookEntry({
+            ...existingEntry,
+            ...assignment,
+            product_id: productId,
+          }, pricebook.id);
+        }
+
+        const nextEntries = nextEntry ? [...retainedEntries, nextEntry] : retainedEntries;
+        const entriesUnchanged = JSON.stringify(existingEntries) === JSON.stringify(nextEntries);
+        if (entriesUnchanged) return pricebook;
+
+        return {
+          ...pricebook,
+          entries: nextEntries,
+          updated_at: now,
+        };
+      }));
+    }
+
     setModal(null);
   };
 
@@ -442,7 +528,9 @@ export default function App() {
         ...pricebook,
         active: Boolean(pricebook.active),
         is_default: Boolean(pricebook.is_default),
-        entries: Array.isArray(pricebook.entries) ? pricebook.entries : [],
+        entries: (Array.isArray(pricebook.entries) ? pricebook.entries : [])
+          .map((entry) => normalizePricebookEntry(entry, pricebook.id))
+          .filter(Boolean),
         tiered_pricing: Array.isArray(pricebook.tiered_pricing) ? pricebook.tiered_pricing : [],
         updated_at: now,
       };
@@ -466,7 +554,7 @@ export default function App() {
 
   const deletePricebook = (id) => {
     setConfirm({
-      msg: 'Delete this pricebook? This action cannot be undone.',
+      msg: 'Delete this price book? This action cannot be undone.',
       fn: () => {
         setPricebooks((prev) => prev.filter((pricebook) => pricebook.id !== id));
         setActivePricebookId((prev) => (prev === id ? null : prev));
@@ -653,14 +741,14 @@ export default function App() {
           </>
         )}
 
-        {/* Pricebooks Page */}
+        {/* Price Books Page */}
         {page === 'pricebooks' && (
           <>
             {!selectedPricebook && (
               <>
                 <div className="page-header">
                   <div className="page-label">Catalog Pricing</div>
-                  <h1 className="page-title">Pricebooks</h1>
+                  <h1 className="page-title">Price Books</h1>
                 </div>
 
                 <div className="toolbar">
@@ -670,11 +758,11 @@ export default function App() {
                       className="search-input"
                       value={pricebookSearch}
                       onChange={(event) => setPricebookSearch(event.target.value)}
-                      placeholder="Search pricebooks..."
+                      placeholder="Search price books..."
                     />
                   </div>
                   <button className="btn-primary btn-product-add" onClick={() => setModal({ type: 'pricebook' })}>
-                    Create Pricebook
+                    Create Price Book
                   </button>
                 </div>
 
@@ -782,7 +870,13 @@ export default function App() {
       </main>
 
       {modal?.type === 'product' && (
-        <ProductModal product={modal.data} products={products} onSave={saveProd} onClose={() => setModal(null)} />
+        <ProductModal
+          product={modal.data}
+          products={products}
+          pricebooks={pricebooks}
+          onSave={saveProd}
+          onClose={() => setModal(null)}
+        />
       )}
       {modal?.type === 'pricebook' && (
         <PricebookModal pricebook={modal.data} onSave={savePricebook} onClose={() => setModal(null)} />

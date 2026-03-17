@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { TYPE_LABELS, calcBundleMonthlyTotal, fmtPrice, getProductCategory, isBundleProduct } from '../data/catalog';
+import StatusBadge from './StatusBadge';
 
 export default function ProductTable({ products, allProducts, onEdit, onDupe, onDelete, onAdd }) {
   const [expanded, setExpanded] = useState(null);
@@ -97,8 +98,10 @@ export default function ProductTable({ products, allProducts, onEdit, onDupe, on
                   <td className="col-annual" style={{ paddingRight: '40px' }}>{renderAnnual(amount)}</td>
                   <td className="col-status" style={{ paddingLeft: '40px' }}>
                     <div className="cell-status">
-                      <span className={`status-dot ${p.active ? 'active' : 'inactive'}`} />
-                      <span className="status-label">{p.active ? 'Active' : 'Inactive'}</span>
+                      <StatusBadge
+                        label={p.active ? 'Active' : 'Inactive'}
+                        tone={p.active ? 'teal' : 'grey'}
+                      />
                     </div>
                   </td>
                   <td className="col-actions">

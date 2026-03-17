@@ -32,7 +32,7 @@ export default function PricebookModal({ pricebook, onSave, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal pricebook-modal modal-theme-products" onClick={(event) => event.stopPropagation()}>
-        <div className="modal-title">{pricebook ? 'Edit Pricebook' : 'Create Pricebook'}</div>
+        <div className="modal-title">{pricebook ? 'Edit Price Book' : 'Create Price Book'}</div>
 
         <div className="field">
           <label className="field-label">Name</label>
@@ -50,7 +50,7 @@ export default function PricebookModal({ pricebook, onSave, onClose }) {
             className="field-textarea"
             value={form.description}
             onChange={(event) => setField('description', event.target.value)}
-            placeholder="Optional context for this pricebook"
+            placeholder="Optional context for this price book"
           />
         </div>
 
@@ -84,12 +84,12 @@ export default function PricebookModal({ pricebook, onSave, onClose }) {
           <label htmlFor="pricebookDefault" className="checkbox-label">Default</label>
         </div>
 
-        <div className="pricebook-modal-note">Only one pricebook can be marked as default.</div>
+        <div className="pricebook-modal-note">Only one price book can be marked as default.</div>
 
         <div className="modal-actions">
           <button className="btn-cancel" onClick={onClose}>Cancel</button>
           <button className="btn-save" onClick={handleSave} disabled={!canSave}>
-            Save Pricebook
+            Save Price Book
           </button>
         </div>
       </div>

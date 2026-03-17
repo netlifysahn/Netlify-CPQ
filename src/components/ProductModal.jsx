@@ -1,4 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import {
   PACKAGE_PRICING_DISPLAYS,
   PACKAGE_QTY_BEHAVIORS,
@@ -20,6 +22,7 @@ import {
   formatIntegerWithCommas,
   parsePositiveIntegerInput,
 } from '../utils/numberFormat';
+import { isRichTextEmpty, toRichTextHtml } from '../utils/richText';
 
 const PILL_COLORS = ['blue', 'green', 'amber', 'purple', 'teal'];
 const QTY_BEHAVIOR_OPTIONS = [
@@ -99,6 +102,7 @@ function isConcurrentBuildsLikeProduct(product) {
 const COLLAPSIBLE_SECTION_KEYS = {
   BASIC_INFO: 'basicInfo',
   PRICING: 'pricing',
+  PRICEBOOKS: 'pricebooks',
   PACKAGE_COMPONENTS: 'packageComponents',
   SERVICE: 'service',
   ENTITLEMENTS: 'entitlements',
@@ -106,14 +110,38 @@ const COLLAPSIBLE_SECTION_KEYS = {
   TERMS: 'terms',
 };
 
-export default function ProductModal({ product, products, onSave, onClose }) {
+const getEntryListPriceOverride = (entry) => {
+  if (!entry || typeof entry !== 'object') return null;
+  if (entry.list_price_override != null) return entry.list_price_override;
+  if (entry.price_override != null) return entry.price_override;
+  return null;
+};
+
+const buildInitialPricebookAssignments = (productId, pricebooks = []) =>
+  (pricebooks || [])
+    .map((pricebook) => {
+      const entry = Array.isArray(pricebook?.entries)
+        ? pricebook.entries.find((item) => item?.product_id === productId)
+        : null;
+      if (!entry) return null;
+      return {
+        pricebook_id: String(pricebook.id),
+        is_active: entry?.is_active !== false,
+        list_price_override: getEntryListPriceOverride(entry),
+      };
+    })
+    .filter(Boolean);
+
+export default function ProductModal({ product, products, pricebooks, onSave, onClose }) {
   const [f, setF] = useState(coerceProduct(product));
   const [jsonError, setJsonError] = useState('');
   const [creditInputDrafts, setCreditInputDrafts] = useState({});
+  const [pricebookAssignments, setPricebookAssignments] = useState(() => buildInitialPricebookAssignments(coerceProduct(product).id, pricebooks));
   const dirtyFieldsRef = useRef(new Set());
   const [openSections, setOpenSections] = useState({
     [COLLAPSIBLE_SECTION_KEYS.BASIC_INFO]: true,
     [COLLAPSIBLE_SECTION_KEYS.PRICING]: true,
+    [COLLAPSIBLE_SECTION_KEYS.PRICEBOOKS]: true,
     [COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS]: true,
     [COLLAPSIBLE_SECTION_KEYS.SERVICE]: true,
     [COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS]: false,
@@ -170,18 +198,73 @@ export default function ProductModal({ product, products, onSave, onClose }) {
   const isStepperProduct = isSeatProduct || isConcurrentBuildsProduct;
   const isCreditProduct = !isConcurrentBuildsProduct && isCreditLikeProduct(f);
   const productMap = useMemo(() => new Map((products || []).map((p) => [p.id, p])), [products]);
-  const COMPONENT_CARD_ORDER = ['platform', 'support', 'entitlement'];
-  const COMPONENT_CARD_LABELS = { platform: 'Platform', support: 'Support', entitlement: 'Entitlements' };
-  const COMPONENT_ADD_LABELS = { platform: 'Add Platform', support: 'Add Support', entitlement: 'Add Entitlement' };
-  const COMPONENT_EMPTY_LABELS = { platform: 'No platform items yet', support: 'No support tier selected.', entitlement: 'No entitlement items yet' };
+  const COMPONENT_CARD_ORDER = ['platform', 'support', 'entitlement', 'addon'];
+  const COMPONENT_CARD_LABELS = {
+    platform: 'Platform',
+    support: 'Support',
+    entitlement: 'Entitlements',
+    addon: 'Add-ons',
+  };
+  const COMPONENT_ADD_LABELS = {
+    platform: 'Add Platform',
+    support: 'Add Support',
+    entitlement: 'Add Entitlement',
+    addon: 'Add Add-on',
+  };
+  const COMPONENT_EMPTY_LABELS = {
+    platform: 'No platform items yet',
+    support: 'No support tier selected.',
+    entitlement: 'No entitlement items yet',
+    addon: 'No add-ons yet',
+  };
+  const availablePricebooks = Array.isArray(pricebooks) ? pricebooks : [];
+  const assignedPricebookIds = useMemo(
+    () => new Set(pricebookAssignments.map((assignment) => assignment.pricebook_id).filter(Boolean)),
+    [pricebookAssignments],
+  );
+  const unassignedPricebooks = useMemo(
+    () => availablePricebooks.filter((pricebook) => !assignedPricebookIds.has(pricebook.id)),
+    [availablePricebooks, assignedPricebookIds],
+  );
+  const showPricebookDraftRow = unassignedPricebooks.length > 0;
+  const pricebookRows = useMemo(
+    () => (showPricebookDraftRow
+      ? [...pricebookAssignments, { pricebook_id: '', is_active: true, list_price_override: null }]
+      : pricebookAssignments),
+    [pricebookAssignments, showPricebookDraftRow],
+  );
+
+  const addPricebookAssignment = (pricebookId = '') => {
+    const nextPricebook = pricebookId
+      ? unassignedPricebooks.find((pricebook) => String(pricebook.id) === String(pricebookId))
+      : unassignedPricebooks[0];
+    if (!nextPricebook) return;
+    setPricebookAssignments((prev) => [...prev, {
+      pricebook_id: nextPricebook.id,
+      is_active: true,
+      list_price_override: null,
+    }]);
+  };
+
+  const updatePricebookAssignment = (index, updates) => {
+    setPricebookAssignments((prev) => prev.map((assignment, rowIndex) => (
+      rowIndex === index ? { ...assignment, ...updates } : assignment
+    )));
+  };
+
+  const removePricebookAssignment = (index) => {
+    setPricebookAssignments((prev) => prev.filter((_, rowIndex) => rowIndex !== index));
+  };
 
   const productsByCategory = useMemo(() => {
-    const grouped = { platform: [], support: [], entitlement: [] };
+    const grouped = { platform: [], support: [], entitlement: [], addon: [] };
     (products || []).forEach((p) => {
       if (p.id === f.id || isBundleProduct(p) || getProductCategory(p) === 'bundle') return;
       const cat = getProductCategory(p);
       if (cat === 'entitlements') {
         grouped.entitlement.push(p);
+      } else if (cat === 'addon') {
+        grouped.addon.push(p);
       } else if (grouped[cat]) {
         grouped[cat].push(p);
       }
@@ -191,13 +274,42 @@ export default function ProductModal({ product, products, onSave, onClose }) {
   }, [products, f.id]);
 
   const membersByCategory = useMemo(() => {
-    const grouped = { platform: [], support: [], entitlement: [] };
+    const grouped = { platform: [], support: [], entitlement: [], addon: [] };
     (f.package_components || []).forEach((component, index) => {
-      const normalizedCat = grouped[component.section] ? component.section : 'platform';
-      grouped[normalizedCat].push({ ...component, _index: index });
+      const section = component.section === 'support' || component.section === 'entitlement'
+        ? component.section
+        : 'platform';
+      const referencedProduct = productMap.get(component.component_product_id);
+      const referencedCategory = getProductCategory(referencedProduct);
+      const renderCategory = section === 'platform' && referencedCategory === 'addon'
+        ? 'addon'
+        : section;
+      grouped[renderCategory].push({ ...component, _index: index });
     });
     return grouped;
-  }, [f.package_components]);
+  }, [f.package_components, productMap]);
+
+  const visibleComponentCategories = useMemo(
+    () => COMPONENT_CARD_ORDER.filter((category) => (membersByCategory[category] || []).length > 0),
+    [membersByCategory],
+  );
+
+  const quillModules = useMemo(
+    () => ({
+      toolbar: [
+        ['bold', 'italic', 'underline'],
+        [{ list: 'bullet' }, { list: 'ordered' }],
+        [{ indent: '-1' }, { indent: '+1' }],
+        ['link'],
+      ],
+    }),
+    [],
+  );
+
+  const quillFormats = useMemo(
+    () => ['bold', 'italic', 'underline', 'list', 'bullet', 'indent', 'link'],
+    [],
+  );
 
   const swapMember = (index, newProductId) => {
     const newProd = productMap.get(newProductId);
@@ -217,7 +329,8 @@ export default function ProductModal({ product, products, onSave, onClose }) {
     const prod = productMap.get(productId);
     if (!prod) return;
     markDirty('package_components', 'members', 'components');
-    if (category === 'support') {
+    const targetSection = category === 'addon' ? 'platform' : category;
+    if (targetSection === 'support') {
       setF((prev) => {
         const existingComponents = [...(prev.package_components || [])];
         const existingIdx = existingComponents.findIndex((component) => component.section === 'support');
@@ -252,7 +365,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
       });
       return;
     }
-    addMember(prod, category);
+    addMember(prod, targetSection);
   };
 
   const categoryOptions = useMemo(() => {
@@ -404,25 +517,49 @@ export default function ProductModal({ product, products, onSave, onClose }) {
       const referencedProduct = productMap.get(component.component_product_id);
       return packageComponentToLegacyMember(component, referencedProduct, index);
     });
+    const knownPricebookIds = new Set(availablePricebooks.map((pricebook) => String(pricebook.id)));
+    const normalizedPricebookAssignments = [];
+    const seenPricebookIds = new Set();
+    pricebookAssignments.forEach((assignment) => {
+      const pricebookId = String(assignment?.pricebook_id || '');
+      if (!pricebookId || seenPricebookIds.has(pricebookId) || !knownPricebookIds.has(pricebookId)) return;
+      seenPricebookIds.add(pricebookId);
+
+      let listPriceOverride = null;
+      if (assignment?.list_price_override !== '' && assignment?.list_price_override != null) {
+        const parsed = parseFloat(assignment.list_price_override);
+        if (Number.isFinite(parsed) && parsed >= 0) listPriceOverride = parsed;
+      }
+
+      normalizedPricebookAssignments.push({
+        product_id: f.id,
+        pricebook_id: pricebookId,
+        is_active: assignment?.is_active !== false,
+        list_price_override: listPriceOverride,
+      });
+    });
 
     onSave({
-      ...f,
-      category: getProductCategory(f),
-      type: getProductCategory(f),
-      default_price: { ...f.default_price, amount: parseFloat(f.default_price.amount) || 0 },
-      default_entitlements: entitlements,
-      config: {
-        ...f.config,
-        default_quantity: parseInt(f.config.default_quantity, 10) || 1,
-        min_quantity: parseInt(f.config.min_quantity, 10) || 1,
-        max_quantity: parseInt(f.config.max_quantity, 10) || 999,
+      product: {
+        ...f,
+        category: getProductCategory(f),
+        type: getProductCategory(f),
+        default_price: { ...f.default_price, amount: parseFloat(f.default_price.amount) || 0 },
+        default_entitlements: entitlements,
+        config: {
+          ...f.config,
+          default_quantity: parseInt(f.config.default_quantity, 10) || 1,
+          min_quantity: parseInt(f.config.min_quantity, 10) || 1,
+          max_quantity: parseInt(f.config.max_quantity, 10) || 999,
+        },
+        configuration_method: isPackage ? 'bundle' : 'none',
+        package_components: isPackage ? normalizedPackageComponents : [],
+        members: isPackage ? normalizedMembers : [],
+        components: isPackage ? normalizedMembers : [],
+        _dirty_fields: Array.from(dirtyFieldsRef.current),
+        _is_edit_mode: Boolean(product),
       },
-      configuration_method: isPackage ? 'bundle' : 'none',
-      package_components: isPackage ? normalizedPackageComponents : [],
-      members: isPackage ? normalizedMembers : [],
-      components: isPackage ? normalizedMembers : [],
-      _dirty_fields: Array.from(dirtyFieldsRef.current),
-      _is_edit_mode: Boolean(product),
+      pricebook_assignments: normalizedPricebookAssignments,
     });
   };
 
@@ -431,7 +568,10 @@ export default function ProductModal({ product, products, onSave, onClose }) {
       <div className={`modal modal-theme-products product-modal ${isPackage ? 'product-modal-base-package' : ''} ${isBasePackage ? 'product-modal-base-package-category' : ''}`.trim()} onClick={(e) => e.stopPropagation()}>
         <div className="modal-title">{product ? 'Edit Product' : 'New Product'}</div>
 
-        <div className="modal-section">
+        <div className="product-modal-group product-modal-group-product">
+          <div className="product-modal-group-label">PRODUCT</div>
+
+          <div className="modal-section">
           <button
             type="button"
             className="modal-section-label modal-section-toggle"
@@ -498,7 +638,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
           </div>
         </div>
 
-        <div className="modal-section modal-section-no-content-divider">
+          <div className="modal-section modal-section-no-content-divider">
           <button
             type="button"
             className="modal-section-label modal-section-toggle"
@@ -536,7 +676,112 @@ export default function ProductModal({ product, products, onSave, onClose }) {
           </div>
         </div>
 
-        <div className="modal-section">
+          <div className="modal-section">
+          <button
+            type="button"
+            className="modal-section-label modal-section-toggle"
+            onClick={() => toggleSection(COLLAPSIBLE_SECTION_KEYS.PRICEBOOKS)}
+            aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.PRICEBOOKS]}
+          >
+            <span>Pricebooks</span>
+            <span>{openSections[COLLAPSIBLE_SECTION_KEYS.PRICEBOOKS] ? '▾' : '▸'}</span>
+          </button>
+
+          <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.PRICEBOOKS] ? 'is-open' : ''}`}>
+            {availablePricebooks.length === 0 && (
+              <div className="product-pricebook-empty">
+                No price books are available yet.
+              </div>
+            )}
+
+            <div className="product-pricebook-list">
+            {pricebookRows.map((assignment, index) => {
+              const isDraftRow = showPricebookDraftRow && index === pricebookAssignments.length;
+              const rowOptions = isDraftRow
+                ? unassignedPricebooks
+                : availablePricebooks
+                  .filter((pricebook) => (
+                    pricebook.id === assignment.pricebook_id || !assignedPricebookIds.has(pricebook.id)
+                  ));
+              const rowKey = isDraftRow ? 'pricebook_new' : `${assignment.pricebook_id}_${index}`;
+              return (
+              <div key={rowKey} className={`product-pricebook-row ${isDraftRow ? 'is-draft' : ''}`}>
+                <div className="field">
+                  <label className="field-label">Price Book</label>
+                  <select
+                    className="field-select"
+                    value={assignment.pricebook_id || ''}
+                    onChange={(event) => {
+                      const nextPricebookId = event.target.value;
+                      if (isDraftRow) {
+                        if (nextPricebookId) addPricebookAssignment(nextPricebookId);
+                        return;
+                      }
+                      updatePricebookAssignment(index, { pricebook_id: nextPricebookId });
+                    }}
+                  >
+                    {isDraftRow && <option value="">Select price book</option>}
+                    {rowOptions.map((pricebook) => (
+                      <option key={pricebook.id} value={pricebook.id}>
+                        {pricebook.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="field">
+                  <label className="field-label">List Price Override</label>
+                  <input
+                    className="field-input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={assignment.list_price_override ?? ''}
+                    placeholder={isDraftRow ? 'Select price book first' : 'Use product default'}
+                    disabled={isDraftRow}
+                    onChange={(event) => {
+                      const raw = event.target.value;
+                      updatePricebookAssignment(index, { list_price_override: raw === '' ? null : raw });
+                    }}
+                  />
+                </div>
+
+                <div className="field product-pricebook-active-field">
+                  <label className="field-label">Active</label>
+                  <div className="checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={assignment.is_active !== false}
+                      disabled={isDraftRow}
+                      onChange={(event) => updatePricebookAssignment(index, { is_active: event.target.checked })}
+                      id={`pricebookActive_${index}`}
+                    />
+                    <label htmlFor={`pricebookActive_${index}`} className="checkbox-label">Active</label>
+                  </div>
+                </div>
+
+                {!isDraftRow && (
+                  <button
+                    type="button"
+                    className="action-btn delete product-pricebook-remove"
+                    onClick={() => removePricebookAssignment(index)}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              );
+            })}
+            </div>
+          </div>
+        </div>
+
+        </div>
+
+        <div className="product-modal-group product-modal-group-package">
+          <div className="product-modal-group-label">PACKAGE</div>
+
+          <div className="modal-section">
           <button
             type="button"
             className="modal-section-label modal-section-toggle"
@@ -565,8 +810,8 @@ export default function ProductModal({ product, products, onSave, onClose }) {
           </div>
         </div>
 
-        {isPackage && (
-          <div className="modal-section modal-section-no-content-divider">
+          {isPackage && (
+            <div className="modal-section modal-section-no-content-divider">
             <button
               type="button"
               className="modal-section-label modal-section-toggle"
@@ -582,7 +827,7 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                 Define what is included in this package and how components behave in quotes.
               </div>
               <div className="pkg-components pkg-components-categorized">
-                {COMPONENT_CARD_ORDER.map((category) => {
+                {visibleComponentCategories.map((category) => {
                   const membersForCategory = membersByCategory[category] || [];
                   const catMembers = category === 'support' ? membersForCategory.slice(0, 1) : membersForCategory;
                   const catLabel = COMPONENT_CARD_LABELS[category];
@@ -610,25 +855,26 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                             ))}
                         </select>
                       </div>
-                      {category === 'entitlement' ? (
-                        <div className="pkg-entitlement-list">
+                      {isBasePackage && ['entitlement', 'platform', 'support', 'addon'].includes(category) ? (
+                        <div className={`pkg-component-list pkg-${category}-list`}>
                           {catMembers.length > 0 ? catMembers.map((member) => {
                             const index = member._index;
                             const referencedProduct = productMap.get(member.component_product_id);
                             const memberSku = referencedProduct?.sku || '';
+                            const isEntitlement = category === 'entitlement';
 
                             return (
-                              <div key={`${member.component_product_id}_${index}`} className="pkg-entitlement-card">
-                                <div className="pkg-entitlement-card-top">
-                                  <div className="pkg-entitlement-card-header-main">
-                                    <div className="pkg-cell-handle pkg-entitlement-handle">
+                              <div key={`${member.component_product_id}_${index}`} className={`pkg-component-row pkg-component-row-${category}`}>
+                                <div className="pkg-component-row-header">
+                                  <div className="pkg-component-row-title">
+                                    <div className="pkg-cell-handle">
                                       <span className="pkg-drag-handle" title="Reordering coming soon" aria-hidden="true">
                                         <i className="fa-solid fa-grip-vertical fa-fw" />
                                       </span>
                                     </div>
-                                    <div className="pkg-product-cell-stack pkg-entitlement-product">
+                                    <div className="pkg-product-cell-stack">
                                       <span className="pkg-member-name">{referencedProduct?.name || 'Unknown'}</span>
-                                      <span className="pkg-member-sku pkg-entitlement-sku">{memberSku || '\u00A0'}</span>
+                                      <span className="pkg-member-sku">{memberSku || '\u00A0'}</span>
                                     </div>
                                   </div>
                                   <button type="button" className="pkg-remove-btn" onClick={() => removeMember(index)} title="Delete">
@@ -636,181 +882,135 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                                   </button>
                                 </div>
 
-                                <div className="pkg-entitlement-field-rows">
-                                  <div className="pkg-entitlement-fields-row pkg-entitlement-fields-row--qty">
-                                    <div className="field pkg-entitlement-qty-field">
-                                      <label className="field-label">Default Qty</label>
-                                      <input
-                                        className="field-input pkg-inline-number"
-                                        type="number"
-                                        min="1"
-                                        value={member.default_qty ?? ''}
-                                        onChange={(e) => updateEntitlementDefaultQty(index, e.target.value)}
-                                      />
-                                    </div>
-                                    <div className="field pkg-entitlement-qty-field">
-                                      <label className="field-label">Min Qty</label>
-                                      <input
-                                        className="field-input pkg-inline-number"
-                                        type="number"
-                                        min="1"
-                                        value={member.min_qty ?? ''}
-                                        onChange={(e) => updateMember(index, 'min_qty', e.target.value)}
-                                      />
-                                    </div>
-                                    <div className="field pkg-entitlement-qty-field">
-                                      <label className="field-label">Max Qty</label>
-                                      <input
-                                        className="field-input pkg-inline-number"
-                                        type="number"
-                                        min="1"
-                                        value={member.max_qty ?? ''}
-                                        onChange={(e) => updateMember(index, 'max_qty', e.target.value)}
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="pkg-entitlement-fields-row">
-                                    <div className="field">
-                                      <label className="field-label">Qty Behavior</label>
-                                      <select
-                                        className="field-select pkg-inline-select"
-                                        value={member.qty_behavior || 'editable'}
-                                        onChange={(e) => updateMember(index, 'qty_behavior', e.target.value)}
-                                      >
-                                        {QTY_BEHAVIOR_OPTIONS.map((opt) => (
-                                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                    <div className="field">
-                                      <label className="field-label">Quote Editability</label>
-                                      <select
-                                        className="field-select pkg-inline-select"
-                                        value={member.quote_edit_mode || 'editable_qty'}
-                                        onChange={(e) => updateMember(index, 'quote_edit_mode', e.target.value)}
-                                      >
-                                        {QUOTE_EDIT_OPTIONS.map((opt) => (
-                                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                    <div className="field">
-                                      <label className="field-label">Pricing Display</label>
-                                      <select
-                                        className="field-select pkg-inline-select"
-                                        value={member.pricing_display || 'package_only'}
-                                        onChange={(e) => updateMember(index, 'pricing_display', e.target.value)}
-                                      >
-                                        {PRICING_DISPLAY_OPTIONS.map((opt) => (
-                                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          }) : (
-                            <div className="pkg-empty-row pkg-empty-card-row">{emptyLabel}</div>
-                          )}
-                        </div>
-                      ) : (category === 'platform' && isBasePackage) ? (
-                        <div className="pkg-platform-list">
-                          {catMembers.length > 0 ? catMembers.map((member) => {
-                            const index = member._index;
-                            const referencedProduct = productMap.get(member.component_product_id);
-                            const memberSku = referencedProduct?.sku || '';
-
-                            return (
-                              <div key={`${member.component_product_id}_${index}`} className="pkg-platform-item">
-                                <div className="pkg-platform-item-top">
-                                  <div className="pkg-platform-item-header-main">
-                                    <div className="pkg-cell-handle pkg-platform-handle">
-                                      <span className="pkg-drag-handle" title="Reordering coming soon" aria-hidden="true">
-                                        <i className="fa-solid fa-grip-vertical fa-fw" />
-                                      </span>
-                                    </div>
-                                    <div className="pkg-product-cell-stack pkg-platform-product">
-                                      <span className="pkg-member-name">{referencedProduct?.name || 'Unknown'}</span>
-                                      <span className="pkg-member-sku pkg-platform-sku">{memberSku || '\u00A0'}</span>
-                                    </div>
-                                  </div>
-                                  <button type="button" className="pkg-remove-btn" onClick={() => removeMember(index)} title="Delete">
-                                    <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
-                                  </button>
-                                </div>
-                                <div className="pkg-platform-field-row">
-                                  <div className="field">
-                                    <label className="field-label">Quote Editability</label>
-                                    <select
-                                      className="field-select pkg-inline-select"
-                                      value={member.quote_edit_mode || 'read_only'}
-                                      onChange={(e) => updateMember(index, 'quote_edit_mode', e.target.value)}
-                                    >
-                                      {QUOTE_EDIT_OPTIONS.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                  <div className="field">
-                                    <label className="field-label">Pricing Display</label>
-                                    <select
-                                      className="field-select pkg-inline-select"
-                                      value={member.pricing_display || 'package_only'}
-                                      onChange={(e) => updateMember(index, 'pricing_display', e.target.value)}
-                                    >
-                                      {PRICING_DISPLAY_OPTIONS.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          }) : (
-                            <div className="pkg-empty-row pkg-empty-card-row">{emptyLabel}</div>
-                          )}
-                        </div>
-                      ) : (category === 'support' && isBasePackage) ? (
-                        <div className="pkg-support-list">
-                          {catMembers.length > 0 ? catMembers.map((member) => {
-                            const index = member._index;
-                            const referencedProduct = productMap.get(member.component_product_id);
-                            const memberSku = referencedProduct?.sku || '';
-
-                            return (
-                              <div key={`${member.component_product_id}_${index}`} className="pkg-support-item">
-                                <div className="pkg-support-item-top">
-                                  <div className="pkg-product-cell-stack pkg-support-product">
-                                    <span className="pkg-member-name">{referencedProduct?.name || 'Unknown'}</span>
-                                    <span className="pkg-member-sku pkg-support-sku">{memberSku || '\u00A0'}</span>
-                                  </div>
-                                </div>
-                                <div className="pkg-support-field-row">
-                                  <div className="field">
-                                    <label className="field-label">Quote Editability</label>
-                                    <select
-                                      className="field-select pkg-inline-select"
-                                      value={member.quote_edit_mode || 'read_only'}
-                                      onChange={(e) => updateMember(index, 'quote_edit_mode', e.target.value)}
-                                    >
-                                      {QUOTE_EDIT_OPTIONS.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                  <div className="field">
-                                    <label className="field-label">Pricing Display</label>
-                                    <select
-                                      className="field-select pkg-inline-select"
-                                      value={member.pricing_display || 'package_only'}
-                                      onChange={(e) => updateMember(index, 'pricing_display', e.target.value)}
-                                    >
-                                      {PRICING_DISPLAY_OPTIONS.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                      ))}
-                                    </select>
-                                  </div>
+                                <div className={`pkg-component-row-fields${isEntitlement ? ' pkg-component-row-fields-entitlement' : ''}`}>
+                                  {isEntitlement ? (
+                                    <>
+                                      <div className="pkg-component-subsection pkg-component-subsection-quantity">
+                                        <div className="pkg-component-subsection-title">Quantity</div>
+                                        <div className="pkg-component-subsection-grid">
+                                          <div className="pkg-component-field-row">
+                                            <label className="pkg-component-field-label">Default Qty</label>
+                                            <div className="pkg-component-field-control">
+                                              <input
+                                                className="field-input pkg-inline-number"
+                                                type="number"
+                                                min="1"
+                                                value={member.default_qty ?? ''}
+                                                onChange={(e) => updateEntitlementDefaultQty(index, e.target.value)}
+                                              />
+                                            </div>
+                                          </div>
+                                          <div className="pkg-component-field-row">
+                                            <label className="pkg-component-field-label">Min Qty</label>
+                                            <div className="pkg-component-field-control">
+                                              <input
+                                                className="field-input pkg-inline-number"
+                                                type="number"
+                                                min="1"
+                                                value={member.min_qty ?? ''}
+                                                onChange={(e) => updateMember(index, 'min_qty', e.target.value)}
+                                              />
+                                            </div>
+                                          </div>
+                                          <div className="pkg-component-field-row">
+                                            <label className="pkg-component-field-label">Max Qty</label>
+                                            <div className="pkg-component-field-control">
+                                              <input
+                                                className="field-input pkg-inline-number"
+                                                type="number"
+                                                min="1"
+                                                value={member.max_qty ?? ''}
+                                                onChange={(e) => updateMember(index, 'max_qty', e.target.value)}
+                                              />
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="pkg-component-subsection pkg-component-subsection-behavior">
+                                        <div className="pkg-component-subsection-title">Behavior</div>
+                                        <div className="pkg-component-subsection-grid">
+                                          <div className="pkg-component-field-row">
+                                            <label className="pkg-component-field-label">Qty Behavior</label>
+                                            <div className="pkg-component-field-control">
+                                              <select
+                                                className="field-select pkg-inline-select"
+                                                value={member.qty_behavior || 'editable'}
+                                                onChange={(e) => updateMember(index, 'qty_behavior', e.target.value)}
+                                              >
+                                                {QTY_BEHAVIOR_OPTIONS.map((opt) => (
+                                                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                              </select>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="pkg-component-subsection pkg-component-subsection-quote-behavior">
+                                        <div className="pkg-component-subsection-title">Quote Behavior</div>
+                                        <div className="pkg-component-subsection-grid">
+                                          <div className="pkg-component-field-row">
+                                            <label className="pkg-component-field-label">Quote Editability</label>
+                                            <div className="pkg-component-field-control">
+                                              <select
+                                                className="field-select pkg-inline-select"
+                                                value={member.quote_edit_mode || 'editable_qty'}
+                                                onChange={(e) => updateMember(index, 'quote_edit_mode', e.target.value)}
+                                              >
+                                                {QUOTE_EDIT_OPTIONS.map((opt) => (
+                                                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                              </select>
+                                            </div>
+                                          </div>
+                                          <div className="pkg-component-field-row">
+                                            <label className="pkg-component-field-label">Pricing Display</label>
+                                            <div className="pkg-component-field-control">
+                                              <select
+                                                className="field-select pkg-inline-select"
+                                                value={member.pricing_display || 'package_only'}
+                                                onChange={(e) => updateMember(index, 'pricing_display', e.target.value)}
+                                              >
+                                                {PRICING_DISPLAY_OPTIONS.map((opt) => (
+                                                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                              </select>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="pkg-component-field-row">
+                                        <label className="pkg-component-field-label">Quote Editability</label>
+                                        <div className="pkg-component-field-control">
+                                          <select
+                                            className="field-select pkg-inline-select"
+                                            value={member.quote_edit_mode || 'read_only'}
+                                            onChange={(e) => updateMember(index, 'quote_edit_mode', e.target.value)}
+                                          >
+                                            {QUOTE_EDIT_OPTIONS.map((opt) => (
+                                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                            ))}
+                                          </select>
+                                        </div>
+                                      </div>
+                                      <div className="pkg-component-field-row">
+                                        <label className="pkg-component-field-label">Pricing Display</label>
+                                        <div className="pkg-component-field-control">
+                                          <select
+                                            className="field-select pkg-inline-select"
+                                            value={member.pricing_display || 'package_only'}
+                                            onChange={(e) => updateMember(index, 'pricing_display', e.target.value)}
+                                          >
+                                            {PRICING_DISPLAY_OPTIONS.map((opt) => (
+                                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                            ))}
+                                          </select>
+                                        </div>
+                                      </div>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             );
@@ -952,21 +1152,21 @@ export default function ProductModal({ product, products, onSave, onClose }) {
                 })}
               </div>
             </div>
-          </div>
-        )}
+            </div>
+          )}
 
-        <div className="modal-section">
+          <div className="modal-section">
           <button
             type="button"
             className="modal-section-label modal-section-toggle"
             onClick={() => toggleSection(COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS)}
             aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS]}
           >
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <span className="modal-section-title-with-help">
               Entitlement Rules
               <span
                 title="Defines the entitlement behavior for this product — e.g. how credits refresh and over what period. Values entered here are parsed and displayed as tags below the JSON field."
-                style={{ fontSize: '13px', color: '#94a3b8', cursor: 'help', fontWeight: 400 }}
+                className="modal-section-help-icon"
               >?</span>
             </span>
             <span>{openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS] ? '▾' : '▸'}</span>
@@ -996,7 +1196,12 @@ export default function ProductModal({ product, products, onSave, onClose }) {
           </div>
         </div>
 
-        <div className="modal-section">
+        </div>
+
+        <div className="product-modal-group product-modal-group-quote-behavior">
+          <div className="product-modal-group-label">QUOTE BEHAVIOR</div>
+
+          <div className="modal-section">
           <button
             type="button"
             className="modal-section-label modal-section-toggle"
@@ -1158,8 +1363,8 @@ export default function ProductModal({ product, products, onSave, onClose }) {
           </div>
         </div>
 
-        {/* ── Terms & Conditions ── */}
-        <div className="modal-section">
+          {/* ── Terms & Conditions ── */}
+          <div className="modal-section">
           <button
             type="button"
             className="modal-section-label modal-section-toggle"
@@ -1173,15 +1378,17 @@ export default function ProductModal({ product, products, onSave, onClose }) {
           <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.TERMS] ? 'is-open' : ''}`}>
             <div className="field">
               <label className="field-label">Product Terms</label>
-              <textarea
-                className="field-textarea"
-                value={f.terms || ''}
-                onChange={(e) => s('terms', e.target.value)}
+              <ReactQuill
+                className="product-terms-editor"
+                value={toRichTextHtml(f.terms || '')}
+                onChange={(value) => s('terms', isRichTextEmpty(value) ? '' : value)}
                 placeholder="Enter any product-specific terms and conditions that will appear on the quote PDF for this line item..."
-                style={{ minHeight: 120 }}
+                modules={quillModules}
+                formats={quillFormats}
               />
             </div>
           </div>
+        </div>
         </div>
 
         <div className="modal-actions">

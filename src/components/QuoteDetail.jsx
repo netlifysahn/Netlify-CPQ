@@ -38,18 +38,6 @@ class QuoteDetailErrorBoundary extends Component {
   }
 }
 
-function AnimatedValue({ value, pulseKey }) {
-  const ref = useRef(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || pulseKey === 0) return;
-    el.classList.remove('value-changed');
-    void el.offsetWidth;
-    el.classList.add('value-changed');
-  }, [pulseKey]);
-  return <div className="qd-summary-value" ref={ref}>{value}</div>;
-}
-
 const relativeTime = (timestamp) => {
   if (!timestamp) return '';
   const now = Date.now();
@@ -98,18 +86,56 @@ const displayPercent = (v) => {
   return `${rounded.toFixed(1)}%`;
 };
 
-const splitPackageComponents = (subs) => {
+const PACKAGE_COMPONENT_RENDER_ORDER = ['platform', 'support', 'entitlement', 'addon'];
+const PACKAGE_COMPONENT_RENDER_LABELS = {
+  platform: 'Platform',
+  support: 'Support',
+  entitlement: 'Entitlements',
+  addon: 'Add-ons',
+};
+
+const getPackageComponentRenderCategory = (line) => {
+  const section = getPackageComponentSection(line);
+  if (section === 'support' || section === 'entitlement') return section;
+  const productCategory = getProductCategory({ category: line?.product_type });
+  if (productCategory === 'addon') return 'addon';
+  return 'platform';
+};
+
+const groupPackageComponentsForDisplay = (subs = []) => {
+  const grouped = {
+    platform: [],
+    support: [],
+    entitlement: [],
+    addon: [],
+  };
+  subs.forEach((sub) => {
+    grouped[getPackageComponentRenderCategory(sub)].push(sub);
+  });
+  return PACKAGE_COMPONENT_RENDER_ORDER
+    .map((category) => ({
+      category,
+      label: PACKAGE_COMPONENT_RENDER_LABELS[category],
+      lines: grouped[category],
+    }))
+    .filter((group) => group.lines.length > 0);
+};
+
+const groupBasePackageSectionsForDisplay = (subs = []) => {
+  const grouped = groupPackageComponentsForDisplay(subs);
   const included = [];
   const configuration = [];
-  for (const sub of subs) {
-    const section = getPackageComponentSection(sub);
-    if (section === 'entitlement') {
-      configuration.push(sub);
-    } else {
-      included.push(sub);
+  grouped.forEach((group) => {
+    if (group.category === 'entitlement') {
+      configuration.push(...group.lines);
+      return;
     }
-  }
-  return { included, configuration };
+    included.push(...group.lines);
+  });
+  return [
+    { key: 'included', label: 'Included Platform', lines: included, isConfiguration: false },
+    { key: 'configuration', label: 'Configuration', lines: configuration, isConfiguration: true },
+  ].filter((section) => section.lines.length > 0);
 };
 
 const SEAT_INPUT_PATTERN = /\b(seat|seats|user|users|license|licenses)\b/i;
@@ -148,8 +174,8 @@ const fmtQty = (v) => {
   return n.toLocaleString('en-US');
 };
 
-const CARD_ORDER_WITH_PACKAGE = ['bundle', 'support', 'addon', 'entitlements'];
-const CARD_ORDER_NO_PACKAGE = ['platform', 'support', 'addon', 'entitlements'];
+const CARD_ORDER_WITH_PACKAGE = ['bundle', 'support', 'entitlements', 'addon'];
+const CARD_ORDER_NO_PACKAGE = ['platform', 'support', 'entitlements', 'addon'];
 const MULTI_SELECT_CATEGORIES = new Set(['platform', 'entitlements', 'addon']);
 
 const getCategoryCardLabel = (category, hasActiveBasePackage) => {
@@ -192,7 +218,7 @@ function DetailInput({ label, field, value, placeholder, span2, type, mono, text
     input = <textarea style={{ ...style, resize: 'vertical', minHeight: '60px' }} value={value || ''} placeholder={placeholder} onChange={handleChange} onFocus={handleDcFocus} onBlur={handleBlur} />;
   } else if (options) {
     input = (
-      <select style={{ ...style, appearance: 'auto', cursor: 'pointer' }} value={value || ''} onChange={(e) => { handleChange(e); onBlur(field, e.target.value); }} onFocus={handleDcFocus} onBlur={(e) => handleDcBlurStyle(e)}>
+      <select className="qd-detail-input-select" style={{ ...style, cursor: 'pointer' }} value={value || ''} onChange={(e) => { handleChange(e); onBlur(field, e.target.value); }} onFocus={handleDcFocus} onBlur={(e) => handleDcBlurStyle(e)}>
         {options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
       </select>
     );
@@ -272,8 +298,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const [quantityInputDrafts, setQuantityInputDrafts] = useState({});
   const [multiPickerDrafts, setMultiPickerDrafts] = useState({});
   const moreRef = useRef(null);
-  const prevTotalsRef = useRef(null);
-  const [pulseKey, setPulseKey] = useState(0);
   const productsById = useMemo(() => new Map((products || []).map((p) => [p.id, p])), [products]);
 
   useEffect(() => {
@@ -342,14 +366,20 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
   const getPriceOverride = (productId) => {
     const pb = getSelectedPricebook();
-    const entry = pb?.entries?.find((e) => e.product_id === productId);
-    return entry?.price_override != null ? entry.price_override : undefined;
+    const entry = pb?.entries?.find((e) => e.product_id === productId && e?.is_active !== false);
+    if (!entry) return undefined;
+    if (entry.list_price_override != null) return entry.list_price_override;
+    return entry.price_override != null ? entry.price_override : undefined;
   };
 
   const availableProducts = useMemo(() => {
     const pb = getSelectedPricebook();
     if (!pb || !pb.entries?.length) return products;
-    const pbProductIds = new Set(pb.entries.map((e) => e.product_id));
+    const pbProductIds = new Set(
+      pb.entries
+        .filter((e) => e?.is_active !== false)
+        .map((e) => e.product_id),
+    );
     return products.filter((p) => pbProductIds.has(p.id));
   }, [products, pricebooks, q.pricebook_id]);
 
@@ -573,12 +603,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const totals = calcQuoteTotals(liveData);
   const meta = STATUS_META[q.status] || STATUS_META.draft;
 
-  const totalsFingerprint = `${totals.monthly}|${totals.annual}|${totals.tcv}`;
-  useEffect(() => {
-    if (prevTotalsRef.current !== null && prevTotalsRef.current !== totalsFingerprint) setPulseKey((k) => k + 1);
-    prevTotalsRef.current = totalsFingerprint;
-  }, [totalsFingerprint]);
-
   const STATUS_EYEBROW_COLORS = {
     draft: '#6b7280', sent: '#2E51ED', draft_revision: '#FBB13D',
     ready_to_submit: '#05BDBA', pending_approval: '#7C3AED',
@@ -766,13 +790,19 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     const hasActiveBasePackage = !!basePackageLine;
     const showStandalonePlatformCard = !hasActiveBasePackage;
     const editCardOrder = showStandalonePlatformCard
-      ? ['bundle', 'platform', 'support', 'addon', 'entitlements']
-      : ['bundle', 'support', 'addon', 'entitlements'];
-    const editCategoryGroups = editCardOrder.map((category) => ({
-      category,
-      label: getCategoryCardLabel(category, hasActiveBasePackage),
-      lines: topLevelByCategory[category] || [],
-    }));
+      ? ['bundle', 'platform', 'support', 'entitlements', 'addon']
+      : ['bundle', 'support', 'entitlements', 'addon'];
+    const editCategoryGroups = editCardOrder
+      .map((category) => ({
+        category,
+        label: getCategoryCardLabel(category, hasActiveBasePackage),
+        lines: topLevelByCategory[category] || [],
+      }))
+      .filter((group) => (
+        !hasActiveBasePackage
+          || group.category === 'bundle'
+          || group.lines.length > 0
+      ));
 
     const getCategorySkuOptions = (category, currentProductId) => {
       const options = [...(productsByCategory[category] || [])];
@@ -1418,25 +1448,13 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     );
 
     const renderEditPackage = (line) => {
-      const expanded = !collapsedPkgs.has(line.id);
       const subs = getSubLines(items, line.id);
-      const productInfoNet = getPackageProductAmount(line);
-      const packageList = typeof productInfoNet === 'number' && Number.isFinite(productInfoNet) ? productInfoNet : 0;
-      const packageNet = getPackageNetAmount(line, packageList);
-      const packageAmount = packageNet;
-      const listPriceField = 'list_price';
-      const discountField = 'discount_amount';
-      const netField = 'net_price';
-      const listPriceKey = getCurrencyInputKey(line.id, listPriceField);
-      const discountKey = getCurrencyInputKey(line.id, discountField);
-      const netKey = getCurrencyInputKey(line.id, netField);
-      const isListEditing = Object.prototype.hasOwnProperty.call(currencyInputDrafts, listPriceKey);
-      const isDiscountEditing = Object.prototype.hasOwnProperty.call(currencyInputDrafts, discountKey);
-      const isNetEditing = Object.prototype.hasOwnProperty.call(currencyInputDrafts, netKey);
+      const sections = groupBasePackageSectionsForDisplay(subs);
       return (
-        <div key={line.id} className="qd-pkg-block">
-          <div className="qd-pkg-header" onClick={() => togglePackage(line.id)}>
-            <div className="qd-pkg-header-main">
+        <div key={line.id} className="qd-pkg-block qd-base-package-block">
+          <div className="qd-base-package-control-row">
+            <span className="qd-base-package-control-label">Package</span>
+            <div className="qd-base-package-control-main">
               {renderSkuSelect({
                 category: 'bundle',
                 line,
@@ -1447,139 +1465,30 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                   }
                   swapDraftLineProduct(line.id, productId);
                 },
-                stopPropagation: true,
               })}
-              <span className="qd-pkg-toggle" aria-hidden>{expanded ? '▾' : '▸'}</span>
-              <button type="button" className="qd-line-icon-btn" aria-label={`Remove ${line.product_name}`} onClick={(e) => { e.stopPropagation(); removeDraftLine(line.id); }}>×</button>
+              <button type="button" className="qd-line-icon-btn qd-base-package-remove-btn" aria-label={`Remove ${line.product_name}`} onClick={() => removeDraftLine(line.id)}>×</button>
             </div>
-            <span className="qd-pkg-header-qty" />
-            <span className="qd-pkg-header-list-price qd-pkg-member-value qd-line-price-value">
-              <span className={`qd-currency-input-wrap${isListEditing ? ' qd-currency-input-wrap--editing' : ''}`} onClick={(e) => e.stopPropagation()}>
-                {isListEditing && <span className="qd-currency-input-symbol" aria-hidden>$</span>}
-                <input
-                  className={`qd-grid-input qd-grid-input-discount${isListEditing ? ' qd-grid-input-currency' : ''}`}
-                  type="text"
-                  inputMode="decimal"
-                  value={isListEditing ? currencyInputDrafts[listPriceKey] : displayCurrencyValue(packageList)}
-                  onFocus={() => {
-                    setCurrencyInputDrafts((prev) => ({ ...prev, [listPriceKey]: formatCurrencyForEdit(packageList) }));
-                  }}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    const next = parseCurrencyFromInput(raw);
-                    setCurrencyInputDrafts((prev) => ({ ...prev, [listPriceKey]: raw }));
-                    updateDraftLineField(line.id, 'list_price', next);
-                  }}
-                  onBlur={(e) => {
-                    const next = parseCurrencyFromInput(e.target.value);
-                    updateDraftLineField(line.id, 'list_price', next);
-                    setCurrencyInputDrafts((prev) => {
-                      const clone = { ...prev };
-                      delete clone[listPriceKey];
-                      return clone;
-                    });
-                  }}
-                />
-              </span>
-            </span>
-            <span className="qd-pkg-header-discount qd-line-price-value">
-              <span className={`qd-currency-input-wrap${isDiscountEditing ? ' qd-currency-input-wrap--editing' : ''}`} onClick={(e) => e.stopPropagation()}>
-                {isDiscountEditing && <span className="qd-currency-input-symbol" aria-hidden>$</span>}
-                <input
-                  className={`qd-grid-input qd-grid-input-discount${isDiscountEditing ? ' qd-grid-input-currency' : ''}`}
-                  type="text"
-                  inputMode="decimal"
-                  value={isDiscountEditing ? currencyInputDrafts[discountKey] : displayCurrencyValue(line.discount_amount ?? 0)}
-                  onFocus={() => {
-                    const current = typeof line.discount_amount === 'number' && Number.isFinite(line.discount_amount) ? line.discount_amount : 0;
-                    setCurrencyInputDrafts((prev) => ({ ...prev, [discountKey]: formatCurrencyForEdit(current) }));
-                  }}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    const next = parseCurrencyFromInput(raw);
-                    setCurrencyInputDrafts((prev) => ({ ...prev, [discountKey]: raw }));
-                    const synced = syncDiscountFromAmount(packageList, next);
-                    updateDraftLine(line.id, synced);
-                  }}
-                  onBlur={(e) => {
-                    const next = parseCurrencyFromInput(e.target.value);
-                    const synced = syncDiscountFromAmount(packageList, next);
-                    updateDraftLine(line.id, synced);
-                    setCurrencyInputDrafts((prev) => {
-                      const clone = { ...prev };
-                      delete clone[discountKey];
-                      return clone;
-                    });
-                  }}
-                />
-              </span>
-            </span>
-            <span className="qd-pkg-header-net-price qd-line-price-value">
-              <span className={`qd-currency-input-wrap${isNetEditing ? ' qd-currency-input-wrap--editing' : ''}`} onClick={(e) => e.stopPropagation()}>
-                {isNetEditing && <span className="qd-currency-input-symbol" aria-hidden>$</span>}
-                <input
-                  className={`qd-grid-input qd-grid-input-discount${isNetEditing ? ' qd-grid-input-currency' : ''}`}
-                  type="text"
-                  inputMode="decimal"
-                  value={isNetEditing ? currencyInputDrafts[netKey] : displayCurrencyValue(packageNet)}
-                  onFocus={() => {
-                    setCurrencyInputDrafts((prev) => ({ ...prev, [netKey]: formatCurrencyForEdit(packageNet) }));
-                  }}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    const nextNet = parseCurrencyFromInput(raw);
-                    setCurrencyInputDrafts((prev) => ({ ...prev, [netKey]: raw }));
-                    const synced = syncDiscountFromAmount(packageList, Math.max(0, packageList - nextNet));
-                    updateDraftLine(line.id, synced);
-                  }}
-                  onBlur={(e) => {
-                    const nextNet = parseCurrencyFromInput(e.target.value);
-                    const synced = syncDiscountFromAmount(packageList, Math.max(0, packageList - nextNet));
-                    updateDraftLine(line.id, synced);
-                    setCurrencyInputDrafts((prev) => {
-                      const clone = { ...prev };
-                      delete clone[netKey];
-                      return clone;
-                    });
-                  }}
-                />
-              </span>
-            </span>
-            <span className="qd-pkg-header-amount qd-line-price-value">{displayCurrencyValue(packageAmount)}</span>
-            <span className="qd-pkg-header-annual-price qd-line-price-value">{displayCurrencyValue(packageAmount * 12)}</span>
           </div>
-          {expanded && subs.length > 0 && (() => {
-            const { included, configuration } = splitPackageComponents(subs);
-            return (
-              <div className="qd-pkg-members">
-                {included.length > 0 && (
-                  <div className="qd-pkg-section">
-                    <div className="qd-pkg-section-label">Included Platform</div>
-                    {included.map((sub) => (
-                      <div key={sub.id} className="qd-pkg-member-row qd-pkg-member-row-edit qd-pkg-member-row--included">
-                        <span className="qd-pkg-member-name">
-                          <span className="cell-name">{sub.product_name}</span>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {configuration.length > 0 && (
-                  <div className="qd-pkg-section">
-                    <div className="qd-pkg-section-label">Configuration</div>
-                    {configuration.map((sub) => (
-                      <div key={sub.id} className="qd-pkg-member-row qd-pkg-member-row-edit qd-pkg-member-row--config">
-                        <span className="qd-pkg-member-name">
-                          <span className="cell-name">{sub.product_name}</span>
-                        </span>
-                        <span className="qd-pkg-member-qty-value">{renderPackageQtyInput(sub)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
+          {sections.length > 0 && (
+            <div className="qd-pkg-members qd-base-package-members">
+              {sections.map((section) => (
+                <div key={section.key} className="qd-pkg-section qd-base-package-section">
+                  <div className="qd-pkg-section-label">{section.label}</div>
+                  {section.lines.map((sub) => (
+                    <div
+                      key={sub.id}
+                      className={`qd-base-package-value-row${section.isConfiguration ? ' qd-base-package-value-row--config' : ''}`}
+                    >
+                      <span className="qd-base-package-value-name">{sub.product_name}</span>
+                      {section.isConfiguration && (
+                        <span className="qd-base-package-value-qty">{renderPackageQtyInput(sub)}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       );
     };
@@ -1603,17 +1512,12 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     );
 
     const renderEmptyPackageRow = () => (
-      <div className="qd-pkg-block" key="bundle-empty">
-        <div className="qd-pkg-header qd-pkg-header-empty">
-          <div className="qd-pkg-header-main">
+      <div className="qd-pkg-block qd-base-package-block qd-base-package-block--empty" key="bundle-empty">
+        <div className="qd-base-package-control-row">
+          <span className="qd-base-package-control-label">Package</span>
+          <div className="qd-base-package-control-main">
             {renderSkuSelect({ category: 'bundle', line: null, onSelect: (productId) => addDraftLineFromCategory('bundle', productId) })}
           </div>
-          <span className="qd-pkg-header-qty" />
-          <span className="qd-pkg-header-list-price qd-line-price-value">—</span>
-          <span className="qd-pkg-header-discount qd-line-price-value">—</span>
-          <span className="qd-pkg-header-net-price qd-line-price-value">—</span>
-          <span className="qd-pkg-header-amount qd-line-price-value">—</span>
-          <span className="qd-pkg-header-annual-price qd-line-price-value">—</span>
         </div>
       </div>
     );
@@ -1655,16 +1559,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                 <span className="qd-category-card-title">{group.label}</span>
               </div>
               {group.category === 'bundle' ? (
-                <div className="qd-pkg-table">
-                  <div className="qd-pkg-table-head">
-                    <span className="qd-pkg-col-product">Product</span>
-                    <span className="qd-pkg-col-qty" aria-hidden />
-                    <span className="qd-pkg-col-list-price">List Price</span>
-                    <span className="qd-pkg-col-discount">Discount</span>
-                    <span className="qd-pkg-col-net-price">Net Price</span>
-                    <span className="qd-pkg-col-amount">Monthly Price</span>
-                    <span className="qd-pkg-col-annual-price">Annual Price</span>
-                  </div>
+                <div className="qd-pkg-table qd-base-package-table">
                   {group.lines.length > 0 ? group.lines.map((line) => renderEditPackage(line)) : renderEmptyPackageRow()}
                 </div>
               ) : group.category === 'support' ? (
@@ -1769,34 +1664,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       </div>
     );
   };
-
-  const renderSummary = (t, source) => (
-    <div className="qd-summary">
-      <div className="qd-summary-item">
-        <div className="qd-summary-label">MRR</div>
-        {t.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(t.preDiscountMonthly)}</div>}
-        <AnimatedValue value={fmtCurrency(t.monthly)} pulseKey={pulseKey} />
-      </div>
-      <div className="qd-summary-item">
-        <div className="qd-summary-label">ARR</div>
-        {t.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(t.preDiscountAnnual)}</div>}
-        <AnimatedValue value={fmtCurrency(t.annual)} pulseKey={pulseKey} />
-      </div>
-      <div className="qd-summary-item qd-summary-tcv">
-        <div className="qd-summary-label">TCV ({source.term_months} month)</div>
-        {t.hasQuoteDiscount && <div className="qd-summary-pre">{fmtCurrency(t.preDiscountTcv)}</div>}
-        <AnimatedValue value={fmtCurrency(t.tcv)} pulseKey={pulseKey} />
-      </div>
-      {t.hasQuoteDiscount && (
-        <>
-          <div className="qd-summary-item">
-            <div className="qd-summary-label">Quote Discount</div>
-            <div className="qd-summary-value">{source.header_discount}%</div>
-          </div>
-        </>
-      )}
-    </div>
-  );
 
   const renderQuoteTotalsBar = (t) => (
     <div className="qd-quote-totals-bar" aria-label="Quote totals">
@@ -2008,66 +1875,40 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                       <span className="qd-category-card-title">{group.label}</span>
                     </div>
                     {group.category === 'bundle' ? (
-                      <div className="qd-pkg-table">
-                        <div className="qd-pkg-table-head">
-                          <span className="qd-pkg-col-product">Product</span>
-                          <span className="qd-pkg-col-qty" aria-hidden />
-                          <span className="qd-pkg-col-list-price">List Price</span>
-                          <span className="qd-pkg-col-discount">Discount</span>
-                          <span className="qd-pkg-col-net-price">Net Price</span>
-                          <span className="qd-pkg-col-amount">Monthly Price</span>
-                          <span className="qd-pkg-col-annual-price">Annual Price</span>
-                        </div>
+                      <div className="qd-pkg-table qd-base-package-table">
                         {group.lines.map((line) => {
                           const subs = getSubLines(q.line_items, line.id);
-                          const expanded = !collapsedPkgs.has(line.id);
-                          const packageList = getPackageProductAmount(line);
-                          const pkgAmount = getPackageNetAmount(line, packageList);
-                          const packageDisplay = getPackageDisplayPricing(line);
+                          const sections = groupBasePackageSectionsForDisplay(subs);
                           return (
-                            <div key={line.id} className="qd-pkg-block">
-                              <div className="qd-pkg-header" onClick={() => togglePackage(line.id)}>
-                                <div className="qd-pkg-header-main">
+                            <div key={line.id} className="qd-pkg-block qd-base-package-block">
+                              <div className="qd-base-package-control-row">
+                                <span className="qd-base-package-control-label">Package</span>
+                                <div className="qd-base-package-selected">
                                   <span className="cell-name qd-pkg-name">{line.product_name}</span>
-                                  <span className="qd-pkg-toggle" aria-hidden>{expanded ? '▾' : '▸'}</span>
                                 </div>
-                                <span className="qd-pkg-header-qty" />
-                                <span className="qd-pkg-header-list-price qd-line-price-value">{displayCurrencyValue(packageDisplay.listPrice)}</span>
-                                <span className="qd-pkg-header-discount qd-line-price-value">{displayCurrencyValue(packageDisplay.discount)}</span>
-                                <span className="qd-pkg-header-net-price qd-line-price-value">{displayCurrencyValue(packageDisplay.netPrice)}</span>
-                                <span className="qd-pkg-header-amount qd-line-price-value">{displayCurrencyValue(pkgAmount)}</span>
-                                <span className="qd-pkg-header-annual-price qd-line-price-value">{displayCurrencyValue(pkgAmount * 12)}</span>
                               </div>
-                              {expanded && subs.length > 0 && (() => {
-                                const { included, configuration } = splitPackageComponents(subs);
-                                return (
-                                  <div className="qd-pkg-members">
-                                    {included.length > 0 && (
-                                      <div className="qd-pkg-section">
-                                        <div className="qd-pkg-section-label">Included Platform</div>
-                                        {included.map((sub) => (
-                                          <div key={sub.id} className="qd-pkg-member-row qd-pkg-member-row--included">
-                                            <span className="cell-name qd-pkg-member-name">{sub.product_name}</span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                    {configuration.length > 0 && (
-                                      <div className="qd-pkg-section">
-                                        <div className="qd-pkg-section-label">Configuration</div>
-                                        {configuration.map((sub) => (
-                                          <div key={sub.id} className="qd-pkg-member-row qd-pkg-member-row--config">
-                                            <span className="cell-name qd-pkg-member-name">{sub.product_name}</span>
-                                            <span className="qd-pkg-member-qty-value">
+                              {sections.length > 0 && (
+                                <div className="qd-pkg-members qd-base-package-members">
+                                  {sections.map((section) => (
+                                    <div key={section.key} className="qd-pkg-section qd-base-package-section">
+                                      <div className="qd-pkg-section-label">{section.label}</div>
+                                      {section.lines.map((sub) => (
+                                        <div
+                                          key={sub.id}
+                                          className={`qd-base-package-value-row${section.isConfiguration ? ' qd-base-package-value-row--config' : ''}`}
+                                        >
+                                          <span className="qd-base-package-value-name">{sub.product_name}</span>
+                                          {section.isConfiguration && (
+                                            <span className="qd-base-package-value-qty">
                                               {isPackageComponentQtyVisible(sub) ? fmtQty(sub.quantity ?? 1) : ''}
                                             </span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })()}
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           );
                         })}
@@ -2222,8 +2063,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         )}
       </div>
 
-      {renderQuoteTotalsBar(totals)}
-
       <div style={{ marginTop: '24px', marginBottom: '24px' }}>
         <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: 0 }}>
           <div className="qd-category-card-header qd-detail-card-header" style={cardHeaderStyle} onClick={() => toggleCard('overage')}>
@@ -2239,19 +2078,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         </div>
       </div>
 
-      {isEditing ? (
-        <div className="qd-summary" style={{ marginTop: '16px' }}>
-        <div className="qd-summary-item">
-          <div className="qd-summary-label">Quote Discount %</div>
-          <div className="qd-summary-value">
-            <input className="inline-edit qd-discount-input" type="number" min="0" max="100" step="0.1" value={draft?.header_discount ?? 0} onChange={(e) => updateDraft((d) => ({ ...d, header_discount: parseFloat(e.target.value) || 0 }))} />
-          </div>
-        </div>
-          <div className="qd-summary-item"><div className="qd-summary-label">MRR</div><AnimatedValue value={fmtCurrency(totals.monthly)} pulseKey={pulseKey} /></div>
-          <div className="qd-summary-item"><div className="qd-summary-label">ARR</div><AnimatedValue value={fmtCurrency(totals.annual)} pulseKey={pulseKey} /></div>
-          <div className="qd-summary-item qd-summary-tcv"><div className="qd-summary-label">TCV ({q.term_months} month)</div><AnimatedValue value={fmtCurrency(totals.tcv)} pulseKey={pulseKey} /></div>
-        </div>
-      ) : <div>{renderSummary(totals, q)}</div>}
+      {renderQuoteTotalsBar(totals)}
 
       <div>{renderFooterInfo(q)}</div>
 
