@@ -206,8 +206,8 @@ const setsEqual = (a, b) => {
   return true;
 };
 
-const DC_LABEL_STYLE = { fontSize: '14px', color: '#0f172a', fontWeight: 500, fontFamily: "'Mulish', sans-serif", marginBottom: '6px' };
-const DC_INPUT_STYLE = { fontSize: '14px', color: '#0a0a0a', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 14px', width: '100%', outline: 'none', boxSizing: 'border-box', background: '#fff', transition: 'border-color 0.15s' };
+const DC_LABEL_STYLE = { fontSize: '13px', color: '#475569', fontWeight: 500, fontFamily: "'Mulish', sans-serif", marginBottom: '4px' };
+const DC_INPUT_STYLE = { fontSize: '13px', color: '#0a0a0a', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '7px 10px', width: '100%', outline: 'none', boxSizing: 'border-box', background: '#fff', transition: 'border-color 0.15s' };
 
 const handleDcFocus = (e) => { e.target.style.borderColor = '#FBB13D'; };
 const handleDcBlurStyle = (e) => { e.target.style.borderColor = '#e5e7eb'; };
@@ -718,7 +718,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const isSupportLine = (line) => getLineCategory(line) === 'support';
 
   const cardHeaderStyle = { cursor: 'pointer', userSelect: 'none' };
-  const cardBodyStyle = { padding: '4px 24px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' };
+  const cardBodyStyle = { padding: '4px 20px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px' };
   const sectionDivider = { height: '1px', background: 'rgba(0,0,0,0.06)', margin: 0 };
 
   const toggleCard = (key) => setDetailCards((p) => ({ ...p, [key]: !p[key] }));

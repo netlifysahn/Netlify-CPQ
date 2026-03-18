@@ -52,7 +52,22 @@
   margin-top: 6px !important;
 }
 
-/* 5. Terms & Conditions rich text editor */
+/* 5. Quote Information form balance */
+.quote-detail .qd-detail-card-body {
+  padding: 4px 20px 16px !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px 20px !important;
+}
+.quote-detail .qd-detail-card-body--terms {
+  grid-template-columns: 1fr !important;
+  padding-top: 8px !important;
+}
+.quote-detail .qd-detail-input-select {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* 6. Terms & Conditions rich text editor */
 .qd-terms-editor {
   width: 100%;
 }
