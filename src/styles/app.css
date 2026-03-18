@@ -259,7 +259,15 @@
   color: #dc2626;
 }
 
-/* 11. Terms & Conditions rich text editor */
+/* 11. Compact quote list rows to match Products / Price Books tables */
+.quote-summary-header {
+  padding: 8px 16px !important;
+}
+.quote-summary-body .quote-summary-row {
+  padding: 8px 16px !important;
+}
+
+/* 12. Terms & Conditions rich text editor */
 .qd-terms-editor {
   width: 100%;
 }
