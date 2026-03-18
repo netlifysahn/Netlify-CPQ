@@ -51,7 +51,7 @@ export default function CustomSelect({ value, options, onChange, className }) {
                   if (detailsRef.current) detailsRef.current.open = false;
                 }}
               >
-                <span className="custom-select-check" aria-hidden="true">{isSelected ? '✓' : ''}</span>
+                <span className="custom-select-check" aria-hidden="true">✓</span>
                 <span>{opt.label}</span>
               </button>
             );

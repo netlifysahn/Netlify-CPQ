@@ -587,6 +587,17 @@
   padding: 8px 16px !important;
 }
 
+/* 11b. List page row height increase (Products, Price Books, Quotes) */
+.data-table.data-table-products td,
+.data-table.data-table-pricebooks td {
+  padding-top: 18px !important;
+  padding-bottom: 18px !important;
+}
+.quote-summary-body .quote-summary-row {
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+}
+
 /* 12. Terms & Conditions rich text editor */
 .qd-terms-editor {
   width: 100%;
@@ -736,7 +747,7 @@
   width: 260px;
   border-radius: 8px;
   border: 1px solid rgba(15, 23, 42, .12);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, .10);
+  box-shadow: none;
   background: #fff;
   overflow: hidden;
 }
@@ -863,23 +874,34 @@
 .product-modal {
   --product-modal-active-color: #05BDBA;
   --product-modal-active-soft: rgba(5, 189, 186, .18);
+  --product-modal-dropdown-radius: 8px;
+  --product-modal-dropdown-shadow: none;
+  --product-modal-dropdown-option-height: 36px;
+  --product-modal-dropdown-focus-ring: 0 0 0 2px rgba(5, 189, 186, .3);
   --select-chevron-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M3.5 5.25L7 8.75l3.5-3.5' stroke='%239ca3af' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --select-chevron-icon-hover: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M3.5 5.25L7 8.75l3.5-3.5' stroke='%2305BDBA' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 .product-modal .field-select:focus,
-.product-modal .field-select:focus-visible,
 .product-modal .pkg-pricebook-picker-summary:focus,
-.product-modal .pkg-pricebook-picker-summary:focus-visible,
 .product-modal .pkg-entitlement-picker-summary:focus,
-.product-modal .pkg-entitlement-picker-summary:focus-visible,
 .product-modal .pkg-category-single-picker-summary:focus,
-.product-modal .pkg-category-single-picker-summary:focus-visible,
 .product-modal .custom-select-trigger:focus,
+.product-modal .field-select:focus-visible,
+.product-modal .pkg-pricebook-picker-summary:focus-visible,
+.product-modal .pkg-entitlement-picker-summary:focus-visible,
+.product-modal .pkg-category-single-picker-summary:focus-visible,
 .product-modal .custom-select-trigger:focus-visible {
   box-shadow: none !important;
   outline: none;
   background-image: var(--select-chevron-icon-hover) !important;
+}
+.product-modal .field-select:focus-visible,
+.product-modal .pkg-pricebook-picker-summary:focus-visible,
+.product-modal .pkg-entitlement-picker-summary:focus-visible,
+.product-modal .pkg-category-single-picker-summary:focus-visible,
+.product-modal .custom-select-trigger:focus-visible {
+  box-shadow: var(--product-modal-dropdown-focus-ring) !important;
 }
 
 .product-modal .pkg-pricebook-picker-summary:hover,
@@ -919,8 +941,8 @@
 }
 
 .product-modal .pkg-category-single-picker-option:hover {
-  color: #05BDBA;
-  background: none;
+  color: #1f2937;
+  background: transparent;
 }
 
 /* Custom single-select overrides inside product modal */
@@ -936,25 +958,93 @@
   color: #1f2937;
   background-color: #fff;
 }
-.product-modal .custom-select-option {
-  min-height: 36px;
+.product-modal .custom-select-menu,
+.product-modal .pkg-category-single-picker-menu {
+  border-radius: var(--product-modal-dropdown-radius);
+  border: 1px solid rgba(15, 23, 42, .12);
+  box-shadow: none;
+  background: #fff;
+  overflow: hidden;
+}
+.product-modal .custom-select-option,
+.product-modal .pkg-category-single-picker-option {
+  position: relative;
+  min-height: var(--product-modal-dropdown-option-height);
   padding: 8px 14px;
   font-size: 13px;
   font-weight: 500;
   color: #1f2937;
+  background: transparent;
   cursor: pointer;
   transition: color .12s ease;
 }
-.product-modal .custom-select-option:hover {
-  color: #05BDBA;
-  background: none;
+.product-modal .custom-select-option > span,
+.product-modal .pkg-category-single-picker-option > span {
+  position: relative;
+  z-index: 1;
 }
-.product-modal .custom-select-menu {
+.product-modal .custom-select-option::before,
+.product-modal .pkg-category-single-picker-option::before {
+  content: "";
+  position: absolute;
+  inset: 2px 6px;
   border-radius: 8px;
-  border: 1px solid rgba(15, 23, 42, .12);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, .10);
-  background: #fff;
-  overflow: hidden;
+  background: #05BDBA;
+  opacity: 0;
+  pointer-events: none;
+}
+.product-modal .custom-select-option:hover::before,
+.product-modal .custom-select-option:focus-visible::before,
+.product-modal .custom-select-option.is-selected::before,
+.product-modal .pkg-category-single-picker-option:hover::before,
+.product-modal .pkg-category-single-picker-option:focus-visible::before,
+.product-modal .pkg-category-single-picker-option.is-selected::before {
+  opacity: 1;
+}
+.product-modal .custom-select-option:hover,
+.product-modal .custom-select-option:focus-visible,
+.product-modal .custom-select-option.is-selected,
+.product-modal .pkg-category-single-picker-option:hover,
+.product-modal .pkg-category-single-picker-option:focus-visible,
+.product-modal .pkg-category-single-picker-option.is-selected {
+  color: #ffffff;
+}
+.product-modal .custom-select-option:focus-visible,
+.product-modal .pkg-category-single-picker-option:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+.product-modal .custom-select-check,
+.product-modal .pkg-category-single-picker-check {
+  opacity: 0;
+  color: #ffffff;
+}
+.product-modal .custom-select-option:hover .custom-select-check,
+.product-modal .custom-select-option:focus-visible .custom-select-check,
+.product-modal .custom-select-option.is-selected .custom-select-check,
+.product-modal .pkg-category-single-picker-option:hover .pkg-category-single-picker-check,
+.product-modal .pkg-category-single-picker-option:focus-visible .pkg-category-single-picker-check,
+.product-modal .pkg-category-single-picker-option.is-selected .pkg-category-single-picker-check {
+  opacity: 1;
+  color: #ffffff;
+}
+.product-modal .custom-select-options:has(.custom-select-option:hover) .custom-select-option.is-selected::before,
+.product-modal .custom-select-options:has(.custom-select-option:focus-visible) .custom-select-option.is-selected::before,
+.product-modal .pkg-category-single-picker-options:has(.pkg-category-single-picker-option:hover) .pkg-category-single-picker-option.is-selected::before,
+.product-modal .pkg-category-single-picker-options:has(.pkg-category-single-picker-option:focus-visible) .pkg-category-single-picker-option.is-selected::before {
+  opacity: 0;
+}
+.product-modal .custom-select-options:has(.custom-select-option:hover) .custom-select-option.is-selected,
+.product-modal .custom-select-options:has(.custom-select-option:focus-visible) .custom-select-option.is-selected,
+.product-modal .pkg-category-single-picker-options:has(.pkg-category-single-picker-option:hover) .pkg-category-single-picker-option.is-selected,
+.product-modal .pkg-category-single-picker-options:has(.pkg-category-single-picker-option:focus-visible) .pkg-category-single-picker-option.is-selected {
+  color: #1f2937;
+}
+.product-modal .custom-select-options:has(.custom-select-option:hover) .custom-select-option.is-selected .custom-select-check,
+.product-modal .custom-select-options:has(.custom-select-option:focus-visible) .custom-select-option.is-selected .custom-select-check,
+.product-modal .pkg-category-single-picker-options:has(.pkg-category-single-picker-option:hover) .pkg-category-single-picker-option.is-selected .pkg-category-single-picker-check,
+.product-modal .pkg-category-single-picker-options:has(.pkg-category-single-picker-option:focus-visible) .pkg-category-single-picker-option.is-selected .pkg-category-single-picker-check {
+  opacity: 0;
 }
 .product-modal .custom-select-picker.pkg-inline-select {
   width: 100%;
