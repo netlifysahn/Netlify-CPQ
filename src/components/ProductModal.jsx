@@ -24,6 +24,7 @@ import {
   parsePositiveIntegerInput,
 } from '../utils/numberFormat';
 import { isRichTextEmpty, toRichTextHtml } from '../utils/richText';
+import { fmtCurrency } from '../data/quotes';
 
 const PILL_COLORS = ['blue', 'green', 'amber', 'purple', 'teal'];
 const QTY_BEHAVIOR_OPTIONS = [
@@ -137,11 +138,14 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
   const [f, setF] = useState(coerceProduct(product));
   const [jsonError, setJsonError] = useState('');
   const [creditInputDrafts, setCreditInputDrafts] = useState({});
+  const [currencyInputDrafts, setCurrencyInputDrafts] = useState({});
   const [pricebookAssignments, setPricebookAssignments] = useState(() => buildInitialPricebookAssignments(coerceProduct(product).id, pricebooks));
   const [pendingPricebookIds, setPendingPricebookIds] = useState([]);
+  const [pendingPlatformIds, setPendingPlatformIds] = useState([]);
   const [pendingEntitlementIds, setPendingEntitlementIds] = useState([]);
   const dirtyFieldsRef = useRef(new Set());
   const pricebookPickerRef = useRef(null);
+  const platformPickerRef = useRef(null);
   const entitlementPickerRef = useRef(null);
   const categoryPickerRefs = useRef({});
   const [openSections, setOpenSections] = useState({
@@ -203,6 +207,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
   const isConcurrentBuildsProduct = isConcurrentBuildsLikeProduct(f);
   const isStepperProduct = isSeatProduct || isConcurrentBuildsProduct;
   const isCreditProduct = !isConcurrentBuildsProduct && isCreditLikeProduct(f);
+  const shouldFormatConfigQtyWithCommas = isSeatProduct || isCreditProduct;
   const productMap = useMemo(() => new Map((products || []).map((p) => [p.id, p])), [products]);
   const COMPONENT_CARD_ORDER = ['platform', 'support', 'entitlement', 'addon'];
   const ALWAYS_VISIBLE_COMPONENT_CATEGORIES = new Set(['platform', 'support', 'entitlement']);
@@ -237,6 +242,10 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
     () => new Set(pendingPricebookIds.map((id) => String(id))),
     [pendingPricebookIds],
   );
+  const pendingPlatformIdSet = useMemo(
+    () => new Set(pendingPlatformIds.map((id) => String(id))),
+    [pendingPlatformIds],
+  );
   const pendingEntitlementIdSet = useMemo(
     () => new Set(pendingEntitlementIds.map((id) => String(id))),
     [pendingEntitlementIds],
@@ -247,11 +256,33 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
     setPendingPricebookIds((prev) => prev.filter((id) => validUnassignedIds.has(String(id))));
   }, [unassignedPricebooks]);
 
+  const formatCurrencyForEdit = (value) => {
+    const n = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+    return String(Math.round(n * 100) / 100);
+  };
+
+  const parseCurrencyFromInput = (raw) => {
+    const normalized = String(raw ?? '').replace(/[^0-9.]/g, '');
+    if (!normalized) return 0;
+    const parts = normalized.split('.');
+    const numeric = parts.length > 1 ? `${parts[0]}.${parts.slice(1).join('')}` : parts[0];
+    const parsed = parseFloat(numeric);
+    return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+  };
+
+  const displayCurrencyValue = (value) => {
+    const n = typeof value === 'number' && Number.isFinite(value) ? value : parseNumber(value, 0);
+    return fmtCurrency(n);
+  };
+
   // Close multi-select picker dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (pricebookPickerRef.current && pricebookPickerRef.current.open && !pricebookPickerRef.current.contains(e.target)) {
         pricebookPickerRef.current.open = false;
+      }
+      if (platformPickerRef.current && platformPickerRef.current.open && !platformPickerRef.current.contains(e.target)) {
+        platformPickerRef.current.open = false;
       }
       if (entitlementPickerRef.current && entitlementPickerRef.current.open && !entitlementPickerRef.current.contains(e.target)) {
         entitlementPickerRef.current.open = false;
@@ -304,6 +335,15 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
     ));
   };
 
+  const togglePendingPlatform = (productId) => {
+    const nextId = String(productId);
+    setPendingPlatformIds((prev) => (
+      prev.some((id) => String(id) === nextId)
+        ? prev.filter((id) => String(id) !== nextId)
+        : [...prev, nextId]
+    ));
+  };
+
   const updatePricebookAssignment = (index, updates) => {
     setPricebookAssignments((prev) => prev.map((assignment, rowIndex) => (
       rowIndex === index ? { ...assignment, ...updates } : assignment
@@ -350,6 +390,10 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
     () => new Set((membersByCategory.entitlement || []).map((member) => String(member.component_product_id))),
     [membersByCategory],
   );
+  const selectedPlatformIds = useMemo(
+    () => new Set((membersByCategory.platform || []).map((member) => String(member.component_product_id))),
+    [membersByCategory],
+  );
 
   useEffect(() => {
     const validIds = new Set((productsByCategory.entitlement || []).map((item) => String(item.id)));
@@ -357,6 +401,13 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
       prev.filter((id) => validIds.has(String(id)) && !selectedEntitlementIds.has(String(id)))
     ));
   }, [productsByCategory, selectedEntitlementIds]);
+
+  useEffect(() => {
+    const validIds = new Set((productsByCategory.platform || []).map((item) => String(item.id)));
+    setPendingPlatformIds((prev) => (
+      prev.filter((id) => validIds.has(String(id)) && !selectedPlatformIds.has(String(id)))
+    ));
+  }, [productsByCategory, selectedPlatformIds]);
 
   const visibleComponentCategories = useMemo(
     () => COMPONENT_CARD_ORDER.filter((category) => (
@@ -696,7 +747,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                 <label htmlFor="pActive" className="checkbox-label">Active in catalog</label>
               </div>
               <div className="checkbox-row">
-                <input type="checkbox" checked={f.hide} onChange={(e) => s('hide', e.target.checked)} id="pHide" />
+                <input className="checkbox-circle" type="checkbox" checked={f.hide} onChange={(e) => s('hide', e.target.checked)} id="pHide" />
                 <label htmlFor="pHide" className="checkbox-label">Hide from quotes</label>
               </div>
               <div className="checkbox-row">
@@ -722,7 +773,34 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
             <div className="grid-3">
               <div className="field">
                 <label className="field-label">Monthly Price ($)</label>
-                <input className="field-input" type="number" min="0" step="0.01" value={f.default_price.amount} onChange={(e) => sp('amount', e.target.value)} placeholder="0.00" />
+                <input
+                  className="field-input field-input--label-typography field-input--currency"
+                  type="text"
+                  inputMode="decimal"
+                  value={Object.prototype.hasOwnProperty.call(currencyInputDrafts, 'default_price.amount')
+                    ? currencyInputDrafts['default_price.amount']
+                    : displayCurrencyValue(parseNumber(f.default_price.amount, 0))}
+                  onFocus={() => {
+                    setCurrencyInputDrafts((prev) => ({
+                      ...prev,
+                      'default_price.amount': formatCurrencyForEdit(parseNumber(f.default_price.amount, 0)),
+                    }));
+                  }}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    setCurrencyInputDrafts((prev) => ({ ...prev, 'default_price.amount': raw }));
+                    sp('amount', parseCurrencyFromInput(raw));
+                  }}
+                  onBlur={(e) => {
+                    sp('amount', parseCurrencyFromInput(e.target.value));
+                    setCurrencyInputDrafts((prev) => {
+                      const clone = { ...prev };
+                      delete clone['default_price.amount'];
+                      return clone;
+                    });
+                  }}
+                  placeholder="$0.00"
+                />
               </div>
               <div className="field">
                 <label className="field-label">Unit</label>
@@ -816,15 +894,36 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                           <span className="pkg-pricebook-assigned-name">{pricebook?.name || assignment.pricebook_id}</span>
                           <div className="pkg-pricebook-assigned-override">
                             <input
-                              className="field-input pkg-pricebook-override-input"
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={assignment.list_price_override ?? ''}
+                              className="field-input field-input--label-typography field-input--currency field-input--compact-currency pkg-pricebook-override-input"
+                              type="text"
+                              inputMode="decimal"
+                              value={Object.prototype.hasOwnProperty.call(currencyInputDrafts, `pricebook:${index}`)
+                                ? currencyInputDrafts[`pricebook:${index}`]
+                                : (assignment.list_price_override == null
+                                    ? ''
+                                    : displayCurrencyValue(parseNumber(assignment.list_price_override, 0)))}
                               placeholder="Use product default"
+                              onFocus={() => {
+                                setCurrencyInputDrafts((prev) => ({
+                                  ...prev,
+                                  [`pricebook:${index}`]: assignment.list_price_override == null
+                                    ? ''
+                                    : formatCurrencyForEdit(parseNumber(assignment.list_price_override, 0)),
+                                }));
+                              }}
                               onChange={(event) => {
                                 const raw = event.target.value;
-                                updatePricebookAssignment(index, { list_price_override: raw === '' ? null : raw });
+                                setCurrencyInputDrafts((prev) => ({ ...prev, [`pricebook:${index}`]: raw }));
+                                updatePricebookAssignment(index, { list_price_override: raw.trim() === '' ? null : parseCurrencyFromInput(raw) });
+                              }}
+                              onBlur={(event) => {
+                                const raw = event.target.value;
+                                updatePricebookAssignment(index, { list_price_override: raw.trim() === '' ? null : parseCurrencyFromInput(raw) });
+                                setCurrencyInputDrafts((prev) => {
+                                  const clone = { ...prev };
+                                  delete clone[`pricebook:${index}`];
+                                  return clone;
+                                });
                               }}
                             />
                           </div>
@@ -877,6 +976,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                   const emptyLabel = COMPONENT_EMPTY_LABELS[category];
 
                   const isEntitlementCategory = category === 'entitlement';
+                  const isPlatformCategory = category === 'platform';
                   const applyPendingEntitlements = () => {
                     if (pendingEntitlementIds.length === 0) return;
                     pendingEntitlementIds.forEach((entitlementId) => {
@@ -889,51 +989,75 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                       entitlementPickerRef.current.open = false;
                     }
                   };
+                  const applyPendingPlatform = () => {
+                    if (pendingPlatformIds.length === 0) return;
+                    pendingPlatformIds.forEach((platformId) => {
+                      const id = String(platformId);
+                      if (selectedPlatformIds.has(id)) return;
+                      addMemberFromCategory(category, id);
+                    });
+                    setPendingPlatformIds([]);
+                    if (platformPickerRef.current) {
+                      platformPickerRef.current.open = false;
+                    }
+                  };
 
                   return (
                     <div key={category} className={`pkg-category-card pkg-category-card-${category}`}>
                       <div className="pkg-category-card-header">
                         <span className="pkg-category-card-title">{catLabel}</span>
-                        {isEntitlementCategory ? (
-                          <details ref={entitlementPickerRef} className="pkg-entitlement-multi-picker" onClick={(e) => e.stopPropagation()}>
-                            <summary className="field-select pkg-category-picker pkg-entitlement-picker-summary">
-                              <span>{catProducts.filter((p) => !selectedEntitlementIds.has(String(p.id))).length > 0 ? addLabel : 'All entitlements added'}</span>
-                              <span className="pkg-entitlement-picker-chevron" aria-hidden="true">▾</span>
-                            </summary>
-                            {catProducts.filter((p) => !selectedEntitlementIds.has(String(p.id))).length > 0 && (
-                              <div className="pkg-entitlement-picker-menu">
-                                <div className="pkg-entitlement-picker-options">
-                                  {catProducts.filter((p) => !selectedEntitlementIds.has(String(p.id))).map((p) => {
-                                    const isPending = pendingEntitlementIdSet.has(String(p.id));
-                                    return (
-                                      <label
-                                    key={p.id}
-                                    className="pkg-entitlement-picker-option"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      className="pkg-entitlement-picker-checkbox"
-                                      checked={isPending}
-                                      onChange={() => togglePendingEntitlement(p.id)}
-                                    />
-                                    <span>{p.name}</span>
-                                  </label>
-                                    );
-                                  })}
-                                </div>
-                                <div className="pkg-entitlement-picker-actions">
-                                  <button
-                                    type="button"
-                                    className="pkg-entitlement-apply-btn"
-                                    onClick={applyPendingEntitlements}
-                                    disabled={pendingEntitlementIds.length === 0}
-                                  >
-                                    Apply selections
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </details>
+                        {isEntitlementCategory || isPlatformCategory ? (
+                          (() => {
+                            const selectedIds = isEntitlementCategory ? selectedEntitlementIds : selectedPlatformIds;
+                            const pendingIdSet = isEntitlementCategory ? pendingEntitlementIdSet : pendingPlatformIdSet;
+                            const pendingIds = isEntitlementCategory ? pendingEntitlementIds : pendingPlatformIds;
+                            const togglePending = isEntitlementCategory ? togglePendingEntitlement : togglePendingPlatform;
+                            const applyPending = isEntitlementCategory ? applyPendingEntitlements : applyPendingPlatform;
+                            const pickerRef = isEntitlementCategory ? entitlementPickerRef : platformPickerRef;
+                            const pickerProducts = catProducts.filter((p) => !selectedIds.has(String(p.id)));
+
+                            return (
+                              <details ref={pickerRef} className="pkg-entitlement-multi-picker" onClick={(e) => e.stopPropagation()}>
+                                <summary className="field-select pkg-category-picker pkg-entitlement-picker-summary">
+                                  <span>{pickerProducts.length > 0 ? addLabel : `All ${catLabel.toLowerCase()} added`}</span>
+                                  <span className="pkg-entitlement-picker-chevron" aria-hidden="true">▾</span>
+                                </summary>
+                                {pickerProducts.length > 0 && (
+                                  <div className="pkg-entitlement-picker-menu">
+                                    <div className="pkg-entitlement-picker-options">
+                                      {pickerProducts.map((p) => {
+                                        const isPending = pendingIdSet.has(String(p.id));
+                                        return (
+                                          <label
+                                            key={p.id}
+                                            className="pkg-entitlement-picker-option"
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              className="pkg-entitlement-picker-checkbox"
+                                              checked={isPending}
+                                              onChange={() => togglePending(p.id)}
+                                            />
+                                            <span>{p.name}</span>
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
+                                    <div className="pkg-entitlement-picker-actions">
+                                      <button
+                                        type="button"
+                                        className="pkg-entitlement-apply-btn"
+                                        onClick={applyPending}
+                                        disabled={pendingIds.length === 0}
+                                      >
+                                        Apply selections
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </details>
+                            );
+                          })()
                         ) : (() => {
                           const filteredProducts = catProducts
                             .filter((p) => category === 'support' || !catMembers.some((m) => m.component_product_id === p.id));
@@ -1261,19 +1385,19 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
           <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.CONFIGURATION] ? 'is-open' : ''}`}>
             <div className="grid-2">
               <div className="checkbox-row">
-                <input type="checkbox" checked={f.config.lock_quantity} onChange={(e) => sc('lock_quantity', e.target.checked)} id="lockQty" />
+                <input className="checkbox-circle" type="checkbox" checked={f.config.lock_quantity} onChange={(e) => sc('lock_quantity', e.target.checked)} id="lockQty" />
                 <label htmlFor="lockQty" className="checkbox-label">Lock quantity</label>
               </div>
               <div className="checkbox-row">
-                <input type="checkbox" checked={f.config.lock_price} onChange={(e) => sc('lock_price', e.target.checked)} id="lockPrice" />
+                <input className="checkbox-circle" type="checkbox" checked={f.config.lock_price} onChange={(e) => sc('lock_price', e.target.checked)} id="lockPrice" />
                 <label htmlFor="lockPrice" className="checkbox-label">Lock price</label>
               </div>
               <div className="checkbox-row">
-                <input type="checkbox" checked={f.config.lock_discount} onChange={(e) => sc('lock_discount', e.target.checked)} id="lockDisc" />
+                <input className="checkbox-circle" type="checkbox" checked={f.config.lock_discount} onChange={(e) => sc('lock_discount', e.target.checked)} id="lockDisc" />
                 <label htmlFor="lockDisc" className="checkbox-label">Lock discount</label>
               </div>
               <div className="checkbox-row">
-                <input type="checkbox" checked={f.config.lock_term} onChange={(e) => sc('lock_term', e.target.checked)} id="lockTerm" />
+                <input className="checkbox-circle" type="checkbox" checked={f.config.lock_term} onChange={(e) => sc('lock_term', e.target.checked)} id="lockTerm" />
                 <label htmlFor="lockTerm" className="checkbox-label">Lock term</label>
               </div>
             </div>
@@ -1283,23 +1407,23 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                 <div className="field">
                   <label className="field-label">Default Qty</label>
                   <input
-                    className={`field-input ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
-                    type={isCreditProduct ? 'text' : 'number'}
-                    inputMode={isCreditProduct ? 'numeric' : undefined}
-                    value={isCreditProduct
+                    className={`field-input field-input--label-typography ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
+                    type={shouldFormatConfigQtyWithCommas ? 'text' : 'number'}
+                    inputMode={shouldFormatConfigQtyWithCommas ? 'numeric' : undefined}
+                    value={shouldFormatConfigQtyWithCommas
                       ? (Object.prototype.hasOwnProperty.call(creditInputDrafts, 'config:default_quantity')
                         ? creditInputDrafts['config:default_quantity']
                         : formatIntegerWithCommas(parsePositiveIntegerInput(f.config.default_quantity, 1, 1), 1))
                       : f.config.default_quantity}
                     onFocus={() => {
-                      if (!isCreditProduct) return;
+                      if (!shouldFormatConfigQtyWithCommas) return;
                       setCreditInputDrafts((prev) => ({
                         ...prev,
                         'config:default_quantity': formatIntegerForEdit(f.config.default_quantity, 1, 1),
                       }));
                     }}
                     onChange={(e) => {
-                      if (!isCreditProduct) {
+                      if (!shouldFormatConfigQtyWithCommas) {
                         sc('default_quantity', e.target.value);
                         return;
                       }
@@ -1308,7 +1432,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                       sc('default_quantity', parsePositiveIntegerInput(raw, 1, 1));
                     }}
                     onBlur={(e) => {
-                      if (!isCreditProduct) return;
+                      if (!shouldFormatConfigQtyWithCommas) return;
                       sc('default_quantity', parsePositiveIntegerInput(e.target.value, 1, 1));
                       setCreditInputDrafts((prev) => {
                         const clone = { ...prev };
@@ -1321,23 +1445,23 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                 <div className="field">
                   <label className="field-label">Min Qty</label>
                   <input
-                    className={`field-input ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
-                    type={isCreditProduct ? 'text' : 'number'}
-                    inputMode={isCreditProduct ? 'numeric' : undefined}
-                    value={isCreditProduct
+                    className={`field-input field-input--label-typography ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
+                    type={shouldFormatConfigQtyWithCommas ? 'text' : 'number'}
+                    inputMode={shouldFormatConfigQtyWithCommas ? 'numeric' : undefined}
+                    value={shouldFormatConfigQtyWithCommas
                       ? (Object.prototype.hasOwnProperty.call(creditInputDrafts, 'config:min_quantity')
                         ? creditInputDrafts['config:min_quantity']
                         : formatIntegerWithCommas(parsePositiveIntegerInput(f.config.min_quantity, 1, 1), 1))
                       : f.config.min_quantity}
                     onFocus={() => {
-                      if (!isCreditProduct) return;
+                      if (!shouldFormatConfigQtyWithCommas) return;
                       setCreditInputDrafts((prev) => ({
                         ...prev,
                         'config:min_quantity': formatIntegerForEdit(f.config.min_quantity, 1, 1),
                       }));
                     }}
                     onChange={(e) => {
-                      if (!isCreditProduct) {
+                      if (!shouldFormatConfigQtyWithCommas) {
                         sc('min_quantity', e.target.value);
                         return;
                       }
@@ -1346,7 +1470,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                       sc('min_quantity', parsePositiveIntegerInput(raw, 1, 1));
                     }}
                     onBlur={(e) => {
-                      if (!isCreditProduct) return;
+                      if (!shouldFormatConfigQtyWithCommas) return;
                       sc('min_quantity', parsePositiveIntegerInput(e.target.value, 1, 1));
                       setCreditInputDrafts((prev) => {
                         const clone = { ...prev };
@@ -1359,23 +1483,23 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                 <div className="field">
                   <label className="field-label">Max Qty</label>
                   <input
-                    className={`field-input ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
-                    type={isCreditProduct ? 'text' : 'number'}
-                    inputMode={isCreditProduct ? 'numeric' : undefined}
-                    value={isCreditProduct
+                    className={`field-input field-input--label-typography ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
+                    type={shouldFormatConfigQtyWithCommas ? 'text' : 'number'}
+                    inputMode={shouldFormatConfigQtyWithCommas ? 'numeric' : undefined}
+                    value={shouldFormatConfigQtyWithCommas
                       ? (Object.prototype.hasOwnProperty.call(creditInputDrafts, 'config:max_quantity')
                         ? creditInputDrafts['config:max_quantity']
                         : formatIntegerWithCommas(parsePositiveIntegerInput(f.config.max_quantity, 1, 1), 1))
                       : f.config.max_quantity}
                     onFocus={() => {
-                      if (!isCreditProduct) return;
+                      if (!shouldFormatConfigQtyWithCommas) return;
                       setCreditInputDrafts((prev) => ({
                         ...prev,
                         'config:max_quantity': formatIntegerForEdit(f.config.max_quantity, 1, 1),
                       }));
                     }}
                     onChange={(e) => {
-                      if (!isCreditProduct) {
+                      if (!shouldFormatConfigQtyWithCommas) {
                         sc('max_quantity', e.target.value);
                         return;
                       }
@@ -1384,7 +1508,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                       sc('max_quantity', parsePositiveIntegerInput(raw, 1, 1));
                     }}
                     onBlur={(e) => {
-                      if (!isCreditProduct) return;
+                      if (!shouldFormatConfigQtyWithCommas) return;
                       sc('max_quantity', parsePositiveIntegerInput(e.target.value, 1, 1));
                       setCreditInputDrafts((prev) => {
                         const clone = { ...prev };
@@ -1398,7 +1522,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
             )}
 
             <div className="checkbox-row">
-              <input type="checkbox" checked={f.config.edit_name} onChange={(e) => sc('edit_name', e.target.checked)} id="editName" />
+              <input className="checkbox-circle" type="checkbox" checked={f.config.edit_name} onChange={(e) => sc('edit_name', e.target.checked)} id="editName" />
               <label htmlFor="editName" className="checkbox-label">Allow editing product name on quote</label>
             </div>
 
