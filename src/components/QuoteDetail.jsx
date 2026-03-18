@@ -2063,16 +2063,28 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         )}
       </div>
 
-      <div style={{ marginTop: '24px', marginBottom: '24px' }}>
-        <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: 0 }}>
+      <div className="qd-overage-section">
+        <div className="qd-overage-card">
           <div className="qd-category-card-header qd-detail-card-header" style={cardHeaderStyle} onClick={() => toggleCard('overage')}>
             <span className="qd-category-card-title">Overage Rates</span>
             <span className="qd-detail-card-chevron">{detailCards.overage ? '▾' : '▸'}</span>
           </div>
           {detailCards.overage && (
-            <div style={{ padding: '4px 24px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' }}>
-              <DetailInput label="Overage Rate per 1,500 Credits" field="overage_rate_credits" value={q.overage_rate_credits} placeholder="$0.00" onChange={handleFieldChange} onBlur={handleFieldBlur} />
-              <DetailInput label="Overage Rate per User / Seat" field="overage_rate_seats" value={q.overage_rate_seats} placeholder="$0.00" onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <div className="qd-overage-body">
+              <div className="qd-overage-group">
+                <div className="qd-overage-group-title">Credits</div>
+                <div className="qd-overage-row">
+                  <span className="qd-overage-row-label">Overage Rate per 1,500 Credits</span>
+                  <input className="qd-overage-input" value={q.overage_rate_credits || ''} placeholder="$0.00" onChange={(e) => handleFieldChange('overage_rate_credits', e.target.value)} onBlur={(e) => handleFieldBlur('overage_rate_credits', e.target.value)} />
+                </div>
+              </div>
+              <div className="qd-overage-group">
+                <div className="qd-overage-group-title">Users</div>
+                <div className="qd-overage-row">
+                  <span className="qd-overage-row-label">Overage Rate per User / Seat</span>
+                  <input className="qd-overage-input" value={q.overage_rate_seats || ''} placeholder="$0.00" onChange={(e) => handleFieldChange('overage_rate_seats', e.target.value)} onBlur={(e) => handleFieldBlur('overage_rate_seats', e.target.value)} />
+                </div>
+              </div>
             </div>
           )}
         </div>
