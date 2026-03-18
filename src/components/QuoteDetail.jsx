@@ -2097,14 +2097,18 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                 <div className="qd-overage-group-title">Credits</div>
                 <div className="qd-overage-row">
                   <span className="qd-overage-row-label">Overage Rate per 1,500 Credits</span>
-                  <input className="qd-overage-input" value={q.overage_rate_credits || ''} placeholder="$0.00" onChange={(e) => handleFieldChange('overage_rate_credits', e.target.value)} onBlur={(e) => handleFieldBlur('overage_rate_credits', e.target.value)} />
+                  {isEditing
+                    ? <input className="qd-overage-input" value={q.overage_rate_credits || ''} placeholder="$0.00" onChange={(e) => handleFieldChange('overage_rate_credits', e.target.value)} onBlur={(e) => handleFieldBlur('overage_rate_credits', e.target.value)} />
+                    : <span className="qd-overage-value">{q.overage_rate_credits || '—'}</span>}
                 </div>
               </div>
               <div className="qd-overage-group">
                 <div className="qd-overage-group-title">Users</div>
                 <div className="qd-overage-row">
                   <span className="qd-overage-row-label">Overage Rate per User / Seat</span>
-                  <input className="qd-overage-input" value={q.overage_rate_seats || ''} placeholder="$0.00" onChange={(e) => handleFieldChange('overage_rate_seats', e.target.value)} onBlur={(e) => handleFieldBlur('overage_rate_seats', e.target.value)} />
+                  {isEditing
+                    ? <input className="qd-overage-input" value={q.overage_rate_seats || ''} placeholder="$0.00" onChange={(e) => handleFieldChange('overage_rate_seats', e.target.value)} onBlur={(e) => handleFieldBlur('overage_rate_seats', e.target.value)} />
+                    : <span className="qd-overage-value">{q.overage_rate_seats || '—'}</span>}
                 </div>
               </div>
             </div>

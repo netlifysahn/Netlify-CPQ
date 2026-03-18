@@ -67,7 +67,16 @@
   appearance: none;
 }
 
-/* 6. Terms & Conditions rich text editor */
+/* 6. Overage rate read-only values */
+.qd-overage-value {
+  font-family: var(--qd-quote-content-font-family, "Poppins", sans-serif);
+  font-size: var(--qd-quote-content-font-size, 13px);
+  font-weight: var(--qd-quote-content-font-weight, 500);
+  color: var(--qd-quote-content-color, #0f172a);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 7. Terms & Conditions rich text editor */
 .qd-terms-editor {
   width: 100%;
 }
