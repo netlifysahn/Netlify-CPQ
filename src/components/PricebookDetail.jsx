@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { getPricebookStatus } from '../data/pricebooks';
 import { fmtPrice } from '../data/catalog';
+import { fmtCurrency } from '../data/quotes';
 import ProductPicker from './ProductPicker';
 
 export default function PricebookDetail({ pricebook, products, onBack, onUpdate }) {
   const [showPicker, setShowPicker] = useState(false);
+  const [currencyInputDrafts, setCurrencyInputDrafts] = useState({});
 
   const productMap = useMemo(() => new Map((products || []).map((product) => [product.id, product])), [products]);
   const entries = Array.isArray(pricebook?.entries) ? pricebook.entries : [];
@@ -52,6 +54,20 @@ export default function PricebookDetail({ pricebook, products, onBack, onUpdate 
       ),
       updated_at: new Date().toISOString(),
     });
+  };
+
+  const formatCurrencyForEdit = (value) => {
+    const n = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+    return String(Math.round(n * 100) / 100);
+  };
+
+  const parseCurrencyFromInput = (raw) => {
+    const normalized = String(raw ?? '').replace(/[^0-9.]/g, '');
+    if (!normalized) return null;
+    const parts = normalized.split('.');
+    const numeric = parts.length > 1 ? `${parts[0]}.${parts.slice(1).join('')}` : parts[0];
+    const parsed = parseFloat(numeric);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
   };
 
   return (
@@ -115,13 +131,35 @@ export default function PricebookDetail({ pricebook, products, onBack, onUpdate 
                       <td><span className="price-monthly">{basePrice > 0 ? fmtPrice(basePrice) + '/mo' : '—'}</span></td>
                       <td>
                         <input
-                          className="inline-edit"
-                          type="number"
-                          step="0.01"
-                          min="0"
+                          className="inline-edit field-input--label-typography field-input--currency field-input--compact-currency"
+                          type="text"
+                          inputMode="decimal"
                           placeholder="Inherit"
-                          value={getOverride(entry) != null ? getOverride(entry) : ''}
-                          onChange={(e) => updateOverride(entry.product_id, e.target.value)}
+                          value={Object.prototype.hasOwnProperty.call(currencyInputDrafts, entry.product_id)
+                            ? currencyInputDrafts[entry.product_id]
+                            : (getOverride(entry) != null ? fmtCurrency(Number(getOverride(entry))) : '')}
+                          onFocus={() => {
+                            const current = getOverride(entry);
+                            setCurrencyInputDrafts((prev) => ({
+                              ...prev,
+                              [entry.product_id]: current == null ? '' : formatCurrencyForEdit(Number(current)),
+                            }));
+                          }}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            setCurrencyInputDrafts((prev) => ({ ...prev, [entry.product_id]: raw }));
+                            const parsed = parseCurrencyFromInput(raw);
+                            updateOverride(entry.product_id, parsed == null ? '' : parsed);
+                          }}
+                          onBlur={(e) => {
+                            const parsed = parseCurrencyFromInput(e.target.value);
+                            updateOverride(entry.product_id, parsed == null ? '' : parsed);
+                            setCurrencyInputDrafts((prev) => {
+                              const clone = { ...prev };
+                              delete clone[entry.product_id];
+                              return clone;
+                            });
+                          }}
                         />
                       </td>
                       <td>
