@@ -1,4 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, Component } from 'react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import { isRichTextEmpty, toRichTextHtml } from '../utils/richText';
 import {
   calcQuoteTotals, calcLineExtended,
   fmtCurrency, STATUS_META, emptyLineItem,
@@ -299,6 +302,22 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const [multiPickerDrafts, setMultiPickerDrafts] = useState({});
   const moreRef = useRef(null);
   const productsById = useMemo(() => new Map((products || []).map((p) => [p.id, p])), [products]);
+
+  const quillModules = useMemo(
+    () => ({
+      toolbar: [
+        ['bold', 'italic', 'underline'],
+        [{ list: 'bullet' }, { list: 'ordered' }],
+        [{ indent: '-1' }, { indent: '+1' }],
+        ['link'],
+      ],
+    }),
+    [],
+  );
+  const quillFormats = useMemo(
+    () => ['bold', 'italic', 'underline', 'list', 'bullet', 'indent', 'link'],
+    [],
+  );
 
   useEffect(() => {
     const handler = (e) => {
@@ -762,15 +781,18 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           <span className="qd-detail-card-chevron">{detailCards.terms_conditions ? '▾' : '▸'}</span>
         </div>
         {detailCards.terms_conditions && (
-          <div style={{ padding: '4px 24px 20px' }}>
-            <textarea
-              className="qd-terms-textarea"
-              value={source.terms_conditions || ''}
-              onChange={(e) => handleFieldChange('terms_conditions', e.target.value)}
-              onBlur={(e) => handleFieldBlur('terms_conditions', e.target.value)}
-              placeholder="Add any quote-specific terms or negotiated language here..."
-              rows={4}
-            />
+          <div className="qd-detail-card-body qd-detail-card-body--terms">
+            <div className="qd-terms-editor">
+              <ReactQuill
+                className="qd-terms-quill"
+                value={toRichTextHtml(source.terms_conditions || '')}
+                onChange={(value) => handleFieldChange('terms_conditions', isRichTextEmpty(value) ? '' : value)}
+                onBlur={() => handleFieldBlur('terms_conditions', source.terms_conditions || '')}
+                placeholder="Add any quote-specific terms or negotiated language here..."
+                modules={quillModules}
+                formats={quillFormats}
+              />
+            </div>
           </div>
         )}
       </div>

@@ -52,7 +52,49 @@
   margin-top: 6px !important;
 }
 
-/* 5. Back to Quotes — render as plain navigation link, not a button */
+/* 5. Terms & Conditions rich text editor */
+.qd-terms-editor {
+  width: 100%;
+}
+.qd-terms-quill {
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+  border: 1px solid rgba(0, 0, 0, .1);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+.qd-terms-quill .ql-toolbar.ql-snow {
+  border: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, .08);
+  padding: 6px 8px;
+}
+.qd-terms-quill .ql-container.ql-snow {
+  border: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.qd-terms-quill .ql-editor {
+  min-height: 132px;
+  max-height: 280px;
+  padding: 10px 12px;
+}
+.qd-terms-quill .ql-editor ol ol {
+  list-style-type: lower-alpha;
+  counter-reset: list-item 0;
+}
+.qd-terms-quill .ql-editor.ql-blank:before {
+  font-family: var(--font-body);
+  font-style: normal;
+  color: #9ca3af;
+}
+.qd-terms-quill:focus-within {
+  border-color: var(--primary-color);
+}
+
+/* 6. Back to Quotes — render as plain navigation link, not a button */
 .quote-detail .back-btn,
 .quote-detail .back-btn:hover,
 .quote-detail .back-btn:active {
