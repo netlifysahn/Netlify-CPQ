@@ -666,11 +666,13 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
               </div>
               <div className="field">
                 <label className="field-label">Category</label>
-                <select
-                  className="field-select"
+                <CustomSelect
                   value={getProductCategory(f)}
-                  onChange={(e) => {
-                    const val = e.target.value;
+                  options={categoryOptions.map((t) => ({
+                    value: t,
+                    label: TYPE_LABELS[t] || (t.charAt(0).toUpperCase() + t.slice(1)),
+                  }))}
+                  onChange={(val) => {
                     s('category', val);
                     s('type', val);
                     // Auto-set configuration_method when switching to/from bundle
@@ -679,11 +681,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                       setOpenSections((prev) => ({ ...prev, [COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS]: true }));
                     }
                   }}
-                >
-                  {categoryOptions.map((t) => (
-                    <option key={t} value={t}>{TYPE_LABELS[t] || (t.charAt(0).toUpperCase() + t.slice(1))}</option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
 
@@ -967,7 +965,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                                             }
                                           }}
                                         >
-                                          <span className="pkg-category-single-picker-check" aria-hidden="true">{isCurrentSupport ? '✓' : ''}</span>
+                                          <span className="pkg-category-single-picker-check" aria-hidden="true">✓</span>
                                           <span>{p.name}</span>
                                         </button>
                                       );
@@ -1133,17 +1131,14 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                                   <td className="pkg-cell-product">
                                     {category === 'support' ? (
                                       <div className="pkg-product-cell-stack">
-                                        <select
-                                          className="field-select pkg-inline-select"
+                                        <CustomSelect
+                                          className="pkg-inline-select"
                                           value={member.component_product_id}
-                                          onChange={(e) => {
-                                            if (e.target.value) swapMember(index, e.target.value);
+                                          options={catProducts.map((p) => ({ value: p.id, label: p.name }))}
+                                          onChange={(val) => {
+                                            if (val) swapMember(index, val);
                                           }}
-                                        >
-                                          {catProducts.map((p) => (
-                                            <option key={p.id} value={p.id}>{p.name}</option>
-                                          ))}
-                                        </select>
+                                        />
                                       </div>
                                     ) : (
                                       <div className="pkg-product-cell-stack">
