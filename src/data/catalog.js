@@ -25,7 +25,7 @@ export const TYPE_COLORS = {
   platform: '#5cbbf6',
   entitlements: '#34d399',
   addon: '#a78bfa',
-  bundle: '#32e6e2',
+  bundle: '#05bdba',
   support: '#f472b6',
 };
 

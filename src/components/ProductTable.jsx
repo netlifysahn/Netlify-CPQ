@@ -57,8 +57,8 @@ export default function ProductTable({ products, allProducts, onEdit, onDupe, on
           <tr>
             <th className="col-expand" />
             <th className="col-product">Product</th>
-            <th className="col-monthly">Monthly</th>
             <th className="col-type">Type</th>
+            <th className="col-monthly">Monthly</th>
             <th className="col-annual" style={{ paddingRight: '40px' }}>Annual</th>
             <th className="col-status" style={{ paddingLeft: '40px' }}>Status</th>
             <th className="col-actions">Actions</th>
@@ -89,10 +89,10 @@ export default function ProductTable({ products, allProducts, onEdit, onDupe, on
                       <div className="cell-name">{p.name}</div>
                     </div>
                   </td>
-                  <td className="col-monthly">{renderMonthly(amount)}</td>
                   <td className="col-type">
                     <span className={`type-pill type-${category}`}>{TYPE_LABELS[category] || category}</span>
                   </td>
+                  <td className="col-monthly">{renderMonthly(amount)}</td>
                   <td className="col-annual" style={{ paddingRight: '40px' }}>{renderAnnual(amount)}</td>
                   <td className="col-status" style={{ paddingLeft: '40px' }}>
                     <div className="cell-status">

@@ -32,6 +32,13 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
 
   const existing = existingProductIds || new Set();
 
+  const renderRecurringPrice = (amount) => {
+    if (!(amount > 0)) return 'Custom';
+    const monthly = fmtPrice(amount);
+    const annual = fmtPrice(amount * 12);
+    return `${monthly}/mo • ${annual}/yr`;
+  };
+
   const toggleSelect = (productId) => {
     if (existing.has(productId)) return;
     setSelected((prev) => {
@@ -79,7 +86,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
                   <div className="picker-item-meta">
                     <span className="picker-item-sku">{p.sku}</span>
                     <span className="picker-item-price">
-                      {p.default_price?.amount > 0 ? fmtPrice(p.default_price.amount) + '/mo' : 'Custom'}
+                      {renderRecurringPrice(p.default_price?.amount)}
                     </span>
                   </div>
                 </button>
@@ -165,7 +172,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
                       <div className="picker-v2-card-sku">{p.sku}</div>
                       <div className="picker-v2-card-bottom">
                         <span className="picker-v2-card-price">
-                          {p.default_price?.amount > 0 ? fmtPrice(p.default_price.amount) + '/mo' : 'Custom'}
+                          {renderRecurringPrice(p.default_price?.amount)}
                         </span>
                         <span className={`type-pill type-${category}`}>{TYPE_LABELS[category] || category}</span>
                       </div>
