@@ -778,39 +778,10 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
 
         </div>
 
+        {isPackage && (
         <div className="product-modal-group product-modal-group-package">
           <div className="product-modal-group-label">PACKAGE</div>
 
-          <div className="modal-section">
-          <button
-            type="button"
-            className="modal-section-label modal-section-toggle"
-            onClick={() => toggleSection(COLLAPSIBLE_SECTION_KEYS.SERVICE)}
-            aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.SERVICE]}
-          >
-            <span>Service</span>
-            <span>{openSections[COLLAPSIBLE_SECTION_KEYS.SERVICE] ? '▾' : '▸'}</span>
-          </button>
-
-          <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.SERVICE] ? 'is-open' : ''}`}>
-            <div className="grid-2">
-              <div className="field">
-                <label className="field-label">Default Term (months)</label>
-                <input className="field-input" type="number" value={f.default_term} onChange={(e) => s('default_term', parseInt(e.target.value, 10) || 0)} />
-              </div>
-              <div className="field">
-                <label className="field-label">Term Behavior</label>
-                <select className="field-select" value={f.term_behavior} onChange={(e) => s('term_behavior', e.target.value)}>
-                  {TERM_BEHAVIORS.map((b) => (
-                    <option key={b} value={b}>{b.charAt(0).toUpperCase() + b.slice(1)}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-          {isPackage && (
             <div className="modal-section modal-section-no-content-divider">
             <button
               type="button"
@@ -835,26 +806,67 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                   const addLabel = COMPONENT_ADD_LABELS[category];
                   const emptyLabel = COMPONENT_EMPTY_LABELS[category];
 
+                  const isEntitlementCategory = category === 'entitlement';
+                  const selectedEntitlementIds = new Set(catMembers.map((m) => m.component_product_id));
+                  const availableEntitlementProducts = catProducts.filter((p) => !selectedEntitlementIds.has(p.id));
+
                   return (
                     <div key={category} className={`pkg-category-card pkg-category-card-${category}`}>
                       <div className="pkg-category-card-header">
                         <span className="pkg-category-card-title">{catLabel}</span>
-                        <select
-                          className="field-select pkg-category-picker"
-                          value=""
-                          onChange={(e) => {
-                            if (e.target.value) addMemberFromCategory(category, e.target.value);
-                          }}
-                          disabled={catProducts.length === 0}
-                        >
-                          <option value="">{addLabel}</option>
-                          {catProducts
-                            .filter((p) => category === 'support' || !catMembers.some((m) => m.component_product_id === p.id))
-                            .map((p) => (
-                              <option key={p.id} value={p.id}>{p.sku ? `${p.name} (${p.sku})` : p.name}</option>
-                            ))}
-                        </select>
+                        {isEntitlementCategory ? (
+                          <details className="pkg-entitlement-multi-picker" onClick={(e) => e.stopPropagation()}>
+                            <summary className="field-select pkg-category-picker pkg-entitlement-picker-summary">
+                              {availableEntitlementProducts.length > 0 ? addLabel : 'No entitlements available'}
+                            </summary>
+                            {availableEntitlementProducts.length > 0 && (
+                              <div className="pkg-entitlement-picker-menu">
+                                {availableEntitlementProducts.map((p) => (
+                                  <button
+                                    key={p.id}
+                                    type="button"
+                                    className="pkg-entitlement-picker-option"
+                                    onClick={() => {
+                                      addMemberFromCategory(category, p.id);
+                                    }}
+                                  >
+                                    {p.sku ? `${p.name} (${p.sku})` : p.name}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </details>
+                        ) : (
+                          <select
+                            className="field-select pkg-category-picker"
+                            value=""
+                            onChange={(e) => {
+                              if (e.target.value) addMemberFromCategory(category, e.target.value);
+                            }}
+                            disabled={catProducts.length === 0}
+                          >
+                            <option value="">{addLabel}</option>
+                            {catProducts
+                              .filter((p) => category === 'support' || !catMembers.some((m) => m.component_product_id === p.id))
+                              .map((p) => (
+                                <option key={p.id} value={p.id}>{p.sku ? `${p.name} (${p.sku})` : p.name}</option>
+                              ))}
+                          </select>
+                        )}
                       </div>
+                      {isEntitlementCategory && catMembers.length > 0 && (
+                        <div className="pkg-entitlement-tokens">
+                          {catMembers.map((member) => {
+                            const referencedProduct = productMap.get(member.component_product_id);
+                            return (
+                              <span key={member.component_product_id} className="pkg-entitlement-token">
+                                <span className="pkg-entitlement-token-label">{referencedProduct?.name || 'Unknown'}</span>
+                                <button type="button" className="pkg-entitlement-token-remove" onClick={() => removeMember(member._index)} aria-label="Remove">×</button>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
                       {isBasePackage && ['entitlement', 'platform', 'support', 'addon'].includes(category) ? (
                         <div className={`pkg-component-list pkg-${category}-list`}>
                           {catMembers.length > 0 ? catMembers.map((member) => {
@@ -1153,53 +1165,41 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
               </div>
             </div>
             </div>
-          )}
+
+        </div>
+        )}
+
+        <div className="product-modal-group product-modal-group-quote-behavior">
+          <div className="product-modal-group-label">QUOTE &amp; ORDER BEHAVIOR</div>
 
           <div className="modal-section">
           <button
             type="button"
             className="modal-section-label modal-section-toggle"
-            onClick={() => toggleSection(COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS)}
-            aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS]}
+            onClick={() => toggleSection(COLLAPSIBLE_SECTION_KEYS.SERVICE)}
+            aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.SERVICE]}
           >
-            <span className="modal-section-title-with-help">
-              Entitlement Rules
-              <span
-                title="Defines the entitlement behavior for this product — e.g. how credits refresh and over what period. Values entered here are parsed and displayed as tags below the JSON field."
-                className="modal-section-help-icon"
-              >?</span>
-            </span>
-            <span>{openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS] ? '▾' : '▸'}</span>
+            <span>Service</span>
+            <span>{openSections[COLLAPSIBLE_SECTION_KEYS.SERVICE] ? '▾' : '▸'}</span>
           </button>
 
-          <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS] ? 'is-open' : ''}`}>
-            <div className="field">
-              <label className="field-label">JSON</label>
-              <textarea
-                className={`field-textarea entitlements-json${jsonError ? ' json-invalid' : (f.default_entitlements && f.default_entitlements !== '{}' ? ' json-valid' : '')}`}
-                value={typeof f.default_entitlements === 'string' ? f.default_entitlements : JSON.stringify(f.default_entitlements, null, 2)}
-                onChange={(e) => validateJson(e.target.value)}
-                placeholder='{"builds": 1000, "bandwidth_gb": 100}'
-              />
-              {jsonError && <div className="json-error">{jsonError}</div>}
-            </div>
-
-            {parsedEntitlements.length > 0 && (
-              <div className="entitlement-pills">
-                {parsedEntitlements.map(([key, val], i) => (
-                  <span key={key} className={`entitlement-pill pill-${getPillColor(i)}`}>
-                    <span className="pill-key">{key}:</span> {String(val)}
-                  </span>
-                ))}
+          <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.SERVICE] ? 'is-open' : ''}`}>
+            <div className="grid-2">
+              <div className="field">
+                <label className="field-label">Default Term (months)</label>
+                <input className="field-input" type="number" value={f.default_term} onChange={(e) => s('default_term', parseInt(e.target.value, 10) || 0)} />
               </div>
-            )}
+              <div className="field">
+                <label className="field-label">Term Behavior</label>
+                <select className="field-select" value={f.term_behavior} onChange={(e) => s('term_behavior', e.target.value)}>
+                  {TERM_BEHAVIORS.map((b) => (
+                    <option key={b} value={b}>{b.charAt(0).toUpperCase() + b.slice(1)}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
         </div>
-
-        </div>
-
-        <div className="product-modal-group product-modal-group-quote-behavior">
-          <div className="product-modal-group-label">QUOTE BEHAVIOR</div>
 
           <div className="modal-section">
           <button
@@ -1360,6 +1360,47 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
               <label className="field-label">Default Description</label>
               <textarea className="field-textarea" value={f.config.default_description} onChange={(e) => sc('default_description', e.target.value)} placeholder="Default line item description..." />
             </div>
+          </div>
+        </div>
+
+          <div className="modal-section">
+          <button
+            type="button"
+            className="modal-section-label modal-section-toggle"
+            onClick={() => toggleSection(COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS)}
+            aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS]}
+          >
+            <span className="modal-section-title-with-help">
+              Entitlement Rules
+              <span
+                title="Defines the entitlement behavior for this product — e.g. how credits refresh and over what period. Values entered here are parsed and displayed as tags below the JSON field."
+                className="modal-section-help-icon"
+              >?</span>
+            </span>
+            <span>{openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS] ? '▾' : '▸'}</span>
+          </button>
+
+          <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS] ? 'is-open' : ''}`}>
+            <div className="field">
+              <label className="field-label">JSON</label>
+              <textarea
+                className={`field-textarea entitlements-json${jsonError ? ' json-invalid' : (f.default_entitlements && f.default_entitlements !== '{}' ? ' json-valid' : '')}`}
+                value={typeof f.default_entitlements === 'string' ? f.default_entitlements : JSON.stringify(f.default_entitlements, null, 2)}
+                onChange={(e) => validateJson(e.target.value)}
+                placeholder='{"builds": 1000, "bandwidth_gb": 100}'
+              />
+              {jsonError && <div className="json-error">{jsonError}</div>}
+            </div>
+
+            {parsedEntitlements.length > 0 && (
+              <div className="entitlement-pills">
+                {parsedEntitlements.map(([key, val], i) => (
+                  <span key={key} className={`entitlement-pill pill-${getPillColor(i)}`}>
+                    <span className="pill-key">{key}:</span> {String(val)}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
