@@ -157,7 +157,109 @@
   color: #dc2626;
 }
 
-/* 8. Terms & Conditions rich text editor */
+/* 8. Entitlement card — 4-column inline row for qty fields + behavior */
+.pkg-entitlement-inline-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.pkg-entitlement-inline-row--2col {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* 9. Platform & Support component cards — 2-column grid for fields */
+.pkg-component-row-fields-grid2 {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* 10. Pricebooks multi-picklist */
+.pkg-pricebook-picker-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.pkg-pricebook-picker-label {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.pkg-pricebook-multi-picker {
+  position: relative;
+  flex: 1;
+  max-width: 260px;
+}
+.pkg-pricebook-picker-summary {
+  cursor: pointer;
+  list-style: none;
+}
+.pkg-pricebook-picker-summary::-webkit-details-marker {
+  display: none;
+}
+.pkg-pricebook-picker-menu {
+  right: auto;
+  left: 0;
+}
+.pkg-pricebook-assigned-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pkg-pricebook-assigned-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, .02);
+  border: 1px solid rgba(0, 0, 0, .06);
+  border-radius: 6px;
+}
+.pkg-pricebook-assigned-name {
+  flex: 1;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-strong);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pkg-pricebook-assigned-override {
+  flex: 0 0 140px;
+}
+.pkg-pricebook-override-input {
+  height: 30px !important;
+  padding: 4px 8px !important;
+  font-size: 13px !important;
+  text-align: right;
+}
+.pkg-pricebook-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  line-height: 1;
+  color: #94a3b8;
+  cursor: pointer;
+}
+.pkg-pricebook-remove-btn:hover {
+  background: rgba(0, 0, 0, .06);
+  color: #dc2626;
+}
+
+/* 11. Terms & Conditions rich text editor */
 .qd-terms-editor {
   width: 100%;
 }
