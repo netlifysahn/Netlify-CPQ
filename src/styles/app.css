@@ -36,7 +36,7 @@
   margin-top: 12px !important;
 }
 .quote-detail .qd-base-package-members .qd-base-package-section:first-child {
-  padding-top: 6px !important;
+  padding-top: 14px !important;
 }
 .quote-detail .qd-pkg-section-label {
   margin-bottom: 2px !important;
@@ -50,4 +50,25 @@
 }
 .quote-detail .qd-overage-group + .qd-overage-group {
   margin-top: 6px !important;
+}
+
+/* 5. Back to Quotes — render as plain navigation link, not a button */
+.quote-detail .back-btn,
+.quote-detail .back-btn:hover,
+.quote-detail .back-btn:active {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  color: var(--text-muted) !important;
+  font-family: var(--font-body) !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  cursor: pointer;
+  transform: none !important;
+}
+.quote-detail .back-btn:hover {
+  color: var(--text-strong) !important;
+  text-decoration: underline !important;
 }
