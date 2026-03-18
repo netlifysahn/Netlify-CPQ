@@ -88,8 +88,6 @@ export default function ProductTable({ products, allProducts, onEdit, onDupe, on
                     <div className="cell-name-wrap">
                       <div className="cell-name">{p.name}</div>
                     </div>
-                    <div className="cell-sku">{p.sku}</div>
-                    {p.description && <div className="cell-description">{p.description}</div>}
                   </td>
                   <td className="col-monthly">{renderMonthly(amount)}</td>
                   <td className="col-type">

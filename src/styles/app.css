@@ -79,44 +79,272 @@
 /* 7. Entitlements multi-picklist in Package Components */
 .pkg-entitlement-multi-picker {
   position: relative;
+  width: min(100%, 780px);
 }
 .pkg-entitlement-picker-summary {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--app-control-height);
+  height: var(--app-control-height) !important;
+  padding: 0 var(--select-padding-right) 0 var(--select-padding-left) !important;
+  line-height: 1.2;
   cursor: pointer;
   list-style: none;
+  border-radius: 8px;
+  background-image: var(--select-chevron-icon) !important;
+  background-repeat: no-repeat;
+  background-position: right var(--select-chevron-right) center;
+  background-size: var(--select-chevron-size) var(--select-chevron-size);
 }
 .pkg-entitlement-picker-summary::-webkit-details-marker {
   display: none;
 }
+.pkg-entitlement-picker-chevron {
+  display: none;
+}
 .pkg-entitlement-picker-menu {
   position: absolute;
-  top: 100%;
-  right: 0;
-  z-index: 10;
-  min-width: 240px;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  width: min(100%, 780px);
+  display: flex;
+  flex-direction: column;
+  max-height: 220px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, .15);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, .12);
+  overflow: hidden;
+}
+.pkg-entitlement-picker-options {
   max-height: 220px;
   overflow-y: auto;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, .12);
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, .1);
-  padding: 4px 0;
-  margin-top: 4px;
 }
 .pkg-entitlement-picker-option {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   width: 100%;
   text-align: left;
-  padding: 7px 12px;
+  padding: 8px 14px;
   background: none;
   border: none;
   font-family: var(--font-body);
   font-size: 13px;
-  color: var(--text-strong);
+  font-weight: 500;
+  color: #1f2937;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+}
+.pkg-entitlement-picker-checkbox {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border-radius: 4px;
+  accent-color: var(--primary-color);
   cursor: pointer;
 }
-.pkg-entitlement-picker-option:hover {
-  background: rgba(5, 189, 186, .08);
+.pkg-entitlement-picker-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 16px 16px;
+  border-top: 1px solid rgba(15, 23, 42, .1);
 }
+.pkg-entitlement-apply-btn {
+  min-height: 44px;
+  padding: 0 26px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.pkg-entitlement-apply-btn:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+/* 7b. Custom single-select picker for Platform / Support / Add-on */
+.pkg-category-single-picker {
+  position: relative;
+  width: min(100%, 780px);
+}
+.pkg-category-single-picker-summary {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--app-control-height);
+  height: var(--app-control-height) !important;
+  padding: 0 var(--select-padding-right) 0 var(--select-padding-left) !important;
+  line-height: 1.2;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 8px;
+  background-image: var(--select-chevron-icon) !important;
+  background-repeat: no-repeat;
+  background-position: right var(--select-chevron-right) center;
+  background-size: var(--select-chevron-size) var(--select-chevron-size);
+}
+.pkg-category-single-picker-summary::-webkit-details-marker {
+  display: none;
+}
+.pkg-category-single-picker-chevron {
+  display: none;
+}
+.pkg-category-single-picker-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  width: min(100%, 780px);
+  display: flex;
+  flex-direction: column;
+  max-height: 220px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, .15);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, .12);
+  overflow: hidden;
+}
+.pkg-category-single-picker-options {
+  max-height: 220px;
+  overflow-y: auto;
+}
+.pkg-category-single-picker-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f2937;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+}
+.pkg-category-single-picker-option:hover {
+  color: #05BDBA;
+  background: none;
+}
+.pkg-category-single-picker-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  min-width: 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #05BDBA;
+}
+.pkg-category-single-picker-option:hover .pkg-category-single-picker-check {
+  color: #05BDBA;
+}
+.pkg-category-single-picker-option.is-selected {
+  font-weight: 600;
+}
+
+/* 7c. Custom single-select dropdown (reusable) — mirrors pkg-category-single-picker */
+.custom-select-picker {
+  position: relative;
+  width: 100%;
+}
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--app-control-height);
+  height: var(--app-control-height) !important;
+  padding: 0 var(--select-padding-right) 0 var(--select-padding-left) !important;
+  line-height: 1.2;
+  cursor: pointer;
+  list-style: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #fff;
+  background-image: var(--select-chevron-icon) !important;
+  background-repeat: no-repeat;
+  background-position: right var(--select-chevron-right) center;
+  background-size: var(--select-chevron-size) var(--select-chevron-size);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f2937;
+}
+.custom-select-trigger::-webkit-details-marker {
+  display: none;
+}
+.custom-select-trigger-chevron {
+  display: none;
+}
+.custom-select-trigger:hover {
+  background-image: var(--select-chevron-icon-hover) !important;
+}
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 30;
+  width: max(100%, 180px);
+  display: flex;
+  flex-direction: column;
+  max-height: 220px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .10);
+  overflow: hidden;
+}
+.custom-select-options {
+  max-height: 220px;
+  overflow-y: auto;
+}
+.custom-select-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f2937;
+  cursor: pointer;
+  transition: color .12s ease;
+}
+.custom-select-option:hover {
+  color: #05BDBA;
+  background: none;
+}
+.custom-select-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  min-width: 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #05BDBA;
+}
+.custom-select-option:hover .custom-select-check {
+  color: #05BDBA;
+}
+.custom-select-option.is-selected {
+  font-weight: 600;
+}
+
 .pkg-entitlement-tokens {
   display: flex;
   flex-wrap: wrap;
@@ -197,7 +425,7 @@
   justify-content: flex-start;
   gap: 10px;
   width: 100%;
-  min-height: 32px;
+  min-height: var(--app-control-height);
   cursor: pointer;
   list-style: none;
   padding: 0 var(--select-padding-right) 0 var(--select-padding-left);
@@ -239,17 +467,19 @@
   align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 16px 20px;
+  padding: 8px 14px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: #1f2937;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
 }
 .pkg-pricebook-picker-checkbox {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   margin: 0;
-  border-radius: 8px;
+  border-radius: 4px;
   accent-color: var(--primary-color);
   cursor: pointer;
 }
@@ -296,8 +526,8 @@
   width: 100%;
 }
 .pkg-pricebook-override-input {
-  height: 32px !important;
-  min-height: 32px !important;
+  height: var(--app-control-height) !important;
+  min-height: var(--app-control-height) !important;
   padding: 0 16px !important;
   font-size: 14px !important;
   text-align: left;
@@ -308,7 +538,7 @@
   align-items: center;
   justify-content: center;
   width: 28px;
-  height: 28px;
+  height: var(--app-control-height);
   flex-shrink: 0;
   padding: 0;
   background: none;
@@ -422,7 +652,10 @@
 
 /* 13. Universal form control height standardization */
 :root {
-  --app-control-height: 32px;
+  --app-control-height: 36px;
+  --btn-height: var(--app-control-height);
+  --product-modal-control-height: var(--app-control-height);
+  --qd-compact-input-height: var(--app-control-height);
 }
 
 .search-wrap,
@@ -441,6 +674,20 @@
   min-height: var(--app-control-height);
 }
 
+.btn-primary,
+.btn-secondary,
+.btn-destructive,
+.btn-save,
+.btn-cancel,
+.settings-action-btn,
+.qd-action-btn,
+.qd-more-btn,
+.pkg-pricebook-apply-btn,
+.pkg-pricebook-remove-btn {
+  height: var(--btn-height) !important;
+  min-height: var(--btn-height) !important;
+}
+
 .field-input,
 .field-select,
 .quote-detail--editing .qd-grid-input,
@@ -451,89 +698,349 @@
   padding-bottom: 0 !important;
 }
 
-/* 14. Product modal Pricebooks selector sizing/alignment */
+/* 14. Product modal Pricebooks & Entitlements selector sizing/alignment */
 .product-modal .pkg-pricebook-picker-wrap {
-  gap: 12px;
-  margin-bottom: 22px;
+  gap: 10px;
+  margin-bottom: 18px;
 }
 .product-modal .pkg-pricebook-picker-label {
   font-size: 14px;
-  line-height: 1;
+  line-height: 1.2;
+  font-weight: 500;
   color: #475569;
 }
-.product-modal .pkg-pricebook-multi-picker {
-  width: min(100%, 840px);
+.product-modal .pkg-pricebook-multi-picker,
+.product-modal .pkg-entitlement-multi-picker {
+  width: 220px;
+  max-width: 220px;
 }
-.product-modal .pkg-pricebook-picker-summary {
-  min-height: var(--app-control-height);
-  height: var(--app-control-height) !important;
-  padding: 0 var(--select-padding-right) 0 var(--select-padding-left) !important;
+.product-modal .pkg-category-single-picker {
+  width: 220px;
+  max-width: 220px;
+}
+.product-modal .pkg-category-single-picker-summary {
+  min-height: var(--product-modal-control-height);
+  height: var(--product-modal-control-height) !important;
+  width: 220px;
+  max-width: 220px;
+  padding: 0 calc(var(--product-modal-control-padding-x) + 20px) 0 var(--product-modal-control-padding-x) !important;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--product-modal-control-radius);
+  font-size: var(--product-modal-control-font-size) !important;
+  font-weight: 500;
+  line-height: var(--product-modal-control-line-height);
+  color: #1f2937;
+  background-color: #fff;
+}
+.product-modal .pkg-category-single-picker-menu {
+  width: 260px;
   border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, .12);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .10);
+  background: #fff;
+  overflow: hidden;
+}
+.product-modal .pkg-category-single-picker-option {
+  min-height: 36px;
+  padding: 8px 14px;
   font-size: 13px;
   font-weight: 500;
+  color: #1f2937;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
 }
-.product-modal .pkg-pricebook-picker-menu {
-  width: min(100%, 840px);
-  border-radius: 16px;
+.product-modal .pkg-pricebook-picker-summary,
+.product-modal .pkg-entitlement-picker-summary {
+  min-height: var(--product-modal-control-height);
+  height: var(--product-modal-control-height) !important;
+  width: 220px;
+  max-width: 220px;
+  padding: 0 calc(var(--product-modal-control-padding-x) + 20px) 0 var(--product-modal-control-padding-x) !important;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--product-modal-control-radius);
+  font-size: var(--product-modal-control-font-size) !important;
+  font-weight: 500;
+  line-height: var(--product-modal-control-line-height);
+  color: #1f2937;
+  background-color: #fff;
 }
-.product-modal .pkg-pricebook-picker-option {
-  min-height: 72px;
-  padding: 0 24px;
-  font-size: 16px;
-}
-.product-modal .pkg-pricebook-picker-checkbox {
-  width: 26px;
-  height: 26px;
+.product-modal .pkg-pricebook-picker-menu,
+.product-modal .pkg-entitlement-picker-menu {
+  width: 260px;
   border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, .12);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .10);
+  background: #fff;
+  overflow: hidden;
 }
-.product-modal .pkg-pricebook-picker-actions {
-  padding: 16px;
+.product-modal .pkg-pricebook-picker-option,
+.product-modal .pkg-entitlement-picker-option {
+  min-height: 36px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f2937;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
 }
-.product-modal .pkg-pricebook-apply-btn {
-  min-height: 52px;
-  padding: 0 28px;
-  border-radius: 12px;
+.product-modal .pkg-pricebook-picker-checkbox,
+.product-modal .pkg-entitlement-picker-checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+.product-modal .pkg-pricebook-picker-actions,
+.product-modal .pkg-entitlement-picker-actions {
+  padding: 10px 14px;
+}
+.product-modal .pkg-pricebook-apply-btn,
+.product-modal .pkg-entitlement-apply-btn {
+  min-height: 32px;
+  padding: 0 14px;
   border: none;
-  background: #98a5ea;
-  color: #fff;
-  font-size: 16px;
-  font-weight: 700;
+  border-radius: 0;
+  background: transparent;
+  color: #6b7280;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color .15s ease;
+}
+.product-modal .pkg-pricebook-apply-btn:hover,
+.product-modal .pkg-entitlement-apply-btn:hover {
+  background: transparent;
+  color: #05BDBA;
+}
+.product-modal .pkg-pricebook-apply-btn:disabled,
+.product-modal .pkg-entitlement-apply-btn:disabled {
+  opacity: .5;
+  cursor: default;
+  color: #6b7280;
 }
 .product-modal .pkg-pricebook-assigned-list {
-  gap: 18px;
+  gap: 14px;
 }
 .product-modal .pkg-pricebook-assigned-row {
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 460px) 32px;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 420px) 28px;
+  gap: 16px;
 }
 .product-modal .pkg-pricebook-assigned-name {
   font-size: 14px;
   line-height: 1.25;
+  font-weight: 500;
 }
 .product-modal .pkg-pricebook-override-input {
-  height: 32px !important;
-  min-height: 32px !important;
+  height: var(--product-modal-control-height) !important;
+  min-height: var(--product-modal-control-height) !important;
   border-radius: 8px !important;
   padding: 0 16px !important;
   font-size: 14px !important;
-  color: #95a0b3;
-  font-weight: 400;
+  color: inherit;
+  font-weight: 500;
 }
 .product-modal .pkg-pricebook-remove-btn {
-  width: 32px;
-  height: 32px;
-  font-size: 16px;
+  width: 28px;
+  height: var(--product-modal-control-height);
+  font-size: 18px;
 }
 
 @media (max-width: 960px) {
   .product-modal .pkg-pricebook-picker-label,
   .product-modal .pkg-pricebook-assigned-name,
   .product-modal .pkg-pricebook-override-input,
-  .product-modal .pkg-pricebook-apply-btn {
+  .product-modal .pkg-pricebook-apply-btn,
+  .product-modal .pkg-entitlement-apply-btn {
     font-size: 14px !important;
   }
   .product-modal .pkg-pricebook-assigned-row {
     grid-template-columns: 1fr;
     gap: 10px;
   }
+}
+
+/* 15. Product modal dropdown option interaction states */
+.product-modal {
+  --product-modal-active-color: #05BDBA;
+  --product-modal-active-soft: rgba(5, 189, 186, .18);
+  --select-chevron-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M3.5 5.25L7 8.75l3.5-3.5' stroke='%239ca3af' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --select-chevron-icon-hover: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M3.5 5.25L7 8.75l3.5-3.5' stroke='%2305BDBA' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.product-modal .field-select:focus,
+.product-modal .field-select:focus-visible,
+.product-modal .pkg-pricebook-picker-summary:focus,
+.product-modal .pkg-pricebook-picker-summary:focus-visible,
+.product-modal .pkg-entitlement-picker-summary:focus,
+.product-modal .pkg-entitlement-picker-summary:focus-visible,
+.product-modal .pkg-category-single-picker-summary:focus,
+.product-modal .pkg-category-single-picker-summary:focus-visible,
+.product-modal .custom-select-trigger:focus,
+.product-modal .custom-select-trigger:focus-visible {
+  box-shadow: none !important;
+  outline: none;
+  background-image: var(--select-chevron-icon-hover) !important;
+}
+
+.product-modal .pkg-pricebook-picker-summary:hover,
+.product-modal .pkg-entitlement-picker-summary:hover,
+.product-modal .pkg-category-single-picker-summary:hover,
+.product-modal .custom-select-trigger:hover {
+  box-shadow: none !important;
+  background-image: var(--select-chevron-icon-hover) !important;
+}
+
+/* Dropdown/select chevrons turn teal on hover */
+.product-modal .field-select:hover {
+  background-image: var(--select-chevron-icon-hover) !important;
+}
+
+.product-modal .pkg-pricebook-multi-picker[open] > .pkg-pricebook-picker-summary,
+.product-modal .pkg-entitlement-multi-picker[open] > .pkg-entitlement-picker-summary,
+.product-modal .pkg-category-single-picker[open] > .pkg-category-single-picker-summary,
+.product-modal .custom-select-picker[open] > .custom-select-trigger {
+  box-shadow: none !important;
+  background-image: var(--select-chevron-icon-hover) !important;
+}
+
+.product-modal .field-select option:hover,
+.product-modal .field-select option:focus,
+.product-modal .field-select option:checked,
+.product-modal .field-select option:active {
+  background: var(--product-modal-active-color);
+  color: #ffffff;
+  box-shadow: 0 0 0 9999px var(--product-modal-active-color) inset;
+}
+
+.product-modal .pkg-entitlement-picker-option:hover,
+.product-modal .pkg-pricebook-picker-option:hover {
+  color: #05BDBA;
+  background: none;
+}
+
+.product-modal .pkg-category-single-picker-option:hover {
+  color: #05BDBA;
+  background: none;
+}
+
+/* Custom single-select overrides inside product modal */
+.product-modal .custom-select-trigger {
+  min-height: var(--product-modal-control-height);
+  height: var(--product-modal-control-height) !important;
+  padding: 0 calc(var(--product-modal-control-padding-x) + 20px) 0 var(--product-modal-control-padding-x) !important;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--product-modal-control-radius);
+  font-size: var(--product-modal-control-font-size) !important;
+  font-weight: 500;
+  line-height: var(--product-modal-control-line-height);
+  color: #1f2937;
+  background-color: #fff;
+}
+.product-modal .custom-select-option {
+  min-height: 36px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f2937;
+  cursor: pointer;
+  transition: color .12s ease;
+}
+.product-modal .custom-select-option:hover {
+  color: #05BDBA;
+  background: none;
+}
+.product-modal .custom-select-menu {
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, .12);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .10);
+  background: #fff;
+  overflow: hidden;
+}
+.product-modal .custom-select-picker.pkg-inline-select {
+  width: 100%;
+  min-width: 0;
+  max-width: 210px;
+}
+
+.product-modal .pkg-entitlement-picker-option:hover .pkg-entitlement-picker-checkbox,
+.product-modal .pkg-pricebook-picker-option:hover .pkg-pricebook-picker-checkbox {
+  border-color: #05BDBA;
+}
+
+.product-modal .pkg-entitlement-picker-checkbox,
+.product-modal .pkg-pricebook-picker-checkbox {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: border-color .12s ease;
+}
+.product-modal .pkg-entitlement-picker-checkbox:checked,
+.product-modal .pkg-pricebook-picker-checkbox:checked {
+  background: transparent;
+  border-color: transparent;
+}
+.product-modal .pkg-entitlement-picker-checkbox:checked::after,
+.product-modal .pkg-pricebook-picker-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 0px;
+  width: 6px;
+  height: 10px;
+  border: solid #05BDBA;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+/* Selected option text stays teal */
+.product-modal .pkg-entitlement-picker-option input:checked + span,
+.product-modal .pkg-pricebook-picker-option input:checked + span {
+  color: #05BDBA;
+}
+
+/* Accordion section toggle chevrons — teal on hover only */
+.modal-theme-products.product-modal .modal-section-toggle:hover > span:last-child {
+  color: #05BDBA;
+  opacity: 1;
+}
+
+/* BASIC INFO checkboxes – custom styling */
+.basic-info-checks .checkbox-row {
+  padding-left: 8px;
+}
+.basic-info-checks .checkbox-row input[type=checkbox] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.basic-info-checks .checkbox-row input[type=checkbox]:checked {
+  background: transparent;
+  border-color: transparent;
+}
+.basic-info-checks .checkbox-row input[type=checkbox]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4.5px;
+  top: 1px;
+  width: 6px;
+  height: 11px;
+  border: solid #05BDBA;
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg);
 }

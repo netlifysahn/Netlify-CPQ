@@ -221,12 +221,12 @@ function DetailInput({ label, field, value, placeholder, span2, type, mono, text
     input = <textarea style={{ ...style, resize: 'vertical', minHeight: '60px' }} value={value || ''} placeholder={placeholder} onChange={handleChange} onFocus={handleDcFocus} onBlur={handleBlur} />;
   } else if (options) {
     input = (
-      <select className="qd-detail-input-select" style={{ ...style, height: '32px', cursor: 'pointer' }} value={value || ''} onChange={(e) => { handleChange(e); onBlur(field, e.target.value); }} onFocus={handleDcFocus} onBlur={(e) => handleDcBlurStyle(e)}>
+      <select className="qd-detail-input-select" style={{ ...style, height: 'var(--app-control-height)', cursor: 'pointer' }} value={value || ''} onChange={(e) => { handleChange(e); onBlur(field, e.target.value); }} onFocus={handleDcFocus} onBlur={(e) => handleDcBlurStyle(e)}>
         {options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
       </select>
     );
   } else {
-    input = <input type={type || 'text'} style={{ ...style, height: '32px' }} value={value || ''} placeholder={placeholder} onChange={handleChange} onFocus={handleDcFocus} onBlur={handleBlur} />;
+    input = <input type={type || 'text'} style={{ ...style, height: 'var(--app-control-height)' }} value={value || ''} placeholder={placeholder} onChange={handleChange} onFocus={handleDcFocus} onBlur={handleBlur} />;
   }
   return (
     <div style={span2 ? { gridColumn: '1 / -1' } : undefined}>
