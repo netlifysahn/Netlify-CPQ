@@ -1,4 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, Component } from 'react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import { isRichTextEmpty, toRichTextHtml } from '../utils/richText';
 import {
   calcQuoteTotals, calcLineExtended,
   fmtCurrency, STATUS_META, emptyLineItem,
@@ -203,8 +206,8 @@ const setsEqual = (a, b) => {
   return true;
 };
 
-const DC_LABEL_STYLE = { fontSize: '14px', color: '#0f172a', fontWeight: 500, fontFamily: "'Mulish', sans-serif", marginBottom: '6px' };
-const DC_INPUT_STYLE = { fontSize: '14px', color: '#0a0a0a', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 14px', width: '100%', outline: 'none', boxSizing: 'border-box', background: '#fff', transition: 'border-color 0.15s' };
+const DC_LABEL_STYLE = { fontSize: '13px', color: '#475569', fontWeight: 500, fontFamily: "'Mulish', sans-serif", marginBottom: '4px' };
+const DC_INPUT_STYLE = { fontSize: '13px', color: '#0a0a0a', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '7px 10px', width: '100%', outline: 'none', boxSizing: 'border-box', background: '#fff', transition: 'border-color 0.15s' };
 
 const handleDcFocus = (e) => { e.target.style.borderColor = '#FBB13D'; };
 const handleDcBlurStyle = (e) => { e.target.style.borderColor = '#e5e7eb'; };
@@ -299,6 +302,22 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const [multiPickerDrafts, setMultiPickerDrafts] = useState({});
   const moreRef = useRef(null);
   const productsById = useMemo(() => new Map((products || []).map((p) => [p.id, p])), [products]);
+
+  const quillModules = useMemo(
+    () => ({
+      toolbar: [
+        ['bold', 'italic', 'underline'],
+        [{ list: 'bullet' }, { list: 'ordered' }],
+        [{ indent: '-1' }, { indent: '+1' }],
+        ['link'],
+      ],
+    }),
+    [],
+  );
+  const quillFormats = useMemo(
+    () => ['bold', 'italic', 'underline', 'list', 'bullet', 'indent', 'link'],
+    [],
+  );
 
   useEffect(() => {
     const handler = (e) => {
@@ -699,7 +718,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const isSupportLine = (line) => getLineCategory(line) === 'support';
 
   const cardHeaderStyle = { cursor: 'pointer', userSelect: 'none' };
-  const cardBodyStyle = { padding: '4px 24px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' };
+  const cardBodyStyle = { padding: '4px 20px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px' };
   const sectionDivider = { height: '1px', background: 'rgba(0,0,0,0.06)', margin: 0 };
 
   const toggleCard = (key) => setDetailCards((p) => ({ ...p, [key]: !p[key] }));
@@ -762,15 +781,18 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           <span className="qd-detail-card-chevron">{detailCards.terms_conditions ? '▾' : '▸'}</span>
         </div>
         {detailCards.terms_conditions && (
-          <div style={{ padding: '4px 24px 20px' }}>
-            <textarea
-              className="qd-terms-textarea"
-              value={source.terms_conditions || ''}
-              onChange={(e) => handleFieldChange('terms_conditions', e.target.value)}
-              onBlur={(e) => handleFieldBlur('terms_conditions', e.target.value)}
-              placeholder="Add any quote-specific terms or negotiated language here..."
-              rows={4}
-            />
+          <div className="qd-detail-card-body qd-detail-card-body--terms">
+            <div className="qd-terms-editor">
+              <ReactQuill
+                className="qd-terms-quill"
+                value={toRichTextHtml(source.terms_conditions || '')}
+                onChange={(value) => handleFieldChange('terms_conditions', isRichTextEmpty(value) ? '' : value)}
+                onBlur={() => handleFieldBlur('terms_conditions', source.terms_conditions || '')}
+                placeholder="Add any quote-specific terms or negotiated language here..."
+                modules={quillModules}
+                formats={quillFormats}
+              />
+            </div>
           </div>
         )}
       </div>
@@ -2063,16 +2085,32 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         )}
       </div>
 
-      <div style={{ marginTop: '24px', marginBottom: '24px' }}>
-        <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: 0 }}>
+      <div className="qd-overage-section">
+        <div className="qd-overage-card">
           <div className="qd-category-card-header qd-detail-card-header" style={cardHeaderStyle} onClick={() => toggleCard('overage')}>
             <span className="qd-category-card-title">Overage Rates</span>
             <span className="qd-detail-card-chevron">{detailCards.overage ? '▾' : '▸'}</span>
           </div>
           {detailCards.overage && (
-            <div style={{ padding: '4px 24px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' }}>
-              <DetailInput label="Overage Rate per 1,500 Credits" field="overage_rate_credits" value={q.overage_rate_credits} placeholder="$0.00" onChange={handleFieldChange} onBlur={handleFieldBlur} />
-              <DetailInput label="Overage Rate per User / Seat" field="overage_rate_seats" value={q.overage_rate_seats} placeholder="$0.00" onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <div className="qd-overage-body">
+              <div className="qd-overage-group">
+                <div className="qd-overage-group-title">Credits</div>
+                <div className="qd-overage-row">
+                  <span className="qd-overage-row-label">Overage Rate per 1,500 Credits</span>
+                  {isEditing
+                    ? <input className="qd-overage-input" value={q.overage_rate_credits || ''} placeholder="$0.00" onChange={(e) => handleFieldChange('overage_rate_credits', e.target.value)} onBlur={(e) => handleFieldBlur('overage_rate_credits', e.target.value)} />
+                    : <span className="qd-overage-value">{q.overage_rate_credits || '—'}</span>}
+                </div>
+              </div>
+              <div className="qd-overage-group">
+                <div className="qd-overage-group-title">Users</div>
+                <div className="qd-overage-row">
+                  <span className="qd-overage-row-label">Overage Rate per User / Seat</span>
+                  {isEditing
+                    ? <input className="qd-overage-input" value={q.overage_rate_seats || ''} placeholder="$0.00" onChange={(e) => handleFieldChange('overage_rate_seats', e.target.value)} onBlur={(e) => handleFieldBlur('overage_rate_seats', e.target.value)} />
+                    : <span className="qd-overage-value">{q.overage_rate_seats || '—'}</span>}
+                </div>
+              </div>
             </div>
           )}
         </div>
