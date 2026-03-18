@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import {
@@ -137,7 +137,9 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
   const [jsonError, setJsonError] = useState('');
   const [creditInputDrafts, setCreditInputDrafts] = useState({});
   const [pricebookAssignments, setPricebookAssignments] = useState(() => buildInitialPricebookAssignments(coerceProduct(product).id, pricebooks));
+  const [pendingPricebookIds, setPendingPricebookIds] = useState([]);
   const dirtyFieldsRef = useRef(new Set());
+  const pricebookPickerRef = useRef(null);
   const [openSections, setOpenSections] = useState({
     [COLLAPSIBLE_SECTION_KEYS.BASIC_INFO]: true,
     [COLLAPSIBLE_SECTION_KEYS.PRICING]: true,
@@ -226,24 +228,43 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
     () => availablePricebooks.filter((pricebook) => !assignedPricebookIds.has(pricebook.id)),
     [availablePricebooks, assignedPricebookIds],
   );
-  const showPricebookDraftRow = unassignedPricebooks.length > 0;
-  const pricebookRows = useMemo(
-    () => (showPricebookDraftRow
-      ? [...pricebookAssignments, { pricebook_id: '', is_active: true, list_price_override: null }]
-      : pricebookAssignments),
-    [pricebookAssignments, showPricebookDraftRow],
+  const pendingPricebookIdSet = useMemo(
+    () => new Set(pendingPricebookIds.map((id) => String(id))),
+    [pendingPricebookIds],
   );
 
-  const addPricebookAssignment = (pricebookId = '') => {
-    const nextPricebook = pricebookId
-      ? unassignedPricebooks.find((pricebook) => String(pricebook.id) === String(pricebookId))
-      : unassignedPricebooks[0];
-    if (!nextPricebook) return;
-    setPricebookAssignments((prev) => [...prev, {
-      pricebook_id: nextPricebook.id,
-      is_active: true,
-      list_price_override: null,
-    }]);
+  useEffect(() => {
+    const validUnassignedIds = new Set(unassignedPricebooks.map((pricebook) => String(pricebook.id)));
+    setPendingPricebookIds((prev) => prev.filter((id) => validUnassignedIds.has(String(id))));
+  }, [unassignedPricebooks]);
+
+  const togglePendingPricebook = (pricebookId) => {
+    const nextId = String(pricebookId);
+    setPendingPricebookIds((prev) => (
+      prev.some((id) => String(id) === nextId)
+        ? prev.filter((id) => String(id) !== nextId)
+        : [...prev, nextId]
+    ));
+  };
+
+  const applyPendingPricebookAssignments = () => {
+    if (pendingPricebookIds.length === 0) return;
+    setPricebookAssignments((prev) => {
+      const assignedIds = new Set(prev.map((assignment) => String(assignment.pricebook_id)));
+      const nextAssignments = availablePricebooks
+        .filter((pricebook) => pendingPricebookIdSet.has(String(pricebook.id)) && !assignedIds.has(String(pricebook.id)))
+        .map((pricebook) => ({
+          pricebook_id: pricebook.id,
+          is_active: true,
+          list_price_override: null,
+        }));
+      if (nextAssignments.length === 0) return prev;
+      return [...prev, ...nextAssignments];
+    });
+    setPendingPricebookIds([]);
+    if (pricebookPickerRef.current) {
+      pricebookPickerRef.current.open = false;
+    }
   };
 
   const updatePricebookAssignment = (index, updates) => {
@@ -696,24 +717,43 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
               <>
                 <div className="pkg-pricebook-picker-wrap">
                   <span className="pkg-pricebook-picker-label">Add Price Books</span>
-                  <details className="pkg-pricebook-multi-picker" onClick={(e) => e.stopPropagation()}>
+                  <details
+                    ref={pricebookPickerRef}
+                    className="pkg-pricebook-multi-picker"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <summary className="field-select pkg-category-picker pkg-pricebook-picker-summary">
-                      {unassignedPricebooks.length > 0 ? 'Select price books' : 'All price books assigned'}
+                      <span>{unassignedPricebooks.length > 0 ? 'Select price books' : 'All price books assigned'}</span>
+                      <span className="pkg-pricebook-picker-chevron" aria-hidden="true">▾</span>
                     </summary>
                     {unassignedPricebooks.length > 0 && (
-                      <div className="pkg-entitlement-picker-menu pkg-pricebook-picker-menu">
-                        {unassignedPricebooks.map((pricebook) => (
+                      <div className="pkg-pricebook-picker-menu">
+                        <div className="pkg-pricebook-picker-options">
+                          {unassignedPricebooks.map((pricebook) => (
+                            <label
+                              key={pricebook.id}
+                              className="pkg-pricebook-picker-option"
+                            >
+                              <input
+                                type="checkbox"
+                                className="pkg-pricebook-picker-checkbox"
+                                checked={pendingPricebookIdSet.has(String(pricebook.id))}
+                                onChange={() => togglePendingPricebook(pricebook.id)}
+                              />
+                              <span>{pricebook.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                        <div className="pkg-pricebook-picker-actions">
                           <button
-                            key={pricebook.id}
                             type="button"
-                            className="pkg-entitlement-picker-option"
-                            onClick={() => {
-                              addPricebookAssignment(pricebook.id);
-                            }}
+                            className="btn-save pkg-pricebook-apply-btn"
+                            onClick={applyPendingPricebookAssignments}
+                            disabled={pendingPricebookIds.length === 0}
                           >
-                            {pricebook.name}
+                            Apply selections
                           </button>
-                        ))}
+                        </div>
                       </div>
                     )}
                   </details>
@@ -733,7 +773,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                               min="0"
                               step="0.01"
                               value={assignment.list_price_override ?? ''}
-                              placeholder="Use default"
+                              placeholder="Use product default"
                               onChange={(event) => {
                                 const raw = event.target.value;
                                 updatePricebookAssignment(index, { list_price_override: raw === '' ? null : raw });
@@ -745,7 +785,9 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                             className="pkg-pricebook-remove-btn"
                             onClick={() => removePricebookAssignment(index)}
                             aria-label="Remove"
-                          >×</button>
+                          >
+                            <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
+                          </button>
                         </div>
                       );
                     })}
@@ -1302,11 +1344,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
             aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS]}
           >
             <span className="modal-section-title-with-help">
-              Entitlement Rules
-              <span
-                title="Defines the entitlement behavior for this product — e.g. how credits refresh and over what period. Values entered here are parsed and displayed as tags below the JSON field."
-                className="modal-section-help-icon"
-              >?</span>
+              ADVANCED RULES (JSON)
             </span>
             <span>{openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS] ? '▾' : '▸'}</span>
           </button>

@@ -207,7 +207,7 @@ const setsEqual = (a, b) => {
 };
 
 const DC_LABEL_STYLE = { fontSize: '13px', color: '#475569', fontWeight: 500, fontFamily: "'Mulish', sans-serif", marginBottom: '4px' };
-const DC_INPUT_STYLE = { fontSize: '13px', color: '#0a0a0a', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '7px 10px', width: '100%', outline: 'none', boxSizing: 'border-box', background: '#fff', transition: 'border-color 0.15s' };
+const DC_INPUT_STYLE = { fontSize: '13px', color: '#0a0a0a', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '0 10px', width: '100%', outline: 'none', boxSizing: 'border-box', background: '#fff', transition: 'border-color 0.15s' };
 
 const handleDcFocus = (e) => { e.target.style.borderColor = '#FBB13D'; };
 const handleDcBlurStyle = (e) => { e.target.style.borderColor = '#e5e7eb'; };
@@ -221,12 +221,12 @@ function DetailInput({ label, field, value, placeholder, span2, type, mono, text
     input = <textarea style={{ ...style, resize: 'vertical', minHeight: '60px' }} value={value || ''} placeholder={placeholder} onChange={handleChange} onFocus={handleDcFocus} onBlur={handleBlur} />;
   } else if (options) {
     input = (
-      <select className="qd-detail-input-select" style={{ ...style, cursor: 'pointer' }} value={value || ''} onChange={(e) => { handleChange(e); onBlur(field, e.target.value); }} onFocus={handleDcFocus} onBlur={(e) => handleDcBlurStyle(e)}>
+      <select className="qd-detail-input-select" style={{ ...style, height: '32px', cursor: 'pointer' }} value={value || ''} onChange={(e) => { handleChange(e); onBlur(field, e.target.value); }} onFocus={handleDcFocus} onBlur={(e) => handleDcBlurStyle(e)}>
         {options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
       </select>
     );
   } else {
-    input = <input type={type || 'text'} style={style} value={value || ''} placeholder={placeholder} onChange={handleChange} onFocus={handleDcFocus} onBlur={handleBlur} />;
+    input = <input type={type || 'text'} style={{ ...style, height: '32px' }} value={value || ''} placeholder={placeholder} onChange={handleChange} onFocus={handleDcFocus} onBlur={handleBlur} />;
   }
   return (
     <div style={span2 ? { gridColumn: '1 / -1' } : undefined}>
