@@ -136,7 +136,7 @@ const groupBasePackageSectionsForDisplay = (subs = []) => {
     included.push(...group.lines);
   });
   return [
-    { key: 'included', label: 'Included Platform', lines: included, isConfiguration: false },
+    { key: 'included', label: 'Included', lines: included, isConfiguration: false },
     { key: 'configuration', label: 'Configuration', lines: configuration, isConfiguration: true },
   ].filter((section) => section.lines.length > 0);
 };
@@ -284,7 +284,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const [confirm, setConfirm] = useState(null);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [collapsedPkgs, setCollapsedPkgs] = useState(new Set());
-  const [detailCards, setDetailCards] = useState({ customer: false, term: false, billing: false, terms_conditions: false, overage: true, activity: false });
+  const [detailCards, setDetailCards] = useState({ customer: false, term: false, billing: false, terms_conditions: false, activity: false });
   const [editingTitle, setEditingTitle] = useState(false);
   const [feedbackModal, setFeedbackModal] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
@@ -1514,7 +1514,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
             {renderEditBasePackagePricingRow(line)}
           </div>
           {sections.filter((s) => !s.isConfiguration).map((section) => (
-            <div key={section.key} className="qd-base-config-section">
+            <div key={section.key} className="qd-base-config-section qd-base-config-section--included">
               <div className="qd-pkg-section-label qd-base-config-label">{section.label}</div>
               <div className="qd-base-config-body">
                 {section.lines.map((sub) => (
@@ -1528,7 +1528,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
             </div>
           ))}
           {sections.filter((s) => s.isConfiguration).map((section) => (
-            <div key={section.key} className="qd-base-config-section">
+            <div key={section.key} className="qd-base-config-section qd-base-config-section--configuration">
               <div className="qd-pkg-section-label qd-base-config-label">{section.label}</div>
               <div className="qd-base-config-body">
                 {section.lines.map((sub) => (
@@ -1724,23 +1724,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     );
   };
 
-  const renderQuoteTotalsBar = (t) => (
-    <div className="qd-quote-totals-bar" aria-label="Quote totals">
-      <div className="qd-quote-totals-item">
-        <div className="qd-quote-totals-label">Total Monthly Price</div>
-        <div className="qd-quote-totals-value">{fmtCurrency(t.monthly)}</div>
-      </div>
-      <div className="qd-quote-totals-item">
-        <div className="qd-quote-totals-label">Total Annual Price</div>
-        <div className="qd-quote-totals-value">{fmtCurrency(t.annual)}</div>
-      </div>
-      <div className="qd-quote-totals-item">
-        <div className="qd-quote-totals-label">Effective Discount</div>
-        <div className="qd-quote-totals-value">{displayPercent(t.effectiveDiscountPercent)}</div>
-      </div>
-    </div>
-  );
-
   const renderFooterInfo = (source) => {
     if (!source.comments && !source.prepared_by) return null;
     return (
@@ -1751,27 +1734,48 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     );
   };
 
-  const renderEntitlementsSummaryColumn = (title, data, overageField) => {
-    const totalQty = data.includedQty + data.additionalQty;
-    const qtyLabel = title === 'Credits' ? 'Credits' : 'Seats';
+  const renderEntitlementsSummaryTable = () => {
+    const rows = [
+      { label: 'Credits', data: entitlementSummary.credits, overageField: 'overage_rate_credits', unitLabel: '/1,500 Credits', unitDivisor: 1500 },
+      { label: 'Seats', data: entitlementSummary.seats, overageField: 'overage_rate_seats', unitLabel: '/Seat/Month', unitDivisor: 1 },
+    ];
     return (
-      <div className="qd-overage-group">
-        <div className="qd-overage-row qd-overage-row--emphasis">
-          <span className="qd-overage-row-label">{`Total ${qtyLabel}`}</span>
-          <span className="qd-overage-value">{fmtQty(totalQty)}</span>
-        </div>
-        <div className="qd-overage-divider" />
-        <div className="qd-overage-row qd-overage-row--emphasis">
-          <span className="qd-overage-row-label">Committed Price</span>
-          <span className="qd-overage-value">{displayCurrency(data.committedPrice)}</span>
-        </div>
-        <div className="qd-overage-row qd-overage-row--emphasis">
-          <span className="qd-overage-row-label">Overage Price</span>
-          {isEditing
-            ? <input className="qd-overage-input" value={q[overageField] || ''} placeholder="$0.00" onChange={(e) => handleFieldChange(overageField, e.target.value)} onBlur={(e) => handleFieldBlur(overageField, e.target.value)} />
-            : <span className="qd-overage-value">{q[overageField] || '—'}</span>}
-        </div>
-      </div>
+      <table className="qd-entitlements-summary-table">
+        <thead>
+          <tr>
+            <th className="qd-es-th qd-es-th--product"></th>
+            <th className="qd-es-th qd-es-th--qty">QTY</th>
+            <th className="qd-es-th qd-es-th--rate">COMMITTED RATE</th>
+            <th className="qd-es-th qd-es-th--rate">OVERAGE RATE</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => {
+            const totalQty = row.data.includedQty + row.data.additionalQty;
+            const committedRate = row.data.additionalQty > 0
+              ? fmtCurrency((row.data.committedPrice / row.data.additionalQty) * row.unitDivisor)
+              : '—';
+            return (
+              <tr key={row.label}>
+                <td className="qd-es-cell qd-es-cell--product">{row.label}</td>
+                <td className="qd-es-cell qd-es-cell--qty">{fmtQty(totalQty)}</td>
+                <td className="qd-es-cell qd-es-cell--rate">
+                  <span className="qd-es-rate-value">{committedRate}</span>
+                  {committedRate !== '—' && <span className="qd-es-rate-unit">{row.unitLabel}</span>}
+                </td>
+                <td className="qd-es-cell qd-es-cell--rate">
+                  {isEditing
+                    ? <input className="qd-overage-input" value={q[row.overageField] || ''} placeholder="$0.00" onChange={(e) => handleFieldChange(row.overageField, e.target.value)} onBlur={(e) => handleFieldBlur(row.overageField, e.target.value)} />
+                    : <>
+                        <span className="qd-es-rate-value">{q[row.overageField] || '—'}</span>
+                        {q[row.overageField] && <span className="qd-es-rate-unit">{row.unitLabel}</span>}
+                      </>}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     );
   };
 
@@ -1991,7 +1995,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                                 </div>
                               </div>
                               {sections.filter((s) => !s.isConfiguration).map((section) => (
-                                <div key={section.key} className="qd-base-config-section">
+                                <div key={section.key} className="qd-base-config-section qd-base-config-section--included">
                                   <div className="qd-pkg-section-label qd-base-config-label">{section.label}</div>
                                   <div className="qd-base-config-body">
                                     {section.lines.map((sub) => (
@@ -2005,7 +2009,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                                 </div>
                               ))}
                               {sections.filter((s) => s.isConfiguration).map((section) => (
-                                <div key={section.key} className="qd-base-config-section">
+                                <div key={section.key} className="qd-base-config-section qd-base-config-section--configuration">
                                   <div className="qd-pkg-section-label qd-base-config-label">{section.label}</div>
                                   <div className="qd-base-config-body">
                                     {section.lines.map((sub) => (
@@ -2175,24 +2179,57 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         )}
       </div>
 
-      <div className="qd-overage-section">
+      <div className="qd-overage-section qd-summary-row">
         <div className="qd-overage-card">
-          <div className="qd-category-card-header qd-detail-card-header qd-detail-card-header--clickable" onClick={() => toggleCard('overage')}>
+          <div className="qd-category-card-header qd-detail-card-header">
             <span className="qd-category-card-title">Entitlements Summary</span>
-            <span className="qd-detail-card-chevron">{detailCards.overage ? '▾' : '▸'}</span>
           </div>
-          {detailCards.overage && (
-            <div className="qd-overage-body">
-              <div className="qd-overage-columns">
-                {renderEntitlementsSummaryColumn('Credits', entitlementSummary.credits, 'overage_rate_credits')}
-                {renderEntitlementsSummaryColumn('Enterprise Seats', entitlementSummary.seats, 'overage_rate_seats')}
+          <div className="qd-overage-body">
+            {renderEntitlementsSummaryTable()}
+          </div>
+        </div>
+        <div className="qd-overage-card qd-pricing-summary-card">
+          <div className="qd-category-card-header qd-detail-card-header">
+            <span className="qd-category-card-title">Summary</span>
+          </div>
+          <div className="qd-overage-body qd-pricing-summary-body">
+            <div className="qd-pricing-summary-group">
+              <div className="qd-pricing-summary-row">
+                <span className="qd-pricing-summary-label">Subtotal</span>
+                <span className="qd-pricing-summary-value">{fmtCurrency(totals.preDiscountMonthly)}</span>
+              </div>
+              <div className="qd-pricing-summary-row">
+                <span className="qd-pricing-summary-label">Discount</span>
+                {isEditing
+                  ? <input className="qd-overage-input" type="number" min="0" max="100" step="any" value={draft.header_discount || ''} placeholder="0%" onChange={(e) => updateDraft((d) => ({ ...d, header_discount: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 }))} />
+                  : <span className="qd-pricing-summary-value">{totals.preDiscountMonthly - totals.monthly > 0 ? `−${fmtCurrency(totals.preDiscountMonthly - totals.monthly)}` : '—'}</span>}
               </div>
             </div>
-          )}
+            <div className="qd-pricing-summary-divider" />
+            <div className="qd-pricing-summary-group">
+              <div className="qd-pricing-summary-row qd-pricing-summary-row--bold">
+                <span className="qd-pricing-summary-label">Net Total</span>
+                <span className="qd-pricing-summary-value">{fmtCurrency(totals.monthly)}</span>
+              </div>
+            </div>
+            <div className="qd-pricing-summary-divider" />
+            <div className="qd-pricing-summary-group">
+              <div className="qd-pricing-summary-row qd-pricing-summary-row--bold">
+                <span className="qd-pricing-summary-label">Total Monthly Price</span>
+                <span className="qd-pricing-summary-value">{fmtCurrency(totals.monthly)}</span>
+              </div>
+              <div className="qd-pricing-summary-row qd-pricing-summary-row--bold">
+                <span className="qd-pricing-summary-label">Total Annual Price</span>
+                <span className="qd-pricing-summary-value">{fmtCurrency(totals.annual)}</span>
+              </div>
+              <div className="qd-pricing-summary-row">
+                <span className="qd-pricing-summary-label">Effective Discount</span>
+                <span className="qd-pricing-summary-value">{displayPercent(totals.effectiveDiscountPercent)}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      {renderQuoteTotalsBar(totals)}
 
       <div>{renderFooterInfo(q)}</div>
 
