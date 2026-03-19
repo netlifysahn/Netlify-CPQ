@@ -189,7 +189,7 @@ const getCategoryCardLabel = (category, hasActiveBasePackage) => {
 const getMultiSelectPlaceholder = (category, cardLabel) => {
   if (category === 'entitlements' && cardLabel === 'Additional Entitlements') return 'Add Product';
   if (category === 'addon') return 'Add Product';
-  return 'Select SKU';
+  return 'Select Product';
 };
 
 const shouldShowPlatformAddonQty = (line) => {
@@ -615,6 +615,35 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const liveData = mode === 'edit' && draft ? { line_items: draft.line_items, groups: draft.groups, header_discount: draft.header_discount, term_months: q.term_months } : q;
   const totals = calcQuoteTotals(liveData);
   const meta = STATUS_META[q.status] || STATUS_META.draft;
+  const entitlementSummary = useMemo(() => {
+    const makeBucket = () => ({ includedQty: 0, additionalQty: 0, committedPrice: 0 });
+    const summary = {
+      credits: makeBucket(),
+      seats: makeBucket(),
+    };
+    const resolveType = (line) => {
+      if (line?.product_type === 'credits') return 'credits';
+      if (line?.product_type === 'seats') return 'seats';
+      if (isCreditQuantityLine(line)) return 'credits';
+      if (isSeatQuantityLine(line)) return 'seats';
+      return null;
+    };
+    (liveData.line_items || []).forEach((line) => {
+      const type = resolveType(line);
+      if (!type) return;
+      const qty = getEffectiveLineQuantity(line);
+      const included = line.parent_line_id
+        ? line.price_behavior !== 'related'
+        : isIncluded(line.unit_type || '');
+      if (included) {
+        summary[type].includedQty += qty;
+        return;
+      }
+      summary[type].additionalQty += qty;
+      summary[type].committedPrice += calcLineExtended(line);
+    });
+    return summary;
+  }, [liveData.line_items]);
 
   const STATUS_EYEBROW_COLORS = {
     draft: '#6b7280', sent: '#2E51ED', draft_revision: '#FBB13D',
@@ -844,11 +873,11 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           {includeNoneOption ? (
             <option value="">{noneLabel}</option>
           ) : (
-            <option value="">{options.length === 0 ? 'No SKUs available' : 'Select SKU'}</option>
+            <option value="">{options.length === 0 ? 'No products available' : 'Select Product'}</option>
           )}
           {options.map((product) => (
             <option key={product.id} value={product.id}>
-              {product.sku ? `${product.name} (${product.sku})` : product.name}
+              {product.name}
             </option>
           ))}
         </select>
@@ -900,7 +929,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           }}
         >
           <summary className="qd-grid-input qd-grid-select qd-multi-picker-summary">
-            {hasOptions ? selectedLabel : 'No SKUs available'}
+            {hasOptions ? selectedLabel : 'No products available'}
           </summary>
           {hasOptions && (
             <div className="qd-multi-picker-menu">
@@ -919,7 +948,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                           setPickerDraft(next);
                         }}
                       />
-                      <span>{product.sku ? `${product.name} (${product.sku})` : product.name}</span>
+                      <span>{product.name}</span>
                     </label>
                   );
                 })}
@@ -1149,10 +1178,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       const listKey = getCurrencyInputKey(line.id, listField);
       const isListEditing = Object.prototype.hasOwnProperty.call(currencyInputDrafts, listKey);
       const currentListValue = typeof line.list_price === 'number' && Number.isFinite(line.list_price) ? line.list_price : 0;
-      const focusProductSelect = () => {
-        const target = document.getElementById(`qd-product-select-${line.id}`);
-        target?.focus();
-      };
 
       return (
         <div key={line.id} className="qd-entitlement-row qd-entitlement-row--edit">
@@ -1170,12 +1195,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                 },
               })}
               <div className="qd-line-actions">
-                <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Edit ${line.product_name}`} title="Edit row" onClick={focusProductSelect}>
-                  <i className="fa-solid fa-pen fa-fw" aria-hidden="true" />
-                </button>
-                <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Clone ${line.product_name}`} title="Clone row" onClick={() => cloneDraftLine(line.id)}>
-                  <i className="fa-solid fa-clone fa-fw" aria-hidden="true" />
-                </button>
                 <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Remove ${line.product_name}`} title="Delete row" onClick={() => removeDraftLine(line.id)}>
                   <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
                 </button>
@@ -1226,10 +1245,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       const listKey = getCurrencyInputKey(line.id, listField);
       const isListEditing = Object.prototype.hasOwnProperty.call(currencyInputDrafts, listKey);
       const currentListValue = typeof line.list_price === 'number' && Number.isFinite(line.list_price) ? line.list_price : 0;
-      const focusProductSelect = () => {
-        const target = document.getElementById(`qd-product-select-${line.id}`);
-        target?.focus();
-      };
 
       return (
         <div key={line.id} className={`qd-platform-addon-row qd-platform-addon-row--edit${showQtyColumn ? ' qd-platform-addon-row--with-qty' : ''}`}>
@@ -1247,9 +1262,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                 },
               })}
               <div className="qd-line-actions">
-                <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Edit ${line.product_name}`} title="Edit row" onClick={focusProductSelect}>
-                  <i className="fa-solid fa-pen fa-fw" aria-hidden="true" />
-                </button>
                 <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Remove ${line.product_name}`} title="Delete row" onClick={() => removeDraftLine(line.id)}>
                   <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
                 </button>
@@ -1338,10 +1350,10 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           onChange={(e) => updateSupportSelection(e.target.value || null)}
           disabled={options.length === 0}
         >
-          <option value="">{options.length === 0 ? 'No Support SKUs available' : 'No Support'}</option>
+          <option value="">{options.length === 0 ? 'No Support options available' : 'No Support'}</option>
           {options.map((product) => (
             <option key={product.id} value={product.id}>
-              {product.sku ? `${product.name} (${product.sku})` : product.name}
+              {product.name}
             </option>
           ))}
         </select>
@@ -1754,6 +1766,30 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     );
   };
 
+  const renderEntitlementsSummaryColumn = (title, data, overageField) => {
+    const totalQty = data.includedQty + data.additionalQty;
+    const qtyLabel = title === 'Credits' ? 'Credits' : 'Seats';
+    return (
+      <div className="qd-overage-group">
+        <div className="qd-overage-row qd-overage-row--emphasis">
+          <span className="qd-overage-row-label">{`Total ${qtyLabel}`}</span>
+          <span className="qd-overage-value">{fmtQty(totalQty)}</span>
+        </div>
+        <div className="qd-overage-divider" />
+        <div className="qd-overage-row qd-overage-row--emphasis">
+          <span className="qd-overage-row-label">Committed Price</span>
+          <span className="qd-overage-value">{displayCurrency(data.committedPrice)}</span>
+        </div>
+        <div className="qd-overage-row qd-overage-row--emphasis">
+          <span className="qd-overage-row-label">Overage Price</span>
+          {isEditing
+            ? <input className="qd-overage-input" value={q[overageField] || ''} placeholder="$0.00" onChange={(e) => handleFieldChange(overageField, e.target.value)} onBlur={(e) => handleFieldBlur(overageField, e.target.value)} />
+            : <span className="qd-overage-value">{q[overageField] || '—'}</span>}
+        </div>
+      </div>
+    );
+  };
+
   const renderConfirmModal = () => (
     <div className="modal-overlay" onClick={() => setConfirm(null)}>
       <div className="modal confirm-modal" onClick={(e) => e.stopPropagation()}>
@@ -1970,12 +2006,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                                 </div>
                               </div>
                               <div className="qd-pkg-members qd-base-package-members">
-                                <div className="qd-pkg-section qd-base-package-section">
-                                  <div className="qd-pkg-section-label">Package</div>
-                                  <div className="qd-base-package-value-row">
-                                    <span className="qd-base-package-value-name">{line.product_name}</span>
-                                  </div>
-                                </div>
                                 {sections.map((section) => (
                                   <div key={section.key} className="qd-pkg-section qd-base-package-section">
                                     <div className="qd-pkg-section-label">{section.label}</div>
@@ -2152,28 +2182,14 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       <div className="qd-overage-section">
         <div className="qd-overage-card">
           <div className="qd-category-card-header qd-detail-card-header qd-detail-card-header--clickable" onClick={() => toggleCard('overage')}>
-            <span className="qd-category-card-title">Overage Rates</span>
+            <span className="qd-category-card-title">Entitlements Summary</span>
             <span className="qd-detail-card-chevron">{detailCards.overage ? '▾' : '▸'}</span>
           </div>
           {detailCards.overage && (
             <div className="qd-overage-body">
-              <div className="qd-overage-group">
-                <div className="qd-overage-group-title">Credits</div>
-                <div className="qd-overage-row">
-                  <span className="qd-overage-row-label">Overage Rate per 1,500 Credits</span>
-                  {isEditing
-                    ? <input className="qd-overage-input" value={q.overage_rate_credits || ''} placeholder="$0.00" onChange={(e) => handleFieldChange('overage_rate_credits', e.target.value)} onBlur={(e) => handleFieldBlur('overage_rate_credits', e.target.value)} />
-                    : <span className="qd-overage-value">{q.overage_rate_credits || '—'}</span>}
-                </div>
-              </div>
-              <div className="qd-overage-group">
-                <div className="qd-overage-group-title">Users</div>
-                <div className="qd-overage-row">
-                  <span className="qd-overage-row-label">Overage Rate per User / Seat</span>
-                  {isEditing
-                    ? <input className="qd-overage-input" value={q.overage_rate_seats || ''} placeholder="$0.00" onChange={(e) => handleFieldChange('overage_rate_seats', e.target.value)} onBlur={(e) => handleFieldBlur('overage_rate_seats', e.target.value)} />
-                    : <span className="qd-overage-value">{q.overage_rate_seats || '—'}</span>}
-                </div>
+              <div className="qd-overage-columns">
+                {renderEntitlementsSummaryColumn('Credits', entitlementSummary.credits, 'overage_rate_credits')}
+                {renderEntitlementsSummaryColumn('Enterprise Seats', entitlementSummary.seats, 'overage_rate_seats')}
               </div>
             </div>
           )}
