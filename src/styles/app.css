@@ -3759,8 +3759,8 @@ tr.drag-over {
 }
 .qd-entitlement-cell-product .cell-name {
   font-size: 13px;
-  font-weight: 500;
-  color: #0f172a;
+  font-weight: 400;
+  color: #334155;
 }
 .qd-entitlement-cell-qty {
   grid-column: 2;
@@ -3897,9 +3897,10 @@ tr.drag-over {
   padding: var(--qd-row-padding-y) 12px var(--qd-row-padding-y) 28px;
 }
 .qd-platform-addon-cell-product .cell-name {
+  font-family: "Poppins", sans-serif;
   font-size: 13px;
-  font-weight: 500;
-  color: #0f172a;
+  font-weight: 400;
+  color: #334155;
 }
 .qd-platform-addon-cell-list-price {
   grid-column: 3;
@@ -4035,8 +4036,8 @@ tr.drag-over {
 }
 .qd-support-cell-product .cell-name {
   font-size: 13px;
-  font-weight: 500;
-  color: #0f172a;
+  font-weight: 400;
+  color: #334155;
 }
 .qd-support-cell-list-price {
   grid-column: 3;
@@ -7350,63 +7351,6 @@ button {
   border-color: var(--primary-color) !important;
   color: #fff !important;
 }
-.qd-quote-totals-bar {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0;
-  margin: 0 0 var(--qd-section-gap);
-  padding: 10px 20px;
-  border-top: 1px solid rgba(15, 23, 42, 0.16);
-  border-left: 1px solid rgba(15, 23, 42, 0.08);
-  border-right: 1px solid rgba(15, 23, 42, 0.08);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-}
-.qd-quote-totals-item {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-  min-height: 70px;
-  padding: 4px 18px;
-}
-.qd-quote-totals-item + .qd-quote-totals-item {
-  border-left: 1px solid rgba(15, 23, 42, 0.08);
-}
-.qd-quote-totals-label {
-  font-family: var(--font-heading);
-  font-size: var(--qd-text-total-label);
-  font-weight: 500;
-  line-height: 1.2;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #475569a8;
-}
-.qd-quote-totals-value {
-  font-family: var(--font-heading);
-  font-size: var(--qd-text-total-value);
-  font-weight: 600;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-  color: #0f172a;
-}
-@media (max-width: 960px) {
-  .qd-quote-totals-bar {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 12px 16px;
-  }
-  .qd-quote-totals-item {
-    min-height: 0;
-    padding: 0;
-  }
-  .qd-quote-totals-item + .qd-quote-totals-item {
-    border-left: none;
-    border-top: 1px solid rgba(15, 23, 42, 0.08);
-    padding-top: 12px;
-  }
-}
 :root {
   --list-header-font-size: 12px;
   --list-header-font-weight: 600;
@@ -7569,7 +7513,6 @@ button {
 }
 .field-label,
 .qd-footer-label,
-.qd-quote-totals-label,
 .qd-overage-row-label,
 .qd-base-package-value-name,
 .qd-customer-field,
@@ -7614,10 +7557,6 @@ button {
   letter-spacing: 0.06em !important;
   opacity: 0.72;
 }
-.qd-quote-totals-value {
-  font-size: var(--ds-type-total) !important;
-  font-weight: 500 !important;
-}
 .qd-summary-value {
   font-size: var(--ds-type-total) !important;
   font-weight: 400 !important;
@@ -7635,7 +7574,6 @@ button {
 .qd-grouped-cards > .qd-category-card,
 .qd-lines-section,
 .qd-overage-section,
-.qd-quote-totals-bar,
 .settings-panel {
   margin-top: var(--ds-space-section);
 }
@@ -7744,21 +7682,11 @@ button {
   border: 1px solid rgba(15, 23, 42, 0.14) !important;
   border-radius: var(--radius-sm);
 }
-.qd-quote-totals-bar,
 .qd-summary,
 .qd-commercial-table,
 .quote-summary-card {
   width: 100%;
   max-width: none;
-}
-.qd-quote-totals-bar {
-  margin-bottom: var(--ds-space-section);
-  padding: 16px 20px;
-  gap: 0;
-}
-.qd-quote-totals-item {
-  min-height: 0;
-  padding: 8px 18px;
 }
 .settings-panel {
   background: var(--surface);
@@ -7822,7 +7750,6 @@ button {
 @media (max-width: 960px) {
   .page-title,
   .qd-title,
-  .qd-quote-totals-value,
   .qd-summary-value {
     font-size: 24px !important;
   }
@@ -7969,6 +7896,9 @@ button {
 .qd-base-config-section {
   padding-top: 10px;
 }
+.qd-base-config-section--configuration {
+  padding-top: 18px;
+}
 .qd-base-config-label {
   padding: 0 0 5px 28px !important;
 }
@@ -8031,6 +7961,15 @@ button {
 }
 .quote-detail .qd-overage-section {
   margin-top: 24px;
+}
+.quote-detail .qd-summary-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  align-items: stretch;
+}
+.quote-detail .qd-summary-row > .qd-overage-card {
+  max-width: none;
 }
 .quote-detail .qd-category-card-header {
   padding-top: 20px !important;
@@ -8107,28 +8046,6 @@ button {
     .qd-platform-addon-cell-monthly,
     .qd-platform-addon-cell-annual
   ) {
-  font-family: var(--font-heading) !important;
-  font-weight: 600 !important;
-}
-.quote-detail .qd-quote-totals-item {
-  gap: 14px;
-  padding: 12px 22px;
-}
-.quote-detail .qd-quote-totals-bar {
-  border: 1px solid var(--ds-border-subtle) !important;
-  border-radius: var(--radius-sm);
-  box-shadow: none !important;
-}
-.quote-detail .qd-quote-totals-label {
-  font-family: var(--font-heading) !important;
-  font-size: var(--qd-eyebrow-font-size) !important;
-  font-weight: var(--qd-eyebrow-font-weight) !important;
-  letter-spacing: var(--qd-eyebrow-letter-spacing) !important;
-  text-transform: uppercase !important;
-  color: var(--qd-eyebrow-color) !important;
-}
-.quote-detail .qd-quote-totals-value {
-  font-size: 24px !important;
   font-family: var(--font-heading) !important;
   font-weight: 600 !important;
 }
@@ -8345,8 +8262,8 @@ button {
   --qd-spec-value-col-width: 120px;
   --qd-quote-content-font-family: "Poppins", sans-serif;
   --qd-quote-content-font-size: 13px;
-  --qd-quote-content-font-weight: 500;
-  --qd-quote-content-color: #0f172a;
+  --qd-quote-content-font-weight: 400;
+  --qd-quote-content-color: #334155;
 }
 .quote-detail .qd-base-package-section .qd-pkg-section-label,
 .quote-detail .qd-overage-group-title {
@@ -8409,9 +8326,9 @@ button {
   margin-left: 0;
   justify-self: start;
   text-align: right;
-  font-family: var(--font-body) !important;
+  font-family: "Poppins", sans-serif !important;
   font-size: 13px !important;
-  font-weight: 600 !important;
+  font-weight: 400 !important;
   color: var(--qd-quote-content-color) !important;
   font-variant-numeric: tabular-nums;
 }
@@ -8487,20 +8404,8 @@ button {
     .qd-platform-addon-cell-discount,
     .qd-platform-addon-cell-net-price,
     .qd-platform-addon-cell-monthly,
-    .qd-platform-addon-cell-annual,
-    .qd-quote-totals-value
+    .qd-platform-addon-cell-annual
   ) {
-  text-align: right;
-}
-.quote-detail .qd-quote-totals-value {
-  width: 100%;
-}
-.quote-detail .qd-quote-totals-item {
-  align-items: flex-end;
-  text-align: right;
-}
-.quote-detail .qd-quote-totals-label {
-  width: 100%;
   text-align: right;
 }
 @media (max-width: 900px) {
@@ -9570,20 +9475,151 @@ button {
   margin-bottom: 2px !important;
 }
 .quote-detail .qd-overage-body {
-  padding: 10px 20px 16px !important;
+  padding: 10px 20px 20px !important;
 }
 .quote-detail .qd-overage-columns {
   gap: 20px !important;
 }
-.quote-detail .qd-category-card--base-package,
-.quote-detail .qd-category-card--support {
-  padding-bottom: 16px !important;
+.quote-detail .qd-category-card {
+  padding-bottom: 20px !important;
 }
 .quote-detail .qd-overage-group {
   gap: 4px !important;
 }
 .quote-detail .qd-overage-group + .qd-overage-group {
   margin-top: 0 !important;
+}
+/* Entitlements Summary – uppercase "TOTAL CREDITS" / "TOTAL SEATS" labels */
+.quote-detail .qd-overage-row-label--title {
+  text-transform: uppercase;
+}
+/* Entitlements Summary – left-align rows to match Base Package Included/Configuration indent */
+.quote-detail .qd-overage-group {
+  padding-left: 8px;
+}
+/* Entitlements Summary – numeric values: Poppins 13px 400 #334155 */
+.quote-detail .qd-overage-row--emphasis .qd-overage-value {
+  font-family: "Poppins", sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: #334155 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pricing Summary card */
+.qd-pricing-summary-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.qd-pricing-summary-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.qd-pricing-summary-divider {
+  height: 1px;
+  background: rgba(15, 23, 42, 0.06);
+  margin: 10px 0;
+}
+.qd-pricing-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 2px 0;
+}
+.qd-pricing-summary-label {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--text-label-color);
+  white-space: nowrap;
+}
+.qd-pricing-summary-value {
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: #334155;
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.qd-pricing-summary-row--bold .qd-pricing-summary-label {
+  font-weight: 600;
+  color: var(--text-label-color);
+}
+.qd-pricing-summary-row--bold .qd-pricing-summary-value {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Entitlements Summary table */
+.qd-entitlements-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+.qd-es-th {
+  font-family: var(--font-body);
+  font-size: var(--qd-text-table-header, 12px);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #47556994;
+  padding: 0 0 8px;
+  text-align: right;
+  white-space: nowrap;
+}
+.qd-es-th--product {
+  text-align: left;
+}
+.qd-es-th--qty {
+  text-align: right;
+}
+.qd-es-th--rate {
+  text-align: right;
+}
+.qd-es-cell {
+  font-family: var(--qd-quote-content-font-family, "Poppins", sans-serif);
+  font-size: var(--qd-quote-content-font-size, 13px);
+  font-weight: 600;
+  color: #0f172a;
+  padding: 6px 0;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.qd-es-cell--product {
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-label-color);
+}
+.qd-es-cell--qty {
+  text-align: right;
+}
+.qd-es-cell--rate {
+  text-align: right;
+}
+.qd-es-rate-value {
+  font-variant-numeric: tabular-nums;
+}
+.qd-es-rate-unit {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 400;
+  color: #94a3b8;
+  margin-left: 2px;
+}
+
+/* Responsive: stack summary cards vertically on small screens */
+@media (max-width: 900px) {
+  .quote-detail .qd-summary-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }
 
 /* 5. Quote Information form balance */
@@ -9605,8 +9641,8 @@ button {
 .qd-overage-value {
   font-family: var(--qd-quote-content-font-family, "Poppins", sans-serif);
   font-size: var(--qd-quote-content-font-size, 13px);
-  font-weight: var(--qd-quote-content-font-weight, 500);
-  color: var(--qd-quote-content-color, #0f172a);
+  font-weight: var(--qd-quote-content-font-weight, 400);
+  color: var(--qd-quote-content-color, #334155);
   font-variant-numeric: tabular-nums;
 }
 
@@ -10133,15 +10169,15 @@ button {
   padding: 8px 16px !important;
 }
 
-/* 11b. List page row height increase (Products, Price Books, Quotes) */
+/* 11b. List page row height (Products, Price Books, Quotes) */
 .data-table.data-table-products td,
 .data-table.data-table-pricebooks td {
-  padding-top: 18px !important;
-  padding-bottom: 18px !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
 }
 .quote-summary-body .quote-summary-row {
-  padding-top: 14px !important;
-  padding-bottom: 14px !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
 }
 
 /* 12. Terms & Conditions rich text editor */
@@ -10733,17 +10769,18 @@ button {
 }
 .quote-detail--editing .qd-platform-addon-cell-product .qd-platform-addon-product-name {
   font-size: 13px;
-  font-weight: 500;
-  color: #0f172a;
+  font-weight: 400;
+  color: #334155;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 360px;
 }
 .quote-detail--editing .qd-entitlement-cell-product .qd-entitlement-product-name {
+  font-family: "Poppins", sans-serif;
   font-size: 13px;
-  font-weight: 500;
-  color: #0f172a;
+  font-weight: 400;
+  color: #334155;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -11292,4 +11329,76 @@ button {
 /* Textarea min-height utility */
 .field-textarea--tall {
   min-height: 120px;
+}
+
+/* ── Base Package card refinements ── */
+
+/* 1. Included section: product name spans two columns (product + qty) */
+.quote-detail .qd-base-config-section--included .qd-entitlement-cell-product {
+  grid-column: 1 / 3;
+}
+
+/* 2. Enterprise Lite pricing row: match font/color/weight to included items */
+.quote-detail .qd-base-package-pricing-body .qd-support-cell {
+  font-family: var(--qd-quote-content-font-family) !important;
+  font-size: var(--qd-quote-content-font-size) !important;
+  font-weight: var(--qd-quote-content-font-weight) !important;
+  color: var(--qd-quote-content-color) !important;
+}
+.quote-detail .qd-base-package-pricing-body .cell-locked {
+  font-family: var(--qd-quote-content-font-family) !important;
+  font-size: var(--qd-quote-content-font-size) !important;
+  font-weight: var(--qd-quote-content-font-weight) !important;
+  color: var(--qd-quote-content-color) !important;
+}
+
+/* 3. Configuration qty values (35,000 / 3): match font/color to included items */
+.quote-detail .qd-base-config-section--configuration .qd-entitlement-cell-qty {
+  font-family: var(--qd-quote-content-font-family) !important;
+  font-size: var(--qd-quote-content-font-size) !important;
+  font-weight: var(--qd-quote-content-font-weight) !important;
+  color: var(--qd-quote-content-color) !important;
+}
+.quote-detail .qd-base-config-section--configuration .qd-entitlement-cell-qty .cell-locked {
+  font-family: var(--qd-quote-content-font-family) !important;
+  font-size: var(--qd-quote-content-font-size) !important;
+  font-weight: var(--qd-quote-content-font-weight) !important;
+  color: var(--qd-quote-content-color) !important;
+  padding: 0;
+}
+
+/* 4. Configuration rows: align qty column to QTY header (use same grid as support table head) */
+.quote-detail .qd-base-package-block .qd-base-config-row {
+  grid-template-columns: minmax(180px, 1.85fr) 0.62fr 1fr 1fr 1fr 1fr 1fr;
+}
+
+/* 5. Hairline dividers: move from below rows to below section labels */
+/* Remove border from rows within included/configuration sections */
+.quote-detail .qd-base-config-section--included .qd-base-config-body .qd-entitlement-row,
+.quote-detail .qd-base-config-section--configuration .qd-base-config-body .qd-entitlement-row {
+  border-bottom: none !important;
+}
+/* Add hairline below the INCLUDED section label */
+.quote-detail .qd-base-config-section--included .qd-base-config-label {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  padding-bottom: 6px !important;
+}
+/* Add hairline below the CONFIGURATION section label */
+.quote-detail .qd-base-config-section--configuration .qd-base-config-label {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  padding-bottom: 6px !important;
+}
+
+/* 6. Base Package included/config product names: Poppins 13px/400/#334155 */
+.quote-detail .qd-base-config-section .qd-entitlement-product-name {
+  font-family: var(--qd-quote-content-font-family) !important;
+  font-size: var(--qd-quote-content-font-size) !important;
+  font-weight: var(--qd-quote-content-font-weight) !important;
+  color: var(--qd-quote-content-color) !important;
+}
+
+/* 7. Additional Entitlements card: align QTY column with Base Package */
+.quote-detail .qd-entitlements-table-head,
+.quote-detail .qd-entitlement-row {
+  grid-template-columns: minmax(180px, 1.85fr) 0.62fr 1fr 1fr 1fr 1fr 1fr;
 }
