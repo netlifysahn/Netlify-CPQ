@@ -795,7 +795,7 @@ export default function App() {
 
             <div className="toolbar">
               <div className="search-wrap">
-                <span style={{ color: '#9ca3af', fontSize: '13px' }}>Search</span>
+                <span className="search-label">Search</span>
                 <input
                   className="search-input"
                   value={search}
