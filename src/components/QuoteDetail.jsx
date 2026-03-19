@@ -28,10 +28,10 @@ class QuoteDetailErrorBoundary extends Component {
   render() {
     if (this.state.error) {
       return (
-        <div style={{ padding: 40 }}>
+        <div className="error-boundary-wrap">
           <button className="back-btn" onClick={this.props.onBack}>Back to Quotes</button>
-          <h2 style={{ marginTop: 20, color: '#ef4444' }}>Something went wrong</h2>
-          <pre style={{ marginTop: 12, padding: 16, background: 'rgba(0,0,0,0.05)', borderRadius: 8, whiteSpace: 'pre-wrap', fontSize: 13 }}>
+          <h2 className="error-boundary-heading">Something went wrong</h2>
+          <pre className="error-boundary-trace">
             {this.state.error?.message || String(this.state.error)}
           </pre>
         </div>
@@ -177,8 +177,8 @@ const fmtQty = (v) => {
   return n.toLocaleString('en-US');
 };
 
-const CARD_ORDER_WITH_PACKAGE = ['bundle', 'support', 'entitlements', 'addon'];
-const CARD_ORDER_NO_PACKAGE = ['platform', 'support', 'entitlements', 'addon'];
+const CARD_ORDER_WITH_PACKAGE = ['bundle', 'support', 'addon', 'entitlements'];
+const CARD_ORDER_NO_PACKAGE = ['platform', 'support', 'addon', 'entitlements'];
 const MULTI_SELECT_CATEGORIES = new Set(['platform', 'entitlements', 'addon']);
 
 const getCategoryCardLabel = (category, hasActiveBasePackage) => {
@@ -206,31 +206,25 @@ const setsEqual = (a, b) => {
   return true;
 };
 
-const DC_LABEL_STYLE = { fontSize: '13px', color: '#475569', fontWeight: 500, fontFamily: "'Mulish', sans-serif", marginBottom: '4px' };
-const DC_INPUT_STYLE = { fontSize: '13px', color: '#0a0a0a', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '0 10px', width: '100%', outline: 'none', boxSizing: 'border-box', background: '#fff', transition: 'border-color 0.15s' };
-
-const handleDcFocus = (e) => { e.target.style.borderColor = '#FBB13D'; };
-const handleDcBlurStyle = (e) => { e.target.style.borderColor = '#e5e7eb'; };
-
 function DetailInput({ label, field, value, placeholder, span2, type, mono, textarea, options, onChange, onBlur }) {
-  const style = mono ? { ...DC_INPUT_STYLE, fontFamily: "'Poppins', sans-serif" } : DC_INPUT_STYLE;
+  const inputCls = `qd-dc-input${mono ? ' qd-dc-input--mono' : ''}`;
   const handleChange = (e) => onChange(field, e.target.value);
-  const handleBlur = (e) => { handleDcBlurStyle(e); onBlur(field, e.target.value); };
+  const handleBlur = (e) => { onBlur(field, e.target.value); };
   let input;
   if (textarea) {
-    input = <textarea style={{ ...style, resize: 'vertical', minHeight: '60px' }} value={value || ''} placeholder={placeholder} onChange={handleChange} onFocus={handleDcFocus} onBlur={handleBlur} />;
+    input = <textarea className={`${inputCls} qd-dc-input--textarea`} value={value || ''} placeholder={placeholder} onChange={handleChange} onBlur={handleBlur} />;
   } else if (options) {
     input = (
-      <select className="qd-detail-input-select" style={{ ...style, height: 'var(--app-control-height)', cursor: 'pointer' }} value={value || ''} onChange={(e) => { handleChange(e); onBlur(field, e.target.value); }} onFocus={handleDcFocus} onBlur={(e) => handleDcBlurStyle(e)}>
+      <select className={`qd-detail-input-select ${inputCls} qd-dc-input--select`} value={value || ''} onChange={(e) => { handleChange(e); onBlur(field, e.target.value); }} onBlur={handleBlur}>
         {options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
       </select>
     );
   } else {
-    input = <input type={type || 'text'} style={{ ...style, height: 'var(--app-control-height)' }} value={value || ''} placeholder={placeholder} onChange={handleChange} onFocus={handleDcFocus} onBlur={handleBlur} />;
+    input = <input type={type || 'text'} className={`${inputCls} qd-dc-input--height`} value={value || ''} placeholder={placeholder} onChange={handleChange} onBlur={handleBlur} />;
   }
   return (
-    <div style={span2 ? { gridColumn: '1 / -1' } : undefined}>
-      <div style={DC_LABEL_STYLE}>{label}</div>
+    <div className={span2 ? 'qd-dc-span2' : undefined}>
+      <div className="qd-dc-label">{label}</div>
       {input}
     </div>
   );
@@ -717,23 +711,19 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
   const isSupportLine = (line) => getLineCategory(line) === 'support';
 
-  const cardHeaderStyle = { cursor: 'pointer', userSelect: 'none' };
-  const cardBodyStyle = { padding: '4px 20px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px' };
-  const sectionDivider = { height: '1px', background: 'rgba(0,0,0,0.06)', margin: 0 };
-
   const toggleCard = (key) => setDetailCards((p) => ({ ...p, [key]: !p[key] }));
   const handleFieldChange = (field, value) => setQ((p) => ({ ...p, [field]: value }));
   const handleFieldBlur = (field, value) => persistQuote((prev) => ({ ...prev, [field]: value }));
 
   const renderDetailCards = (source) => (
-    <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: 0, marginBottom: '12px' }}>
+    <div className="qd-detail-card-wrap">
       <div>
-        <div className="qd-category-card-header qd-detail-card-header" style={cardHeaderStyle} onClick={() => toggleCard('customer')}>
+        <div className="qd-category-card-header qd-detail-card-header qd-detail-card-header--clickable" onClick={() => toggleCard('customer')}>
           <span className="qd-category-card-title">Customer Information</span>
           <span className="qd-detail-card-chevron">{detailCards.customer ? '▾' : '▸'}</span>
         </div>
         {detailCards.customer && (
-          <div style={cardBodyStyle}>
+          <div className="qd-detail-card-body">
             <DetailInput label="Customer Name" field="customer_name" value={source.customer_name} placeholder="Company name" span2 onChange={handleFieldChange} onBlur={handleFieldBlur} />
             <DetailInput label="Address" field="address" value={source.address} placeholder="Street, City, State, ZIP, Country" span2 onChange={handleFieldChange} onBlur={handleFieldBlur} />
             <DetailInput label="Primary Contact Name" field="contact_name" value={source.contact_name} placeholder="Full name" onChange={handleFieldChange} onBlur={handleFieldBlur} />
@@ -745,27 +735,27 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           </div>
         )}
       </div>
-      <div style={sectionDivider} />
+      <div className="qd-section-divider" />
       <div>
-        <div className="qd-category-card-header qd-detail-card-header" style={cardHeaderStyle} onClick={() => toggleCard('term')}>
+        <div className="qd-category-card-header qd-detail-card-header qd-detail-card-header--clickable" onClick={() => toggleCard('term')}>
           <span className="qd-category-card-title">Subscription Term</span>
           <span className="qd-detail-card-chevron">{detailCards.term ? '▾' : '▸'}</span>
         </div>
         {detailCards.term && (
-          <div style={cardBodyStyle}>
+          <div className="qd-detail-card-body">
             <DetailInput label="Subscription Start Date" field="start_date" value={source.start_date} type="date" onChange={handleFieldChange} onBlur={handleFieldBlur} />
             <DetailInput label="Subscription Term (Months)" field="term_months" value={source.term_months} placeholder="12" onChange={handleFieldChange} onBlur={handleFieldBlur} />
           </div>
         )}
       </div>
-      <div style={sectionDivider} />
+      <div className="qd-section-divider" />
       <div>
-        <div className="qd-category-card-header qd-detail-card-header" style={cardHeaderStyle} onClick={() => toggleCard('billing')}>
+        <div className="qd-category-card-header qd-detail-card-header qd-detail-card-header--clickable" onClick={() => toggleCard('billing')}>
           <span className="qd-category-card-title">Billing & Payment</span>
           <span className="qd-detail-card-chevron">{detailCards.billing ? '▾' : '▸'}</span>
         </div>
         {detailCards.billing && (
-          <div style={cardBodyStyle}>
+          <div className="qd-detail-card-body">
             <DetailInput label="Billing Schedule" field="billing_schedule" value={source.billing_schedule} options={['Annual', 'Semi-Annual', 'Quarterly', 'Monthly']} onChange={handleFieldChange} onBlur={handleFieldBlur} />
             <DetailInput label="Payment Method" field="payment_method" value={source.payment_method} options={['Credit Card', 'ACH / Bank Transfer', 'Wire Transfer', 'Check', 'Invoice']} onChange={handleFieldChange} onBlur={handleFieldBlur} />
             <DetailInput label="Payment Terms" field="payment_terms" value={source.payment_terms} options={['Net 30', 'Net 45', 'Net 60', 'Due on Receipt']} onChange={handleFieldChange} onBlur={handleFieldBlur} />
@@ -774,9 +764,9 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           </div>
         )}
       </div>
-      <div style={sectionDivider} />
+      <div className="qd-section-divider" />
       <div>
-        <div className="qd-category-card-header qd-detail-card-header" style={cardHeaderStyle} onClick={() => toggleCard('terms_conditions')}>
+        <div className="qd-category-card-header qd-detail-card-header qd-detail-card-header--clickable" onClick={() => toggleCard('terms_conditions')}>
           <span className="qd-category-card-title">Terms & Conditions</span>
           <span className="qd-detail-card-chevron">{detailCards.terms_conditions ? '▾' : '▸'}</span>
         </div>
@@ -812,19 +802,14 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     const hasActiveBasePackage = !!basePackageLine;
     const showStandalonePlatformCard = !hasActiveBasePackage;
     const editCardOrder = showStandalonePlatformCard
-      ? ['bundle', 'platform', 'support', 'entitlements', 'addon']
-      : ['bundle', 'support', 'entitlements', 'addon'];
+      ? ['bundle', 'platform', 'support', 'addon', 'entitlements']
+      : ['bundle', 'support', 'addon', 'entitlements'];
     const editCategoryGroups = editCardOrder
       .map((category) => ({
         category,
         label: getCategoryCardLabel(category, hasActiveBasePackage),
         lines: topLevelByCategory[category] || [],
-      }))
-      .filter((group) => (
-        !hasActiveBasePackage
-          || group.category === 'bundle'
-          || group.lines.length > 0
-      ));
+      }));
 
     const getCategorySkuOptions = (category, currentProductId) => {
       const options = [...(productsByCategory[category] || [])];
@@ -1602,7 +1587,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     const renderEmptyEntitlementRow = () => (
       <div className="qd-entitlement-row qd-entitlement-row--empty" key="entitlements-empty">
         <span className="qd-entitlement-cell qd-entitlement-cell-product">
-          <span className="cell-muted">Use Add Product to include additional entitlements</span>
+          <span className="cell-muted">Select one or more SKUs above</span>
         </span>
         <span className="qd-entitlement-cell qd-entitlement-cell-qty">—</span>
         <span className="qd-entitlement-cell qd-entitlement-cell-list-price">—</span>
@@ -1616,7 +1601,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     const renderEmptyPlatformAddonRow = (showQtyColumn = false) => (
       <div className={`qd-platform-addon-row qd-platform-addon-row--empty${showQtyColumn ? ' qd-platform-addon-row--with-qty' : ''}`} key="platform-addons-empty">
         <span className="qd-platform-addon-cell qd-platform-addon-cell-product">
-          <span className="cell-muted">Use Add Product to include platform add-ons</span>
+          <span className="cell-muted">Select one or more SKUs above</span>
         </span>
         {showQtyColumn && <span className="qd-platform-addon-cell qd-platform-addon-cell-qty">—</span>}
         <span className="qd-platform-addon-cell qd-platform-addon-cell-list-price">—</span>
@@ -1808,18 +1793,18 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         <button className="back-btn" onClick={onBack}>Back to Quotes</button>
         <div className="qd-header-info" style={{ flex: 1 }}>
           <div className="qd-quote-number">{q.quote_number}</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '24px' }}>
+          <div className="qd-header-title-row">
             {editingTitle ? (
               <input autoFocus type="text" value={q.name} placeholder="Quote name"
                 onChange={(e) => setQ((prev) => ({ ...prev, name: e.target.value }))}
                 onBlur={(e) => { setEditingTitle(false); persistQuote((prev) => ({ ...prev, name: e.target.value })); }}
                 onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setEditingTitle(false); }}
-                style={{ fontFamily: "'Poppins', sans-serif", fontSize: '34px', fontWeight: 300, letterSpacing: '-0.01em', color: 'var(--text-strong)', background: 'transparent', border: 'none', borderBottom: '1px solid #FBB13D', outline: 'none', padding: 0, margin: 0, flex: 1, lineHeight: 'inherit' }} />
+                className="qd-title-input" />
             ) : (
               <h1 className="qd-title" onClick={() => setEditingTitle(true)} style={{ cursor: 'pointer', flex: 1 }}>{q.name || 'Untitled Quote'}</h1>
             )}
             {!isEditing && (
-              <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: STATUS_EYEBROW_COLORS[q.status] || '#6b7280', whiteSpace: 'nowrap', paddingRight: '8px' }}>
+              <div className="qd-status-eyebrow" style={{ color: STATUS_EYEBROW_COLORS[q.status] || '#6b7280' }}>
                 {(STATUS_META[q.status] || STATUS_META.draft).label}
               </div>
             )}
@@ -1836,14 +1821,14 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         </div>
       )}
 
-      <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', margin: '0 0 24px', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+      <div className="qd-action-bar">
         {isEditing ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="qd-action-group">
             <button className="qd-action-btn" onClick={cancelEdit}>Cancel</button>
             <button className="qd-action-btn qd-action-btn-primary" onClick={saveEdit}>Save</button>
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="qd-action-group">
 
             {q.status === 'draft' && (
               <>
@@ -1914,7 +1899,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
             {['draft', 'sent', 'draft_revision', 'ready_to_submit', 'pending_approval', 'rejected', 'archived'].includes(q.status) && (
               <div className="qd-more-wrap" ref={moreRef}>
-                <button className="qd-more-btn" style={{ border: 'none', background: 'transparent', boxShadow: 'none', outline: 'none', color: '#FBB13D', cursor: 'pointer', padding: '0 8px' }} onClick={() => setShowMoreMenu(!showMoreMenu)}>···</button>
+                <button className="qd-more-btn qd-more-btn--reset" onClick={() => setShowMoreMenu(!showMoreMenu)}>···</button>
                 {showMoreMenu && (
                   <div className="qd-more-menu">
                     {q.status === 'draft' && (<><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); onClone(q); }}>Clone Quote</button><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>Archive</button></>)}
@@ -2166,7 +2151,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
       <div className="qd-overage-section">
         <div className="qd-overage-card">
-          <div className="qd-category-card-header qd-detail-card-header" style={cardHeaderStyle} onClick={() => toggleCard('overage')}>
+          <div className="qd-category-card-header qd-detail-card-header qd-detail-card-header--clickable" onClick={() => toggleCard('overage')}>
             <span className="qd-category-card-title">Overage Rates</span>
             <span className="qd-detail-card-chevron">{detailCards.overage ? '▾' : '▸'}</span>
           </div>
@@ -2199,7 +2184,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
       <div>{renderFooterInfo(q)}</div>
 
-      <div style={{ marginTop: '28px' }}>
+      <div className="qd-activity-section">
         <div className="qd-footer-label" style={{ marginBottom: '12px' }}>Activity</div>
         <div className="qd-activity-timeline">
           {[...(q.activity_log || [])].reverse().map((entry, i, arr) => {
@@ -2232,18 +2217,18 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
               </div>
             );
           })}
-          {(!q.activity_log || q.activity_log.length === 0) && <div style={{ fontSize: '13px', color: '#9ca3af' }}>No activity recorded.</div>}
+          {(!q.activity_log || q.activity_log.length === 0) && <div className="text-empty">No activity recorded.</div>}
         </div>
       </div>
 
       {feedbackModal && (
         <div className="modal-overlay" onClick={() => setFeedbackModal(false)}>
-          <div className="modal modal-theme-quotes" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
+          <div className="modal modal-theme-quotes modal--sm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-title">Customer Feedback</div>
             <div className="modal-section">
               <div className="field">
                 <label className="field-label">Revision Notes</label>
-                <textarea className="field-textarea" value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} placeholder="Enter customer feedback and revision notes..." style={{ minHeight: 120 }} autoFocus />
+                <textarea className="field-textarea field-textarea--tall" value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} placeholder="Enter customer feedback and revision notes..." autoFocus />
               </div>
             </div>
             <div className="modal-actions">
@@ -2260,10 +2245,10 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
       {ddNotesModal && (
         <div className="modal-overlay" onClick={() => setDdNotesModal(false)}>
-          <div className="modal modal-theme-quotes" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
+          <div className="modal modal-theme-quotes modal--sm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-title">Deal Desk Notes</div>
             <div className="modal-section">
-              <div style={{ fontSize: '14px', color: '#374151', lineHeight: 1.6, whiteSpace: 'pre-wrap', minHeight: 60 }}>{q.comments || 'No notes recorded.'}</div>
+              <div className="qd-notes-body">{q.comments || 'No notes recorded.'}</div>
             </div>
             <div className="modal-actions"><button className="btn-cancel" onClick={() => setDdNotesModal(false)}>Close</button></div>
           </div>

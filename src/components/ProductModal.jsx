@@ -713,7 +713,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
             <div className="grid-2">
               <div className="field">
                 <label className="field-label">SKU</label>
-                <input className="field-input" value={f.sku} onChange={(e) => s('sku', e.target.value.toUpperCase())} placeholder="NTL-XXX" style={{ fontFamily: "'Menlo', monospace" }} />
+                <input className="field-input input-mono" value={f.sku} onChange={(e) => s('sku', e.target.value.toUpperCase())} placeholder="NTL-XXX" />
               </div>
               <div className="field">
                 <label className="field-label">Category</label>

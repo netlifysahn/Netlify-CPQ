@@ -64,7 +64,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
         <div className="modal picker-modal modal-theme-products" onClick={(e) => e.stopPropagation()}>
           <div className="modal-title">Add Product</div>
           <div className="search-wrap" style={{ marginBottom: 16 }}>
-            <span style={{ color: '#9ca3af', fontSize: '13px' }}>Search</span>
+            <span className="search-label">Search</span>
             <input
               className="search-input"
               value={search}
@@ -106,7 +106,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
         <div className="picker-v2-header">
           <div className="picker-v2-title">Quote — Add Products</div>
           <div className="search-wrap picker-v2-search">
-            <span style={{ color: '#9ca3af', fontSize: '13px' }}>Search</span>
+            <span className="search-label">Search</span>
             <input
               className="search-input"
               value={search}
@@ -141,7 +141,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
 
           <div className="picker-v2-grid-wrap">
             {filtered.length === 0 ? (
-              <div className="picker-empty" style={{ gridColumn: '1 / -1', padding: 40, textAlign: 'center' }}>No matching products</div>
+              <div className="picker-empty picker-empty--full">No matching products</div>
             ) : (
               <div className="picker-v2-grid">
                 {filtered.map((p) => {
@@ -159,10 +159,10 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
                     >
                       <div className="picker-v2-card-check">
                         {isExisting ? (
-                          <span style={{ color: 'var(--text-faint)', fontSize: 12 }}>Added</span>
+                          <span className="picker-added-label">Added</span>
                         ) : (
                           <div className={`picker-v2-checkbox${isSelected ? ' checked' : ''}`}>
-                            {isSelected && <span style={{ fontSize: '11px' }}>✓</span>}
+                            {isSelected && <span className="picker-checkmark">✓</span>}
                           </div>
                         )}
                       </div>
