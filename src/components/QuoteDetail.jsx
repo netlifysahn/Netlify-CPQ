@@ -1182,23 +1182,11 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       return (
         <div key={line.id} className="qd-entitlement-row qd-entitlement-row--edit">
           <span className="qd-entitlement-cell qd-entitlement-cell-product">
-            <div className="qd-edit-product-cell">
-              {renderSkuSelect({
-                category: 'entitlements',
-                line,
-                onSelect: (productId) => {
-                  if (!productId) {
-                    removeDraftLine(line.id);
-                    return;
-                  }
-                  swapDraftLineProduct(line.id, productId);
-                },
-              })}
-              <div className="qd-line-actions">
-                <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Remove ${line.product_name}`} title="Delete row" onClick={() => removeDraftLine(line.id)}>
-                  <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
-                </button>
-              </div>
+            <span className="qd-entitlement-product-name">{line.product_name || 'Unnamed Product'}</span>
+            <div className="qd-line-actions">
+              <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Remove ${line.product_name}`} title="Delete row" onClick={() => removeDraftLine(line.id)}>
+                <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
+              </button>
             </div>
           </span>
           <span className="qd-entitlement-cell qd-entitlement-cell-qty">{renderQtyInput(line, false)}</span>
@@ -1249,23 +1237,11 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       return (
         <div key={line.id} className={`qd-platform-addon-row qd-platform-addon-row--edit${showQtyColumn ? ' qd-platform-addon-row--with-qty' : ''}`}>
           <span className="qd-platform-addon-cell qd-platform-addon-cell-product">
-            <div className="qd-edit-product-cell">
-              {renderSkuSelect({
-                category: 'addon',
-                line,
-                onSelect: (productId) => {
-                  if (!productId) {
-                    removeDraftLine(line.id);
-                    return;
-                  }
-                  swapDraftLineProduct(line.id, productId);
-                },
-              })}
-              <div className="qd-line-actions">
-                <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Remove ${line.product_name}`} title="Delete row" onClick={() => removeDraftLine(line.id)}>
-                  <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
-                </button>
-              </div>
+            <span className="qd-platform-addon-product-name">{line.product_name || 'Unnamed Product'}</span>
+            <div className="qd-line-actions">
+              <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Remove ${line.product_name}`} title="Delete row" onClick={() => removeDraftLine(line.id)}>
+                <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
+              </button>
             </div>
           </span>
           {showQtyColumn && <span className="qd-platform-addon-cell qd-platform-addon-cell-qty">{renderQtyInput(line, false)}</span>}
@@ -1537,26 +1513,35 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           <div className="qd-support-table-body qd-base-package-pricing-body">
             {renderEditBasePackagePricingRow(line)}
           </div>
-          {sections.length > 0 && (
-            <div className="qd-pkg-members qd-base-package-members">
-              {sections.map((section) => (
-                <div key={section.key} className="qd-pkg-section qd-base-package-section">
-                  <div className="qd-pkg-section-label">{section.label}</div>
-                  {section.lines.map((sub) => (
-                    <div
-                      key={sub.id}
-                      className={`qd-base-package-value-row${section.isConfiguration ? ' qd-base-package-value-row--config' : ''}`}
-                    >
-                      <span className="qd-base-package-value-name">{sub.product_name}</span>
-                      {section.isConfiguration && (
-                        <span className="qd-base-package-value-qty">{renderPackageQtyInput(sub)}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ))}
+          {sections.filter((s) => !s.isConfiguration).map((section) => (
+            <div key={section.key} className="qd-base-config-section">
+              <div className="qd-pkg-section-label qd-base-config-label">{section.label}</div>
+              <div className="qd-base-config-body">
+                {section.lines.map((sub) => (
+                  <div key={sub.id} className="qd-entitlement-row qd-entitlement-row--edit qd-base-config-row">
+                    <span className="qd-entitlement-cell qd-entitlement-cell-product">
+                      <span className="qd-entitlement-product-name">{sub.product_name}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
+          ))}
+          {sections.filter((s) => s.isConfiguration).map((section) => (
+            <div key={section.key} className="qd-base-config-section">
+              <div className="qd-pkg-section-label qd-base-config-label">{section.label}</div>
+              <div className="qd-base-config-body">
+                {section.lines.map((sub) => (
+                  <div key={sub.id} className="qd-entitlement-row qd-entitlement-row--edit qd-base-config-row">
+                    <span className="qd-entitlement-cell qd-entitlement-cell-product">
+                      <span className="qd-entitlement-product-name">{sub.product_name}</span>
+                    </span>
+                    <span className="qd-entitlement-cell qd-entitlement-cell-qty">{renderPackageQtyInput(sub)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       );
     };
@@ -1659,13 +1644,13 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                     {renderCategoryMultiSelect(group.category, group.lines, group.label)}
                   </div>
                   <div className="qd-pkg-table-head qd-entitlements-table-head">
-                    <span className="qd-pkg-col-product">Product</span>
-                    <span className="qd-pkg-col-qty">Qty</span>
-                    <span className="qd-pkg-col-list-price">List Price</span>
-                    <span className="qd-pkg-col-discount">Discount</span>
-                    <span className="qd-pkg-col-net-price">Net Price</span>
-                    <span className="qd-pkg-col-amount">Monthly Price</span>
-                    <span className="qd-pkg-col-annual-price">Annual Price</span>
+                    <span className="qd-support-col-product">Product</span>
+                    <span className="qd-support-col-qty">QTY</span>
+                    <span className="qd-support-col-list-price">List Price</span>
+                    <span className="qd-support-col-discount">Discount</span>
+                    <span className="qd-support-col-net-price">Net Price</span>
+                    <span className="qd-support-col-monthly">Monthly Price</span>
+                    <span className="qd-support-col-annual">Annual Price</span>
                   </div>
                   <div className="qd-entitlements-table-body">
                     {group.lines.length > 0 ? group.lines.map((line) => renderEditEntitlementRow(line)) : renderEmptyEntitlementRow()}
@@ -2005,26 +1990,37 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                                   <span className="qd-support-cell qd-support-cell-annual">{displayCurrency(extended * 12)}</span>
                                 </div>
                               </div>
-                              <div className="qd-pkg-members qd-base-package-members">
-                                {sections.map((section) => (
-                                  <div key={section.key} className="qd-pkg-section qd-base-package-section">
-                                    <div className="qd-pkg-section-label">{section.label}</div>
+                              {sections.filter((s) => !s.isConfiguration).map((section) => (
+                                <div key={section.key} className="qd-base-config-section">
+                                  <div className="qd-pkg-section-label qd-base-config-label">{section.label}</div>
+                                  <div className="qd-base-config-body">
                                     {section.lines.map((sub) => (
-                                      <div
-                                        key={sub.id}
-                                        className={`qd-base-package-value-row${section.isConfiguration ? ' qd-base-package-value-row--config' : ''}`}
-                                      >
-                                        <span className="qd-base-package-value-name">{sub.product_name}</span>
-                                        {section.isConfiguration && (
-                                          <span className="qd-base-package-value-qty">
-                                            {isPackageComponentQtyVisible(sub) ? fmtQty(sub.quantity ?? 1) : ''}
-                                          </span>
-                                        )}
+                                      <div key={sub.id} className="qd-entitlement-row qd-base-config-row">
+                                        <span className="qd-entitlement-cell qd-entitlement-cell-product">
+                                          <span className="qd-entitlement-product-name">{sub.product_name}</span>
+                                        </span>
                                       </div>
                                     ))}
                                   </div>
-                                ))}
-                              </div>
+                                </div>
+                              ))}
+                              {sections.filter((s) => s.isConfiguration).map((section) => (
+                                <div key={section.key} className="qd-base-config-section">
+                                  <div className="qd-pkg-section-label qd-base-config-label">{section.label}</div>
+                                  <div className="qd-base-config-body">
+                                    {section.lines.map((sub) => (
+                                      <div key={sub.id} className="qd-entitlement-row qd-base-config-row">
+                                        <span className="qd-entitlement-cell qd-entitlement-cell-product">
+                                          <span className="qd-entitlement-product-name">{sub.product_name}</span>
+                                        </span>
+                                        <span className="qd-entitlement-cell qd-entitlement-cell-qty">
+                                          {isPackageComponentQtyVisible(sub) ? fmtQty(sub.quantity ?? 1) : ''}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           );
                         })}
@@ -2068,13 +2064,13 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                     ) : group.category === 'entitlements' ? (
                       <div className="qd-pkg-table qd-entitlements-table qd-entitlements-table--readonly">
                         <div className="qd-pkg-table-head qd-entitlements-table-head">
-                          <span className="qd-pkg-col-product">Product</span>
-                          <span className="qd-pkg-col-qty">Qty</span>
-                          <span className="qd-pkg-col-list-price">List Price</span>
-                          <span className="qd-pkg-col-discount">Discount</span>
-                          <span className="qd-pkg-col-net-price">Net Price</span>
-                          <span className="qd-pkg-col-amount">Monthly Price</span>
-                          <span className="qd-pkg-col-annual-price">Annual Price</span>
+                          <span className="qd-support-col-product">Product</span>
+                          <span className="qd-support-col-qty">QTY</span>
+                          <span className="qd-support-col-list-price">List Price</span>
+                          <span className="qd-support-col-discount">Discount</span>
+                          <span className="qd-support-col-net-price">Net Price</span>
+                          <span className="qd-support-col-monthly">Monthly Price</span>
+                          <span className="qd-support-col-annual">Annual Price</span>
                         </div>
                         <div className="qd-entitlements-table-body">
                           {group.lines.map((line) => {
