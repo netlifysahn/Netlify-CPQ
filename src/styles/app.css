@@ -3665,9 +3665,9 @@ tr.drag-over {
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #4755699e;
+  color: #47556994;
   line-height: 1.2;
-  padding: 8px 12px;
+  padding: 7px 12px;
 }
 .qd-pkg-col-product {
   grid-column: 1;
@@ -3800,7 +3800,7 @@ tr.drag-over {
 }
 .qd-platform-addons-table-head {
   display: grid;
-  grid-template-columns: var(--qd-addon-grid-columns);
+  grid-template-columns: var(--qd-shared-grid-columns);
   align-items: center;
   border-bottom-color: #00000005;
   background: transparent;
@@ -3830,23 +3830,23 @@ tr.drag-over {
   padding-left: 28px;
 }
 .qd-platform-addon-col-list-price {
-  grid-column: 2;
-  text-align: right;
-}
-.qd-platform-addon-col-discount {
   grid-column: 3;
   text-align: right;
 }
-.qd-platform-addon-col-net-price {
+.qd-platform-addon-col-discount {
   grid-column: 4;
   text-align: right;
 }
-.qd-platform-addon-col-monthly {
+.qd-platform-addon-col-net-price {
   grid-column: 5;
   text-align: right;
 }
-.qd-platform-addon-col-annual {
+.qd-platform-addon-col-monthly {
   grid-column: 6;
+  text-align: right;
+}
+.qd-platform-addon-col-annual {
+  grid-column: 7;
   text-align: right;
   padding-right: 28px;
 }
@@ -3874,7 +3874,7 @@ tr.drag-over {
 }
 .qd-platform-addon-row {
   display: grid;
-  grid-template-columns: var(--qd-addon-grid-columns);
+  grid-template-columns: var(--qd-shared-grid-columns);
   align-items: center;
   min-height: 34px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.04);
@@ -3902,27 +3902,27 @@ tr.drag-over {
   color: #0f172a;
 }
 .qd-platform-addon-cell-list-price {
-  grid-column: 2;
-  padding: var(--qd-row-padding-y) 12px;
-  text-align: right;
-}
-.qd-platform-addon-cell-discount {
   grid-column: 3;
   padding: var(--qd-row-padding-y) 12px;
   text-align: right;
 }
-.qd-platform-addon-cell-net-price {
+.qd-platform-addon-cell-discount {
   grid-column: 4;
   padding: var(--qd-row-padding-y) 12px;
   text-align: right;
 }
-.qd-platform-addon-cell-monthly {
+.qd-platform-addon-cell-net-price {
   grid-column: 5;
   padding: var(--qd-row-padding-y) 12px;
   text-align: right;
 }
-.qd-platform-addon-cell-annual {
+.qd-platform-addon-cell-monthly {
   grid-column: 6;
+  padding: var(--qd-row-padding-y) 12px;
+  text-align: right;
+}
+.qd-platform-addon-cell-annual {
+  grid-column: 7;
   padding: var(--qd-row-padding-y) 28px var(--qd-row-padding-y) 12px;
   text-align: right;
 }
@@ -6669,7 +6669,8 @@ select.qd-detail-input-select::-ms-expand {
 }
 .quote-detail--editing .qd-multi-picker {
   position: relative;
-  max-width: 380px;
+  width: 100%;
+  max-width: 360px;
 }
 .quote-detail--editing .qd-add-control {
   display: inline-flex;
@@ -6708,7 +6709,7 @@ select.qd-detail-input-select::-ms-expand {
 .quote-detail--editing .qd-multi-picker-summary {
   display: flex;
   align-items: center;
-  width: fit-content;
+  width: 100%;
   list-style: none;
 }
 .quote-detail--editing .qd-multi-picker-summary::-webkit-details-marker {
@@ -7906,7 +7907,7 @@ button {
 }
 .quote-detail .qd-entitlements-table-head,
 .quote-detail .qd-platform-addons-table-head {
-  border-bottom-color: rgba(15, 23, 42, 0.05);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.05);
 }
 .quote-detail .qd-category-picker-row--entitlements,
 .quote-detail .qd-category-picker-row--platform-addons {
@@ -7920,6 +7921,14 @@ button {
 }
 .quote-detail .qd-support-table-head,
 .quote-detail .qd-support-row {
+  grid-template-columns: minmax(180px, 1.85fr) 0.62fr 1fr 1fr 1fr 1fr 1fr;
+}
+.quote-detail .qd-entitlements-table-head,
+.quote-detail .qd-entitlement-row {
+  grid-template-columns: 1.24fr 1.24fr 1fr 1fr 1fr 1fr 1fr;
+}
+.quote-detail .qd-platform-addons-table-head,
+.quote-detail .qd-platform-addon-row {
   grid-template-columns: minmax(180px, 1.85fr) 0.62fr 1fr 1fr 1fr 1fr 1fr;
 }
 .quote-detail .qd-support-table-head {
@@ -7949,7 +7958,31 @@ button {
 .quote-detail .qd-support-table-body > .qd-support-row:last-child {
   border-bottom: none !important;
 }
+.quote-detail .qd-entitlement-row {
+  min-height: 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06) !important;
+}
+.quote-detail .qd-entitlements-table-body > .qd-entitlement-row:last-child {
+  border-bottom: none !important;
+}
+/* Base Package Configuration section – entitlement-style rows */
+.qd-base-config-section {
+  padding-top: 10px;
+}
+.qd-base-config-label {
+  padding: 0 0 5px 28px !important;
+}
+.qd-base-config-body {
+  background: transparent;
+}
+.qd-base-config-body > .qd-entitlement-row:last-child {
+  border-bottom: none !important;
+}
 .quote-detail .qd-support-cell {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+.quote-detail .qd-entitlement-cell {
   padding-top: 7px;
   padding-bottom: 7px;
 }
@@ -7958,6 +7991,29 @@ button {
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
+  padding-right: 8px;
+}
+.quote-detail .qd-entitlement-cell-product {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 8px;
+}
+.quote-detail .qd-platform-addon-row {
+  min-height: 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06) !important;
+}
+.quote-detail .qd-platform-addons-table-body > .qd-platform-addon-row:last-child {
+  border-bottom: none !important;
+}
+.quote-detail .qd-platform-addon-cell {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+.quote-detail .qd-platform-addon-cell-product {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding-right: 8px;
 }
 .quote-detail .qd-support-cell-description {
@@ -7980,14 +8036,10 @@ button {
   padding-top: 20px !important;
   padding-bottom: 10px !important;
 }
-.quote-detail .qd-base-package-pricing-row {
+.quote-detail .qd-base-package-block > .qd-support-table-head,
+.quote-detail .qd-base-package-block > .qd-base-package-pricing-body {
   margin-left: -24px;
   margin-right: -24px;
-}
-.quote-detail--editing .qd-base-package-pricing-row .qd-support-cell-product {
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
 }
 .quote-detail .qd-pkg-section-label,
 .quote-detail .qd-overage-group-title {
@@ -8400,6 +8452,8 @@ button {
     .qd-support-cell-net-price,
     .qd-support-cell-monthly,
     .qd-support-cell-annual,
+    .qd-entitlement-cell-product .cell-name,
+    .qd-entitlement-cell-qty,
     .qd-entitlement-cell-list-price,
     .qd-entitlement-cell-discount,
     .qd-entitlement-cell-net-price,
@@ -10662,6 +10716,41 @@ button {
 }
 .quote-detail--editing .qd-base-package-pricing-body {
   margin-bottom: 12px;
+}
+.quote-detail--editing .qd-base-package-pricing-row .qd-edit-product-cell {
+  display: contents;
+}
+.quote-detail--editing .qd-base-package-pricing-row .qd-base-package-selector-inline {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  flex: none;
+}
+.quote-detail--editing .qd-platform-addon-cell-product {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.quote-detail--editing .qd-platform-addon-cell-product .qd-platform-addon-product-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 360px;
+}
+.quote-detail--editing .qd-entitlement-cell-product .qd-entitlement-product-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 360px;
+}
+.quote-detail--editing .qd-platform-addon-row:hover .qd-line-icon-btn {
+  opacity: 1;
 }
 
 /* Unified control height across dropdown triggers and inline inputs */
