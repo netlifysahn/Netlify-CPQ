@@ -4099,31 +4099,44 @@ tr.drag-over {
 }
 .qd-overage-body {
   padding: 12px 20px 14px;
+}
+.qd-overage-columns {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
 }
 .qd-overage-group {
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
-  gap: 7px;
-  max-width: 420px;
+  gap: 0;
 }
 .qd-overage-group-title {
   font-family: var(--card-label-font-family);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: none;
   color: var(--text-subtle);
+  margin-bottom: 4px;
 }
 .qd-overage-row {
-  display: grid;
-  grid-template-columns: minmax(220px, max-content) 104px;
+  display: flex;
   align-items: center;
-  justify-content: start;
-  column-gap: 14px;
-  row-gap: 0;
+  gap: 20px;
+  padding: 2px 0;
+}
+.qd-overage-row--light .qd-overage-row-label,
+.qd-overage-row--light .qd-overage-value {
+  color: #94a3b8;
+  font-weight: 400;
+}
+.qd-overage-row--emphasis .qd-overage-row-label {
+  font-weight: 600;
+  color: var(--text-label-color);
+}
+.qd-overage-row--emphasis .qd-overage-value {
+  font-weight: 600;
+  color: #0f172a;
 }
 .qd-overage-row-label {
   font-family: var(--font-body);
@@ -4131,21 +4144,32 @@ tr.drag-over {
   font-weight: 500;
   line-height: 1.35;
   color: var(--text-label-color);
-  max-width: 280px;
+  white-space: nowrap;
+}
+.qd-overage-value {
+  margin-left: auto;
+  text-align: right;
+  white-space: nowrap;
+}
+.qd-overage-divider {
+  height: 1px;
+  background: rgba(15, 23, 42, 0.06);
+  margin: 6px 0;
 }
 .qd-overage-input {
-  width: 104px;
-  height: 28px;
+  width: 88px;
+  height: 26px;
   border: 1px solid rgba(15, 23, 42, 0.1);
   border-radius: var(--radius-sm);
   background: var(--surface);
   box-sizing: border-box;
-  padding: 4px 8px;
+  padding: 3px 7px;
   text-align: right;
   font-family: var(--font-heading);
   font-size: 12px;
   font-weight: 500;
   color: #0f172a;
+  margin-left: auto;
 }
 .qd-overage-input::placeholder {
   color: #94a3b8;
@@ -4155,16 +4179,13 @@ tr.drag-over {
   border-color: #fbb13d;
 }
 @media (max-width: 900px) {
-  .qd-overage-body {
+  .qd-overage-columns {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  .qd-overage-row {
-    grid-template-columns: 1fr;
-  }
   .qd-overage-input {
-    width: 100%;
-    max-width: 220px;
+    width: 88px;
+    max-width: none;
   }
 }
 .qd-pkg-header {
@@ -7881,6 +7902,21 @@ button {
   border: none !important;
   box-shadow: none !important;
   background: transparent;
+  border-radius: 0 !important;
+}
+.quote-detail .qd-entitlements-table-head,
+.quote-detail .qd-platform-addons-table-head {
+  border-bottom-color: rgba(15, 23, 42, 0.05);
+}
+.quote-detail .qd-category-picker-row--entitlements,
+.quote-detail .qd-category-picker-row--platform-addons {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom: none;
+}
+.quote-detail .qd-entitlements-table-body,
+.quote-detail .qd-platform-addons-table-body {
+  background: transparent;
 }
 .quote-detail .qd-support-table-head,
 .quote-detail .qd-support-row {
@@ -7930,6 +7966,19 @@ button {
   font-weight: 400;
   line-height: 1.35;
   color: var(--text-subtle);
+}
+.quote-detail .qd-grouped-cards {
+  gap: 24px;
+}
+.quote-detail .qd-grouped-cards > .qd-category-card {
+  margin-top: 0;
+}
+.quote-detail .qd-overage-section {
+  margin-top: 24px;
+}
+.quote-detail .qd-category-card-header {
+  padding-top: 20px !important;
+  padding-bottom: 10px !important;
 }
 .quote-detail .qd-base-package-pricing-row {
   margin-left: -24px;
@@ -9468,7 +9517,9 @@ button {
 }
 .quote-detail .qd-overage-body {
   padding: 10px 20px 16px !important;
-  gap: 14px !important;
+}
+.quote-detail .qd-overage-columns {
+  gap: 20px !important;
 }
 .quote-detail .qd-category-card--base-package,
 .quote-detail .qd-category-card--support {
@@ -9478,7 +9529,7 @@ button {
   gap: 4px !important;
 }
 .quote-detail .qd-overage-group + .qd-overage-group {
-  margin-top: 6px !important;
+  margin-top: 0 !important;
 }
 
 /* 5. Quote Information form balance */
