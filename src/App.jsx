@@ -707,12 +707,11 @@ export default function App() {
 
             <div className="toolbar">
               <div className="search-wrap">
-                <span style={{ color: '#9ca3af', fontSize: '13px' }}>Search</span>
                 <input
                   className="search-input"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search products..."
+                  placeholder="Search Products"
                 />
               </div>
               <div className="toolbar-select-wrap">
@@ -753,12 +752,11 @@ export default function App() {
 
                 <div className="toolbar">
                   <div className="search-wrap">
-                    <span style={{ color: '#9ca3af', fontSize: '13px' }}>Search</span>
                     <input
                       className="search-input"
                       value={pricebookSearch}
                       onChange={(event) => setPricebookSearch(event.target.value)}
-                      placeholder="Search price books..."
+                      placeholder="Search Price Books"
                     />
                   </div>
                   <button className="btn-primary btn-product-add" onClick={() => setModal({ type: 'pricebook' })}>
