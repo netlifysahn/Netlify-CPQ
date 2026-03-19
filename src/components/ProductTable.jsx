@@ -55,8 +55,12 @@ export default function ProductTable({ products, allProducts, onEdit, onDupe, on
       <table className="data-table data-table-products">
         <thead>
           <tr>
-            <th className="col-expand" />
-            <th className="col-product">Product</th>
+            <th className="col-product">
+              <div className="product-name-cell product-name-cell-header">
+                <span className="product-chevron-slot" aria-hidden="true" />
+                <span>Product</span>
+              </div>
+            </th>
             <th className="col-type">Type</th>
             <th className="col-monthly">Monthly</th>
             <th className="col-annual" style={{ paddingRight: '40px' }}>Annual</th>
@@ -77,16 +81,27 @@ export default function ProductTable({ products, allProducts, onEdit, onDupe, on
             return (
               <React.Fragment key={p.id}>
                 <tr>
-                  <td className="col-expand">
-                    {hasExpandable && (
-                      <button className="expand-btn" onClick={() => toggleExpand(p.id)}>
-                        {isExpanded ? '▾' : '▸'}
-                      </button>
-                    )}
-                  </td>
                   <td className="col-product">
-                    <div className="cell-name-wrap">
-                      <div className="cell-name">{p.name}</div>
+                    <div className="product-name-cell">
+                      <span className="product-chevron-slot">
+                        {hasExpandable && (
+                          <button
+                            type="button"
+                            className="expand-btn product-expand-btn"
+                            aria-label={isExpanded ? `Collapse ${p.name}` : `Expand ${p.name}`}
+                            onClick={() => toggleExpand(p.id)}
+                          >
+                            {isExpanded ? '▾' : '▸'}
+                          </button>
+                        )}
+                      </span>
+                      <button
+                        type="button"
+                        className="name-link product-name-trigger"
+                        onClick={() => onEdit(p)}
+                      >
+                        {p.name}
+                      </button>
                     </div>
                   </td>
                   <td className="col-type">
@@ -104,9 +119,6 @@ export default function ProductTable({ products, allProducts, onEdit, onDupe, on
                   </td>
                   <td className="col-actions">
                     <div className="actions-group">
-                      <button className="action-btn edit" title="Edit" aria-label="Edit" onClick={() => onEdit(p)}>
-                        <i className="fa-solid fa-pen-to-square fa-fw fa-sm" aria-hidden="true" />
-                      </button>
                       <button className="action-btn duplicate" title="Duplicate" aria-label="Duplicate" onClick={() => onDupe(p)}>
                         <i className="fa-solid fa-clone fa-fw fa-sm" aria-hidden="true" />
                       </button>
@@ -118,7 +130,6 @@ export default function ProductTable({ products, allProducts, onEdit, onDupe, on
                 </tr>
                 {isExpanded && (
                   <tr className="expanded-row">
-                    <td className="col-expand" />
                     <td colSpan={6}>
                       {bundle && members.length > 0 && (
                         <div className="bundle-members">

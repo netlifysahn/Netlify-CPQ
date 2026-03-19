@@ -1631,7 +1631,10 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       <div className="qd-lines-card">
         <div className="qd-grouped-cards">
           {editCategoryGroups.map((group) => (
-            <div key={group.category} className="qd-category-card">
+            <div
+              key={group.category}
+              className={`qd-category-card${group.category === 'bundle' ? ' qd-category-card--base-package' : ''}${group.category === 'support' ? ' qd-category-card--support' : ''}`}
+            >
               <div className="qd-category-card-header">
                 <span className="qd-category-card-title">{group.label}</span>
               </div>
@@ -1944,7 +1947,10 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
             ) : (
               <div className="qd-grouped-cards">
                 {groupLinesByCategory(q.line_items).map((group) => (
-                  <div key={group.category} className="qd-category-card">
+                  <div
+                    key={group.category}
+                    className={`qd-category-card${group.category === 'bundle' ? ' qd-category-card--base-package' : ''}${group.category === 'support' ? ' qd-category-card--support' : ''}`}
+                  >
                     <div className="qd-category-card-header">
                       <span className="qd-category-card-title">{group.label}</span>
                     </div>
