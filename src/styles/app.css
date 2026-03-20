@@ -30,7 +30,7 @@
   --section-products-tint: rgba(0, 0, 0, 0.04);
   --section-pricebooks: #05bdba;
   --section-pricebooks-tint: rgba(0, 0, 0, 0.04);
-  --section-scope: #fe4e5c;
+  --section-scope: #9A2D99;
   --section-scope-tint: rgba(0, 0, 0, 0.04);
   --section-quotes: #fbb13d;
   --section-quotes-tint: rgba(0, 0, 0, 0.04);
@@ -220,10 +220,10 @@
   --primary-color-rgb: 251, 177, 61;
 }
 .main-content.section-scope {
-  --page-cta: #fe4e5c;
-  --page-cta-hover: #e54552;
-  --primary-color: #fe4e5c;
-  --primary-color-rgb: 254, 78, 92;
+  --page-cta: #9A2D99;
+  --page-cta-hover: #8a2889;
+  --primary-color: #9A2D99;
+  --primary-color-rgb: 154, 45, 153;
 }
 .main-content.section-orders {
   --page-cta: #2e51ed;
@@ -838,6 +838,28 @@
 .action-btn.delete:hover {
   color: var(--red);
 }
+
+/* Order table action icons */
+.cell-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.row-action-btn {
+  background: transparent;
+  border: none;
+  color: #64748B;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 13px;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+.row-action-btn:hover {
+  color: #2e513d;
+  transform: scale(1.05);
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1031,12 +1053,24 @@ select.field-select::-ms-expand {
   box-shadow: 0 2px 6px #0000001a;
 }
 .modal-theme-scope {
-  --modal-focus-accent: #fe4e5c;
-  --modal-focus-accent-tint: rgba(254, 78, 92, 0.12);
+  --modal-focus-accent: #9A2D99;
+  --modal-focus-accent-tint: rgba(154, 45, 153, 0.12);
 }
 .modal-theme-orders {
   --modal-focus-accent: #2e51ed;
   --modal-focus-accent-tint: rgba(46, 81, 237, 0.12);
+}
+.modal-theme-orders .btn-save {
+  background: #2E51ED;
+  border-color: #2E51ED;
+  color: #fff;
+}
+.modal-theme-orders .btn-save:hover {
+  box-shadow: 0 2px 6px #0000001a;
+}
+.modal-theme-orders .btn-cancel {
+  border-color: #2E51ED;
+  color: #2E51ED;
 }
 .modal
   :is(
@@ -1067,7 +1101,7 @@ select.field-select::-ms-expand {
 }
 .main-content.section-scope
   :is(.field-input, .field-textarea, .field-select):focus {
-  border-color: #fe4e5c;
+  border-color: #9A2D99;
   box-shadow: none;
 }
 .main-content.section-orders
@@ -2950,6 +2984,16 @@ tr.drag-over {
 .pricebook-detail {
   width: 100%;
 }
+.pricebook-detail .table-card {
+  background: transparent;
+  border: none !important;
+  border-radius: 0;
+  box-shadow: none !important;
+}
+.pricebook-detail .table-card:hover {
+  box-shadow: none !important;
+  transform: none;
+}
 .back-btn {
   display: inline-flex;
   align-items: center;
@@ -3390,16 +3434,16 @@ tr.drag-over {
   border-left: none;
 }
 .qd-lines-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
 }
 .qd-view-lines-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
 }
 .qd-view-lines-card .line-table td {
   padding: 16px 12px;
@@ -3440,13 +3484,13 @@ tr.drag-over {
   gap: var(--qd-section-gap);
 }
 .qd-category-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  border-radius: 0;
   overflow: visible;
 }
 .qd-category-card--bundle {
-  background: #fdfdfd;
+  background: transparent;
 }
 .qd-category-card-header {
   display: flex;
@@ -3454,7 +3498,7 @@ tr.drag-over {
   justify-content: space-between;
   padding: var(--qd-card-header-padding-y) 20px;
   min-height: 34px;
-  border-radius: 8px 8px 0 0;
+  border-radius: 0;
 }
 .qd-category-card-title {
   display: block;
@@ -3482,9 +3526,9 @@ tr.drag-over {
   margin-right: auto;
 }
 .qd-detail-cards {
-  background: var(--surface);
-  border: 1px solid rgba(0, 0, 0, 0.07);
-  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  border-radius: 0;
   padding: 0;
   margin-bottom: 12px;
 }
@@ -4085,10 +4129,10 @@ tr.drag-over {
   margin: 0 0 var(--qd-section-gap);
 }
 .qd-overage-card {
-  background: var(--surface);
-  border: 1px solid rgba(15, 23, 42, 0.09);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
 }
 .qd-overage-body {
   padding: 12px 20px 14px;
@@ -5367,7 +5411,8 @@ tr.drag-over {
 }
 .data-table-products th,
 .data-table-pricebooks th,
-.data-table-quotes th {
+.data-table-quotes th,
+.data-table-orders th {
   color: var(--text-muted);
 }
 .data-table-products th,
@@ -5375,11 +5420,15 @@ tr.drag-over {
 .data-table-pricebooks th,
 .data-table-pricebooks td,
 .data-table-quotes th,
-.data-table-quotes td {
+.data-table-quotes td,
+.data-table-orders th,
+.data-table-orders td {
   border-bottom-color: var(--border);
 }
 .data-table.data-table-products th,
-.data-table.data-table-products td {
+.data-table.data-table-products td,
+.data-table.data-table-orders th,
+.data-table.data-table-orders td {
   padding: 14px 12px;
 }
 .data-table-products th.col-annual,
@@ -5982,10 +6031,10 @@ tr.drag-over {
 }
 .qd-lines-card,
 .qd-view-lines-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-sm);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 .qd-view-lines-card .line-row-sub td {
   background: #f9fafb;
@@ -7167,7 +7216,7 @@ input[type="number"].number-stepper-seat::-webkit-inner-spin-button {
   display: grid;
   grid-template-columns:
     minmax(200px, 1.45fr) minmax(180px, 1.2fr) minmax(108px, 0.7fr)
-    minmax(116px, 0.78fr) minmax(116px, 0.78fr) minmax(128px, 0.9fr);
+    minmax(116px, 0.78fr) minmax(116px, 0.78fr) minmax(128px, 0.9fr) 64px;
   column-gap: 10px;
   align-items: center;
 }
@@ -7374,6 +7423,8 @@ button {
 .data-table-products tbody td,
 .data-table-pricebooks tbody tr,
 .data-table-pricebooks tbody td,
+.data-table-orders tbody tr,
+.data-table-orders tbody td,
 .quote-summary-body .quote-summary-row,
 .quote-summary-body .quote-summary-cell {
   font-family: var(--font-body) !important;
@@ -7383,6 +7434,7 @@ button {
 .data-table-products thead th,
 .data-table-pricebooks thead th,
 .data-table-quotes thead th,
+.data-table-orders thead th,
 .quote-summary-header .quote-summary-cell {
   font-family: var(--font-heading) !important;
   font-size: var(--list-header-font-size) !important;
@@ -7517,6 +7569,7 @@ button {
 .data-table th,
 .data-table-products thead th,
 .data-table-pricebooks thead th,
+.data-table-orders thead th,
 .quote-summary-header .quote-summary-cell,
 .line-table th,
 .qd-pkg-col-product,
@@ -7535,14 +7588,25 @@ button {
   font-size: var(--ds-type-total) !important;
   font-weight: 400 !important;
 }
-.modal-section,
-.qd-category-card,
-.qd-detail-cards,
-.qd-overage-card {
+.modal-section {
   border: 1px solid var(--ds-border-subtle) !important;
   border-radius: var(--radius-sm);
   box-shadow: none !important;
   background: var(--surface);
+}
+.qd-category-card,
+.qd-detail-cards,
+.qd-overage-card {
+  border: none !important;
+  border-radius: 0;
+  box-shadow: none !important;
+  background: transparent;
+}
+.modal.modal-flat-sections .modal-section {
+  border: none !important;
+  border-radius: 0;
+  box-shadow: none !important;
+  background: transparent;
 }
 .modal-section + .modal-section,
 .qd-grouped-cards > .qd-category-card,
@@ -7609,13 +7673,16 @@ button {
   max-width: var(--ds-content-column-max);
 }
 .table-card,
-.quote-summary-card,
+.quote-summary-card {
+  box-shadow: none !important;
+  border: 1px solid var(--ds-border-subtle) !important;
+}
 .qd-commercial-table,
 .qd-support-table,
 .qd-entitlements-table,
 .qd-platform-addons-table {
   box-shadow: none !important;
-  border: 1px solid var(--ds-border-subtle) !important;
+  border: none !important;
 }
 .data-table th,
 .quote-summary-header .quote-summary-cell {
@@ -7634,6 +7701,8 @@ button {
 .data-table.data-table-pricebooks td,
 .data-table.data-table-quotes th,
 .data-table.data-table-quotes td,
+.data-table.data-table-orders th,
+.data-table.data-table-orders td,
 .quote-summary-header,
 .quote-summary-body .quote-summary-row {
   padding-top: var(--ds-space-row) !important;
@@ -9530,6 +9599,7 @@ button {
 /* Entitlements Summary table */
 .qd-entitlements-summary-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   border-spacing: 0;
 }
@@ -9545,13 +9615,16 @@ button {
   white-space: nowrap;
 }
 .qd-es-th--product {
+  width: 38%;
   text-align: left;
   padding-left: 0;
 }
 .qd-es-th--qty {
+  width: 12%;
   text-align: right;
 }
 .qd-es-th--rate {
+  width: 25%;
   text-align: right;
 }
 .qd-es-cell {
@@ -9578,8 +9651,11 @@ button {
 .qd-es-cell--rate {
   text-align: right;
 }
-.qd-es-rate-value {
-  font-weight: 600;
+.qd-es-value {
+  font-family: var(--qd-quote-content-font-family, "Poppins", sans-serif);
+  font-size: var(--qd-quote-content-font-size, 13px);
+  font-weight: var(--qd-quote-content-font-weight, 400);
+  color: var(--qd-quote-content-color, #334155);
   font-variant-numeric: tabular-nums;
 }
 .qd-es-rate-unit {
@@ -10145,9 +10221,10 @@ button {
   padding: 8px 16px !important;
 }
 
-/* 11b. List page row height (Products, Price Books, Quotes) */
+/* 11b. List page row height (Products, Price Books, Quotes, Orders) */
 .data-table.data-table-products td,
-.data-table.data-table-pricebooks td {
+.data-table.data-table-pricebooks td,
+.data-table.data-table-orders td {
   padding-top: 10px !important;
   padding-bottom: 10px !important;
 }
@@ -10908,6 +10985,119 @@ button {
   text-overflow: ellipsis;
 }
 
+/* ── Orders list table ── */
+
+.btn-order-add {
+  background: var(--section-orders);
+  border-color: var(--section-orders);
+  color: #fff;
+  font-weight: 500;
+}
+.btn-order-add:hover {
+  box-shadow: 0 2px 6px #0000001a;
+}
+.btn-order-add:active {
+  transform: scale(0.98);
+}
+
+.data-table.data-table-orders th,
+.data-table.data-table-orders td {
+  padding: 14px 16px;
+  height: auto;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table.data-table-orders th {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.data-table.data-table-orders th.col-order-number,
+.data-table.data-table-orders td.col-order-number {
+  width: 10%;
+  text-align: left;
+}
+
+.data-table.data-table-orders th.col-name,
+.data-table.data-table-orders td.col-name {
+  width: 18%;
+  text-align: left;
+}
+
+.data-table.data-table-orders td.col-name {
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.data-table.data-table-orders th.col-account,
+.data-table.data-table-orders td.col-account {
+  width: 14%;
+  text-align: left;
+}
+
+.data-table.data-table-orders th.col-owner,
+.data-table.data-table-orders td.col-owner {
+  width: 12%;
+  text-align: left;
+}
+
+.data-table.data-table-orders th.col-status,
+.data-table.data-table-orders td.col-status {
+  width: 10%;
+  text-align: left;
+}
+
+.data-table.data-table-orders th.col-acv,
+.data-table.data-table-orders td.col-acv {
+  width: 10%;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table.data-table-orders td.col-acv {
+  font-weight: 600;
+}
+
+.data-table.data-table-orders th.col-date,
+.data-table.data-table-orders td.col-date {
+  width: 10%;
+  text-align: left;
+}
+
+.data-table.data-table-orders th.col-updated,
+.data-table.data-table-orders td.col-updated {
+  width: 10%;
+  text-align: left;
+  color: var(--text-muted);
+}
+
+.data-table.data-table-orders th.col-actions,
+.data-table.data-table-orders td.col-actions {
+  width: 6%;
+  text-align: center;
+}
+
+.data-table.data-table-orders td.col-actions .actions-group {
+  justify-content: center;
+}
+
+.data-table.data-table-orders .cell-mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.data-table.data-table-orders .cell-currency {
+  color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table.data-table-orders .cell-muted {
+  color: var(--text-muted);
+}
+
 /* Sidebar navigation: hover + active states */
 .sidebar-nav {
   padding-inline: 10px;
@@ -11110,9 +11300,9 @@ button {
 
 /* QuoteDetail card container */
 .qd-detail-card-wrap {
-  background: var(--surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   padding: 0;
   margin-bottom: 12px;
 }

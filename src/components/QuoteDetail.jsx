@@ -1814,18 +1814,18 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
             return (
               <tr key={row.label}>
                 <td className="qd-es-cell qd-es-cell--product">{row.label}</td>
-                <td className="qd-es-cell qd-es-cell--qty"><strong>{fmtQty(totalQty)}</strong></td>
+                <td className="qd-es-cell qd-es-cell--qty"><span className="qd-es-value">{fmtQty(totalQty)}</span></td>
                 <td className="qd-es-cell qd-es-cell--rate">
                   {committedRate !== '—'
-                    ? <><strong className="qd-es-rate-value">{committedRate}</strong><span className="qd-es-rate-unit"> {row.unitLabel}</span></>
-                    : <span className="qd-es-rate-value">—</span>}
+                    ? <><span className="qd-es-value">{committedRate}</span><span className="qd-es-rate-unit"> {row.unitLabel}</span></>
+                    : <span className="qd-es-value">—</span>}
                 </td>
                 <td className="qd-es-cell qd-es-cell--rate">
                   {isEditing && !readOnlyQuote
                     ? <input className="qd-overage-input" value={q[row.overageField] || ''} placeholder="$0.00" onChange={(e) => handleFieldChange(row.overageField, e.target.value)} onBlur={(e) => handleFieldBlur(row.overageField, e.target.value)} />
                     : q[row.overageField]
-                      ? <><strong className="qd-es-rate-value">{q[row.overageField]}</strong><span className="qd-es-rate-unit"> {row.unitLabel}</span></>
-                      : <span className="qd-es-rate-value">—</span>}
+                      ? <><span className="qd-es-value">{q[row.overageField]}</span><span className="qd-es-rate-unit"> {row.unitLabel}</span></>
+                      : <span className="qd-es-value">—</span>}
                 </td>
               </tr>
             );

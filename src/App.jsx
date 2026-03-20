@@ -889,12 +889,32 @@ export default function App() {
 
         {page === 'orders' && !activeOrder && (
           <>
-            <div className="page-header"><div className="page-label">Order Management</div><h1 className="page-title">Orders</h1></div>
-            <div className="toolbar">
-              <div className="search-wrap"><span className="search-label">Search</span><input className="search-input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search orders..." /></div>
-              <button className="btn-primary" onClick={() => setModal({ type: 'order' })}>New Order</button>
+            <div className="page-header">
+              <div className="page-label">Order Management</div>
+              <h1 className="page-title">Orders</h1>
             </div>
-            <OrderList orders={orders.filter((o) => { if (!search) return true; const q = search.toLowerCase(); return (o.name||'').toLowerCase().includes(q)||(o.order_number||'').toLowerCase().includes(q)||(o.customer_name||'').toLowerCase().includes(q); })} onNew={() => setModal({ type: 'order' })} onOpen={(o) => setActiveOrder(o)} onDupe={dupeOrder} onDelete={delOrder} />
+
+            <div className="toolbar">
+              <div className="search-wrap">
+                <input
+                  className="search-input"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search Orders"
+                />
+              </div>
+              <button className="btn-primary btn-order-add" onClick={() => setModal({ type: 'order' })}>
+                New Order
+              </button>
+            </div>
+
+            <OrderList
+              orders={orders.filter((o) => { if (!search) return true; const q = search.toLowerCase(); return (o.name||'').toLowerCase().includes(q)||(o.order_number||'').toLowerCase().includes(q)||(o.customer_name||'').toLowerCase().includes(q); })}
+              onNew={() => setModal({ type: 'order' })}
+              onOpen={(o) => setActiveOrder(o)}
+              onDupe={dupeOrder}
+              onDelete={delOrder}
+            />
           </>
         )}
         {page === 'orders' && activeOrder && (
