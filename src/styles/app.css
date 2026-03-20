@@ -858,7 +858,7 @@
   color: transparent;
   cursor: pointer;
   padding: 4px;
-  font-size: 14px;
+  font-size: 13px;
   opacity: 0;
   transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }

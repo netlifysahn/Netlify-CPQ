@@ -73,10 +73,10 @@ export default function QuoteList({ quotes, onNew, onOpen, onDupe, onDelete }) {
                 </div>
                 <div className="quote-summary-cell cell-actions" role="cell" onClick={(e) => e.stopPropagation()}>
                   <button className="row-action-btn" title="Clone" onClick={() => onDupe(q)}>
-                    <i className="fa-solid fa-clone fa-fw" />
+                    <i className="fa-solid fa-clone fa-fw fa-sm" />
                   </button>
                   <button className="row-action-btn row-action-btn--danger" title="Delete" onClick={() => onDelete(q.id)}>
-                    <i className="fa-solid fa-trash fa-fw" />
+                    <i className="fa-solid fa-trash fa-fw fa-sm" />
                   </button>
                 </div>
               </div>
