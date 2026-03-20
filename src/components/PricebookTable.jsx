@@ -24,7 +24,7 @@ export default function PricebookTable({ pricebooks, onOpen, onEdit, onDelete, o
         <thead>
           <tr>
             <th>Name</th>
-            <th>Description</th>
+            <th aria-label="Default" />
             <th>Products</th>
             <th>Currency</th>
             <th>Status</th>
@@ -40,9 +40,7 @@ export default function PricebookTable({ pricebooks, onOpen, onEdit, onDelete, o
                 </button>
               </td>
               <td>
-                <div className="cell-description cell-description-static">
-                  {pricebook.description || '—'}
-                </div>
+                {pricebook.is_default ? <StatusBadge label="default" tone="grey" /> : null}
               </td>
               <td>
                 <span className="cell-count">{Array.isArray(pricebook.entries) ? pricebook.entries.length : 0}</span>
@@ -53,7 +51,7 @@ export default function PricebookTable({ pricebooks, onOpen, onEdit, onDelete, o
               <td>
                 <div className="cell-status">
                   <StatusBadge
-                    label={pricebook.active ? 'Active' : 'Inactive'}
+                    label={pricebook.active ? 'active' : 'inactive'}
                     tone={pricebook.active ? 'teal' : 'grey'}
                   />
                 </div>

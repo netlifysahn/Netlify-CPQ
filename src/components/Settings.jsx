@@ -244,38 +244,16 @@ export default function Settings({ settings, onSave, saveError = '' }) {
         <h1 className="page-title">Settings</h1>
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
+      <div className="settings-card-wrap">
         {saveError && (
-          <div
-            style={{
-              marginBottom: '12px',
-              padding: '10px 12px',
-              border: '1px solid rgba(185, 28, 28, 0.25)',
-              borderRadius: '8px',
-              background: 'rgba(254, 242, 242, 0.8)',
-              color: '#B91C1C',
-              fontSize: '12px',
-              lineHeight: 1.45,
-            }}
-          >
+          <div className="settings-error-banner">
             {saveError}
           </div>
         )}
         <div className="settings-section-label-row">
           <div className="qd-category-card-title">Order Form Header Text</div>
         </div>
-        <div
-          className="settings-terms-card"
-          style={{
-            background: '#FFFFFF',
-            border: '1px solid rgba(0,0,0,0.07)',
-            borderRadius: '8px',
-            padding: '16px',
-            marginBottom: '16px',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
+        <div className="settings-terms-card settings-terms-card--styled">
           <div className="settings-terms-card-body">
             <ReactQuill
               className="settings-terms-card-editor"
@@ -295,51 +273,27 @@ export default function Settings({ settings, onSave, saveError = '' }) {
         {sections.map((section, index) => (
           <div
             key={section.id}
-            className="settings-terms-card"
+            className={`settings-terms-card settings-terms-card--styled${draggedSectionId === section.id ? ' is-dragged is-dragging' : ''}${dragOverSectionId === section.id && draggedSectionId !== section.id ? ' is-drag-over' : ''}`}
             draggable={dragArmedIndex === index}
             onDragStart={(event) => handleDragStart(index, event)}
             onDrag={(event) => handleDrag(event)}
             onDragEnd={handleDragEnd}
             onDragOver={(event) => handleDragOver(index, section.id, event)}
             onDrop={(event) => handleDrop(index, event)}
-            style={{
-              background: '#FFFFFF',
-              border: draggedSectionId === section.id ? '1px solid #382AA4' : '1px solid rgba(0,0,0,0.07)',
-              borderRadius: '8px',
-              padding: '16px',
-              marginBottom: '12px',
-              boxShadow:
-                draggedSectionId === section.id
-                  ? '0 12px 28px rgba(17,24,39,0.20)'
-                  : dragOverSectionId === section.id
-                    ? 'inset 0 0 0 1px rgba(56,42,164,0.45)'
-                    : 'none',
-              opacity: draggedSectionId === section.id ? 0 : 1,
-              position: 'relative',
-              zIndex: draggedSectionId === section.id ? 0 : 1,
-              display: 'flex',
-              flexDirection: 'column',
-              transition: 'box-shadow 150ms ease, border-color 150ms ease, opacity 120ms ease',
-            }}
           >
-            <div className="settings-terms-card-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+            <div className="settings-terms-card-header settings-terms-card-header--flex">
               <input
                 type="text"
                 value={section.title}
                 onChange={(e) => update(index, 'title', e.target.value)}
                 onBlur={flushAutosave}
                 placeholder="Section title"
-                style={{
-                  flex: 1, fontFamily: "'Poppins', sans-serif", fontSize: '14px', fontWeight: 400,
-                  border: 'none', borderRadius: 0, padding: 0,
-                  outline: 'none', background: 'transparent', appearance: 'none',
-                }}
+                className="settings-card-title-input"
               />
               <button
                 type="button"
                 onClick={() => remove(index)}
-                className="settings-card-icon-btn"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', padding: '4px 8px' }}
+                className="settings-card-icon-btn settings-card-icon-btn--reset"
                 title="Delete section"
                 aria-label="Delete section"
               >
@@ -349,8 +303,7 @@ export default function Settings({ settings, onSave, saveError = '' }) {
                 type="button"
                 onMouseDown={() => setDragArmedIndex(index)}
                 onMouseUp={() => setDragArmedIndex(null)}
-                className="settings-card-icon-btn"
-                style={{ background: 'none', border: 'none', cursor: 'grab', fontSize: '14px', padding: '4px 6px' }}
+                className="settings-card-icon-btn settings-card-icon-btn--grab"
                 title="Drag to reorder"
                 aria-label="Drag to reorder section"
               >
@@ -371,14 +324,10 @@ export default function Settings({ settings, onSave, saveError = '' }) {
           </div>
         ))}
 
-        <div style={{ display: 'flex', marginTop: '16px' }}>
+        <div className="settings-add-section-wrap">
           <button
             className="settings-action-btn settings-action-btn-solid"
             onClick={addSection}
-            style={{
-              border: '1px solid', borderRadius: '6px',
-              padding: '8px 16px', cursor: 'pointer', fontFamily: "'Mulish', sans-serif",
-            }}
           >Add Section</button>
         </div>
       </div>

@@ -1,6 +1,7 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import CustomSelect from './CustomSelect';
 import {
   PACKAGE_PRICING_DISPLAYS,
   PACKAGE_QTY_BEHAVIORS,
@@ -23,6 +24,7 @@ import {
   parsePositiveIntegerInput,
 } from '../utils/numberFormat';
 import { isRichTextEmpty, toRichTextHtml } from '../utils/richText';
+import { fmtCurrency } from '../data/quotes';
 
 const PILL_COLORS = ['blue', 'green', 'amber', 'purple', 'teal'];
 const QTY_BEHAVIOR_OPTIONS = [
@@ -136,8 +138,16 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
   const [f, setF] = useState(coerceProduct(product));
   const [jsonError, setJsonError] = useState('');
   const [creditInputDrafts, setCreditInputDrafts] = useState({});
+  const [currencyInputDrafts, setCurrencyInputDrafts] = useState({});
   const [pricebookAssignments, setPricebookAssignments] = useState(() => buildInitialPricebookAssignments(coerceProduct(product).id, pricebooks));
+  const [pendingPricebookIds, setPendingPricebookIds] = useState([]);
+  const [pendingPlatformIds, setPendingPlatformIds] = useState([]);
+  const [pendingEntitlementIds, setPendingEntitlementIds] = useState([]);
   const dirtyFieldsRef = useRef(new Set());
+  const pricebookPickerRef = useRef(null);
+  const platformPickerRef = useRef(null);
+  const entitlementPickerRef = useRef(null);
+  const categoryPickerRefs = useRef({});
   const [openSections, setOpenSections] = useState({
     [COLLAPSIBLE_SECTION_KEYS.BASIC_INFO]: true,
     [COLLAPSIBLE_SECTION_KEYS.PRICING]: true,
@@ -197,8 +207,10 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
   const isConcurrentBuildsProduct = isConcurrentBuildsLikeProduct(f);
   const isStepperProduct = isSeatProduct || isConcurrentBuildsProduct;
   const isCreditProduct = !isConcurrentBuildsProduct && isCreditLikeProduct(f);
+  const shouldFormatConfigQtyWithCommas = isSeatProduct || isCreditProduct;
   const productMap = useMemo(() => new Map((products || []).map((p) => [p.id, p])), [products]);
   const COMPONENT_CARD_ORDER = ['platform', 'support', 'entitlement', 'addon'];
+  const ALWAYS_VISIBLE_COMPONENT_CATEGORIES = new Set(['platform', 'support', 'entitlement']);
   const COMPONENT_CARD_LABELS = {
     platform: 'Platform',
     support: 'Support',
@@ -226,24 +238,110 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
     () => availablePricebooks.filter((pricebook) => !assignedPricebookIds.has(pricebook.id)),
     [availablePricebooks, assignedPricebookIds],
   );
-  const showPricebookDraftRow = unassignedPricebooks.length > 0;
-  const pricebookRows = useMemo(
-    () => (showPricebookDraftRow
-      ? [...pricebookAssignments, { pricebook_id: '', is_active: true, list_price_override: null }]
-      : pricebookAssignments),
-    [pricebookAssignments, showPricebookDraftRow],
+  const pendingPricebookIdSet = useMemo(
+    () => new Set(pendingPricebookIds.map((id) => String(id))),
+    [pendingPricebookIds],
+  );
+  const pendingPlatformIdSet = useMemo(
+    () => new Set(pendingPlatformIds.map((id) => String(id))),
+    [pendingPlatformIds],
+  );
+  const pendingEntitlementIdSet = useMemo(
+    () => new Set(pendingEntitlementIds.map((id) => String(id))),
+    [pendingEntitlementIds],
   );
 
-  const addPricebookAssignment = (pricebookId = '') => {
-    const nextPricebook = pricebookId
-      ? unassignedPricebooks.find((pricebook) => String(pricebook.id) === String(pricebookId))
-      : unassignedPricebooks[0];
-    if (!nextPricebook) return;
-    setPricebookAssignments((prev) => [...prev, {
-      pricebook_id: nextPricebook.id,
-      is_active: true,
-      list_price_override: null,
-    }]);
+  useEffect(() => {
+    const validUnassignedIds = new Set(unassignedPricebooks.map((pricebook) => String(pricebook.id)));
+    setPendingPricebookIds((prev) => prev.filter((id) => validUnassignedIds.has(String(id))));
+  }, [unassignedPricebooks]);
+
+  const formatCurrencyForEdit = (value) => {
+    const n = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+    return String(Math.round(n * 100) / 100);
+  };
+
+  const parseCurrencyFromInput = (raw) => {
+    const normalized = String(raw ?? '').replace(/[^0-9.]/g, '');
+    if (!normalized) return 0;
+    const parts = normalized.split('.');
+    const numeric = parts.length > 1 ? `${parts[0]}.${parts.slice(1).join('')}` : parts[0];
+    const parsed = parseFloat(numeric);
+    return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+  };
+
+  const displayCurrencyValue = (value) => {
+    const n = typeof value === 'number' && Number.isFinite(value) ? value : parseNumber(value, 0);
+    return fmtCurrency(n);
+  };
+
+  // Close multi-select picker dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (pricebookPickerRef.current && pricebookPickerRef.current.open && !pricebookPickerRef.current.contains(e.target)) {
+        pricebookPickerRef.current.open = false;
+      }
+      if (platformPickerRef.current && platformPickerRef.current.open && !platformPickerRef.current.contains(e.target)) {
+        platformPickerRef.current.open = false;
+      }
+      if (entitlementPickerRef.current && entitlementPickerRef.current.open && !entitlementPickerRef.current.contains(e.target)) {
+        entitlementPickerRef.current.open = false;
+      }
+      Object.values(categoryPickerRefs.current).forEach((el) => {
+        if (el && el.open && !el.contains(e.target)) {
+          el.open = false;
+        }
+      });
+    };
+    document.addEventListener('mousedown', handleClickOutside, true);
+    return () => document.removeEventListener('mousedown', handleClickOutside, true);
+  }, []);
+
+  const togglePendingPricebook = (pricebookId) => {
+    const nextId = String(pricebookId);
+    setPendingPricebookIds((prev) => (
+      prev.some((id) => String(id) === nextId)
+        ? prev.filter((id) => String(id) !== nextId)
+        : [...prev, nextId]
+    ));
+  };
+
+  const applyPendingPricebookAssignments = () => {
+    if (pendingPricebookIds.length === 0) return;
+    setPricebookAssignments((prev) => {
+      const assignedIds = new Set(prev.map((assignment) => String(assignment.pricebook_id)));
+      const nextAssignments = availablePricebooks
+        .filter((pricebook) => pendingPricebookIdSet.has(String(pricebook.id)) && !assignedIds.has(String(pricebook.id)))
+        .map((pricebook) => ({
+          pricebook_id: pricebook.id,
+          is_active: true,
+          list_price_override: null,
+        }));
+      if (nextAssignments.length === 0) return prev;
+      return [...prev, ...nextAssignments];
+    });
+    setPendingPricebookIds([]);
+    if (pricebookPickerRef.current) {
+      pricebookPickerRef.current.open = false;
+    }
+  };
+
+  const togglePendingEntitlement = (productId) => {
+    const nextId = String(productId);
+    setPendingEntitlementIds((prev) => (
+      prev.some((id) => String(id) === nextId)
+        ? prev.filter((id) => String(id) !== nextId)
+        : [...prev, nextId]
+    ));
+  };
+
+  const togglePendingPlatform = (productId) => {
+    const nextId = String(productId);
+    setPendingPlatformIds((prev) => (
+      prev.some((id) => String(id) === nextId)
+        ? prev.filter((id) => String(id) !== nextId)
+        : [...prev, nextId]
+    ));
   };
 
   const updatePricebookAssignment = (index, updates) => {
@@ -288,9 +386,33 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
     });
     return grouped;
   }, [f.package_components, productMap]);
+  const selectedEntitlementIds = useMemo(
+    () => new Set((membersByCategory.entitlement || []).map((member) => String(member.component_product_id))),
+    [membersByCategory],
+  );
+  const selectedPlatformIds = useMemo(
+    () => new Set((membersByCategory.platform || []).map((member) => String(member.component_product_id))),
+    [membersByCategory],
+  );
+
+  useEffect(() => {
+    const validIds = new Set((productsByCategory.entitlement || []).map((item) => String(item.id)));
+    setPendingEntitlementIds((prev) => (
+      prev.filter((id) => validIds.has(String(id)) && !selectedEntitlementIds.has(String(id)))
+    ));
+  }, [productsByCategory, selectedEntitlementIds]);
+
+  useEffect(() => {
+    const validIds = new Set((productsByCategory.platform || []).map((item) => String(item.id)));
+    setPendingPlatformIds((prev) => (
+      prev.filter((id) => validIds.has(String(id)) && !selectedPlatformIds.has(String(id)))
+    ));
+  }, [productsByCategory, selectedPlatformIds]);
 
   const visibleComponentCategories = useMemo(
-    () => COMPONENT_CARD_ORDER.filter((category) => (membersByCategory[category] || []).length > 0),
+    () => COMPONENT_CARD_ORDER.filter((category) => (
+      ALWAYS_VISIBLE_COMPONENT_CATEGORIES.has(category) || (membersByCategory[category] || []).length > 0
+    )),
     [membersByCategory],
   );
 
@@ -591,15 +713,17 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
             <div className="grid-2">
               <div className="field">
                 <label className="field-label">SKU</label>
-                <input className="field-input" value={f.sku} onChange={(e) => s('sku', e.target.value.toUpperCase())} placeholder="NTL-XXX" style={{ fontFamily: "'Menlo', monospace" }} />
+                <input className="field-input input-mono" value={f.sku} onChange={(e) => s('sku', e.target.value.toUpperCase())} placeholder="NTL-XXX" />
               </div>
               <div className="field">
                 <label className="field-label">Category</label>
-                <select
-                  className="field-select"
+                <CustomSelect
                   value={getProductCategory(f)}
-                  onChange={(e) => {
-                    const val = e.target.value;
+                  options={categoryOptions.map((t) => ({
+                    value: t,
+                    label: TYPE_LABELS[t] || (t.charAt(0).toUpperCase() + t.slice(1)),
+                  }))}
+                  onChange={(val) => {
                     s('category', val);
                     s('type', val);
                     // Auto-set configuration_method when switching to/from bundle
@@ -608,11 +732,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                       setOpenSections((prev) => ({ ...prev, [COLLAPSIBLE_SECTION_KEYS.PACKAGE_COMPONENTS]: true }));
                     }
                   }}
-                >
-                  {categoryOptions.map((t) => (
-                    <option key={t} value={t}>{TYPE_LABELS[t] || (t.charAt(0).toUpperCase() + t.slice(1))}</option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
 
@@ -621,13 +741,13 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
               <textarea className="field-textarea" value={f.description} onChange={(e) => s('description', e.target.value)} placeholder="Product description..." />
             </div>
 
-            <div className="grid-2">
+            <div className="grid-2 basic-info-checks">
               <div className="checkbox-row">
                 <input type="checkbox" checked={f.active} onChange={(e) => s('active', e.target.checked)} id="pActive" />
                 <label htmlFor="pActive" className="checkbox-label">Active in catalog</label>
               </div>
               <div className="checkbox-row">
-                <input type="checkbox" checked={f.hide} onChange={(e) => s('hide', e.target.checked)} id="pHide" />
+                <input className="checkbox-circle" type="checkbox" checked={f.hide} onChange={(e) => s('hide', e.target.checked)} id="pHide" />
                 <label htmlFor="pHide" className="checkbox-label">Hide from quotes</label>
               </div>
               <div className="checkbox-row">
@@ -653,23 +773,50 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
             <div className="grid-3">
               <div className="field">
                 <label className="field-label">Monthly Price ($)</label>
-                <input className="field-input" type="number" min="0" step="0.01" value={f.default_price.amount} onChange={(e) => sp('amount', e.target.value)} placeholder="0.00" />
+                <input
+                  className="field-input field-input--label-typography field-input--currency"
+                  type="text"
+                  inputMode="decimal"
+                  value={Object.prototype.hasOwnProperty.call(currencyInputDrafts, 'default_price.amount')
+                    ? currencyInputDrafts['default_price.amount']
+                    : displayCurrencyValue(parseNumber(f.default_price.amount, 0))}
+                  onFocus={() => {
+                    setCurrencyInputDrafts((prev) => ({
+                      ...prev,
+                      'default_price.amount': formatCurrencyForEdit(parseNumber(f.default_price.amount, 0)),
+                    }));
+                  }}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    setCurrencyInputDrafts((prev) => ({ ...prev, 'default_price.amount': raw }));
+                    sp('amount', parseCurrencyFromInput(raw));
+                  }}
+                  onBlur={(e) => {
+                    sp('amount', parseCurrencyFromInput(e.target.value));
+                    setCurrencyInputDrafts((prev) => {
+                      const clone = { ...prev };
+                      delete clone['default_price.amount'];
+                      return clone;
+                    });
+                  }}
+                  placeholder="$0.00"
+                />
               </div>
               <div className="field">
                 <label className="field-label">Unit</label>
-                <select className="field-select" value={f.default_price.unit} onChange={(e) => sp('unit', e.target.value)}>
-                  {PRICE_UNITS.map((u) => (
-                    <option key={u} value={u}>{UNIT_LABELS[u]}</option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={f.default_price.unit}
+                  options={PRICE_UNITS.map((u) => ({ value: u, label: UNIT_LABELS[u] }))}
+                  onChange={(val) => sp('unit', val)}
+                />
               </div>
               <div className="field">
                 <label className="field-label">Method</label>
-                <select className="field-select" value={f.default_price.pricing_method} onChange={(e) => sp('pricing_method', e.target.value)}>
-                  {PRICING_METHODS.map((m) => (
-                    <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={f.default_price.pricing_method}
+                  options={PRICING_METHODS.map((m) => ({ value: m, label: m.charAt(0).toUpperCase() + m.slice(1) }))}
+                  onChange={(val) => sp('pricing_method', val)}
+                />
               </div>
             </div>
 
@@ -696,24 +843,43 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
               <>
                 <div className="pkg-pricebook-picker-wrap">
                   <span className="pkg-pricebook-picker-label">Add Price Books</span>
-                  <details className="pkg-pricebook-multi-picker" onClick={(e) => e.stopPropagation()}>
+                  <details
+                    ref={pricebookPickerRef}
+                    className="pkg-pricebook-multi-picker"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <summary className="field-select pkg-category-picker pkg-pricebook-picker-summary">
-                      {unassignedPricebooks.length > 0 ? 'Select price books' : 'All price books assigned'}
+                      <span>{unassignedPricebooks.length > 0 ? 'Select price books' : 'All price books assigned'}</span>
+                      <span className="pkg-pricebook-picker-chevron" aria-hidden="true">▾</span>
                     </summary>
                     {unassignedPricebooks.length > 0 && (
-                      <div className="pkg-entitlement-picker-menu pkg-pricebook-picker-menu">
-                        {unassignedPricebooks.map((pricebook) => (
+                      <div className="pkg-pricebook-picker-menu">
+                        <div className="pkg-pricebook-picker-options">
+                          {unassignedPricebooks.map((pricebook) => (
+                            <label
+                              key={pricebook.id}
+                              className="pkg-pricebook-picker-option"
+                            >
+                              <input
+                                type="checkbox"
+                                className="pkg-pricebook-picker-checkbox"
+                                checked={pendingPricebookIdSet.has(String(pricebook.id))}
+                                onChange={() => togglePendingPricebook(pricebook.id)}
+                              />
+                              <span>{pricebook.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                        <div className="pkg-pricebook-picker-actions">
                           <button
-                            key={pricebook.id}
                             type="button"
-                            className="pkg-entitlement-picker-option"
-                            onClick={() => {
-                              addPricebookAssignment(pricebook.id);
-                            }}
+                            className="pkg-pricebook-apply-btn"
+                            onClick={applyPendingPricebookAssignments}
+                            disabled={pendingPricebookIds.length === 0}
                           >
-                            {pricebook.name}
+                            Apply selections
                           </button>
-                        ))}
+                        </div>
                       </div>
                     )}
                   </details>
@@ -728,15 +894,36 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                           <span className="pkg-pricebook-assigned-name">{pricebook?.name || assignment.pricebook_id}</span>
                           <div className="pkg-pricebook-assigned-override">
                             <input
-                              className="field-input pkg-pricebook-override-input"
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={assignment.list_price_override ?? ''}
-                              placeholder="Use default"
+                              className="field-input field-input--label-typography field-input--currency field-input--compact-currency pkg-pricebook-override-input"
+                              type="text"
+                              inputMode="decimal"
+                              value={Object.prototype.hasOwnProperty.call(currencyInputDrafts, `pricebook:${index}`)
+                                ? currencyInputDrafts[`pricebook:${index}`]
+                                : (assignment.list_price_override == null
+                                    ? ''
+                                    : displayCurrencyValue(parseNumber(assignment.list_price_override, 0)))}
+                              placeholder="Use product default"
+                              onFocus={() => {
+                                setCurrencyInputDrafts((prev) => ({
+                                  ...prev,
+                                  [`pricebook:${index}`]: assignment.list_price_override == null
+                                    ? ''
+                                    : formatCurrencyForEdit(parseNumber(assignment.list_price_override, 0)),
+                                }));
+                              }}
                               onChange={(event) => {
                                 const raw = event.target.value;
-                                updatePricebookAssignment(index, { list_price_override: raw === '' ? null : raw });
+                                setCurrencyInputDrafts((prev) => ({ ...prev, [`pricebook:${index}`]: raw }));
+                                updatePricebookAssignment(index, { list_price_override: raw.trim() === '' ? null : parseCurrencyFromInput(raw) });
+                              }}
+                              onBlur={(event) => {
+                                const raw = event.target.value;
+                                updatePricebookAssignment(index, { list_price_override: raw.trim() === '' ? null : parseCurrencyFromInput(raw) });
+                                setCurrencyInputDrafts((prev) => {
+                                  const clone = { ...prev };
+                                  delete clone[`pricebook:${index}`];
+                                  return clone;
+                                });
                               }}
                             />
                           </div>
@@ -745,7 +932,9 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                             className="pkg-pricebook-remove-btn"
                             onClick={() => removePricebookAssignment(index)}
                             aria-label="Remove"
-                          >×</button>
+                          >
+                            <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
+                          </button>
                         </div>
                       );
                     })}
@@ -787,72 +976,136 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                   const emptyLabel = COMPONENT_EMPTY_LABELS[category];
 
                   const isEntitlementCategory = category === 'entitlement';
-                  const selectedEntitlementIds = new Set(catMembers.map((m) => m.component_product_id));
-                  const availableEntitlementProducts = catProducts.filter((p) => !selectedEntitlementIds.has(p.id));
+                  const isPlatformCategory = category === 'platform';
+                  const applyPendingEntitlements = () => {
+                    if (pendingEntitlementIds.length === 0) return;
+                    pendingEntitlementIds.forEach((entitlementId) => {
+                      const id = String(entitlementId);
+                      if (selectedEntitlementIds.has(id)) return;
+                      addMemberFromCategory(category, id);
+                    });
+                    setPendingEntitlementIds([]);
+                    if (entitlementPickerRef.current) {
+                      entitlementPickerRef.current.open = false;
+                    }
+                  };
+                  const applyPendingPlatform = () => {
+                    if (pendingPlatformIds.length === 0) return;
+                    pendingPlatformIds.forEach((platformId) => {
+                      const id = String(platformId);
+                      if (selectedPlatformIds.has(id)) return;
+                      addMemberFromCategory(category, id);
+                    });
+                    setPendingPlatformIds([]);
+                    if (platformPickerRef.current) {
+                      platformPickerRef.current.open = false;
+                    }
+                  };
 
                   return (
                     <div key={category} className={`pkg-category-card pkg-category-card-${category}`}>
                       <div className="pkg-category-card-header">
                         <span className="pkg-category-card-title">{catLabel}</span>
-                        {isEntitlementCategory ? (
-                          <details className="pkg-entitlement-multi-picker" onClick={(e) => e.stopPropagation()}>
-                            <summary className="field-select pkg-category-picker pkg-entitlement-picker-summary">
-                              {availableEntitlementProducts.length > 0 ? addLabel : 'No entitlements available'}
-                            </summary>
-                            {availableEntitlementProducts.length > 0 && (
-                              <div className="pkg-entitlement-picker-menu">
-                                {availableEntitlementProducts.map((p) => (
-                                  <button
-                                    key={p.id}
-                                    type="button"
-                                    className="pkg-entitlement-picker-option"
-                                    onClick={() => {
-                                      addMemberFromCategory(category, p.id);
-                                    }}
-                                  >
-                                    {p.sku ? `${p.name} (${p.sku})` : p.name}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </details>
-                        ) : (
-                          <select
-                            className="field-select pkg-category-picker"
-                            value=""
-                            onChange={(e) => {
-                              if (e.target.value) addMemberFromCategory(category, e.target.value);
-                            }}
-                            disabled={catProducts.length === 0}
-                          >
-                            <option value="">{addLabel}</option>
-                            {catProducts
-                              .filter((p) => category === 'support' || !catMembers.some((m) => m.component_product_id === p.id))
-                              .map((p) => (
-                                <option key={p.id} value={p.id}>{p.sku ? `${p.name} (${p.sku})` : p.name}</option>
-                              ))}
-                          </select>
-                        )}
-                      </div>
-                      {isEntitlementCategory && catMembers.length > 0 && (
-                        <div className="pkg-entitlement-tokens">
-                          {catMembers.map((member) => {
-                            const referencedProduct = productMap.get(member.component_product_id);
+                        {isEntitlementCategory || isPlatformCategory ? (
+                          (() => {
+                            const selectedIds = isEntitlementCategory ? selectedEntitlementIds : selectedPlatformIds;
+                            const pendingIdSet = isEntitlementCategory ? pendingEntitlementIdSet : pendingPlatformIdSet;
+                            const pendingIds = isEntitlementCategory ? pendingEntitlementIds : pendingPlatformIds;
+                            const togglePending = isEntitlementCategory ? togglePendingEntitlement : togglePendingPlatform;
+                            const applyPending = isEntitlementCategory ? applyPendingEntitlements : applyPendingPlatform;
+                            const pickerRef = isEntitlementCategory ? entitlementPickerRef : platformPickerRef;
+                            const pickerProducts = catProducts.filter((p) => !selectedIds.has(String(p.id)));
+
                             return (
-                              <span key={member.component_product_id} className="pkg-entitlement-token">
-                                <span className="pkg-entitlement-token-label">{referencedProduct?.name || 'Unknown'}</span>
-                                <button type="button" className="pkg-entitlement-token-remove" onClick={() => removeMember(member._index)} aria-label="Remove">×</button>
-                              </span>
+                              <details ref={pickerRef} className="pkg-entitlement-multi-picker" onClick={(e) => e.stopPropagation()}>
+                                <summary className="field-select pkg-category-picker pkg-entitlement-picker-summary">
+                                  <span>{pickerProducts.length > 0 ? addLabel : `All ${catLabel.toLowerCase()} added`}</span>
+                                  <span className="pkg-entitlement-picker-chevron" aria-hidden="true">▾</span>
+                                </summary>
+                                {pickerProducts.length > 0 && (
+                                  <div className="pkg-entitlement-picker-menu">
+                                    <div className="pkg-entitlement-picker-options">
+                                      {pickerProducts.map((p) => {
+                                        const isPending = pendingIdSet.has(String(p.id));
+                                        return (
+                                          <label
+                                            key={p.id}
+                                            className="pkg-entitlement-picker-option"
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              className="pkg-entitlement-picker-checkbox"
+                                              checked={isPending}
+                                              onChange={() => togglePending(p.id)}
+                                            />
+                                            <span>{p.name}</span>
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
+                                    <div className="pkg-entitlement-picker-actions">
+                                      <button
+                                        type="button"
+                                        className="pkg-entitlement-apply-btn"
+                                        onClick={applyPending}
+                                        disabled={pendingIds.length === 0}
+                                      >
+                                        Apply selections
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </details>
                             );
-                          })}
-                        </div>
-                      )}
+                          })()
+                        ) : (() => {
+                          const filteredProducts = catProducts
+                            .filter((p) => category === 'support' || !catMembers.some((m) => m.component_product_id === p.id));
+                          const currentSupportId = category === 'support' && catMembers.length > 0 ? catMembers[0].component_product_id : null;
+                          return (
+                            <details
+                              ref={(el) => { categoryPickerRefs.current[category] = el; }}
+                              className="pkg-category-single-picker"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <summary className="field-select pkg-category-picker pkg-category-single-picker-summary">
+                                <span>{filteredProducts.length > 0 ? addLabel : `No ${catLabel.toLowerCase()} available`}</span>
+                                <span className="pkg-category-single-picker-chevron" aria-hidden="true">▾</span>
+                              </summary>
+                              {filteredProducts.length > 0 && (
+                                <div className="pkg-category-single-picker-menu">
+                                  <div className="pkg-category-single-picker-options">
+                                    {filteredProducts.map((p) => {
+                                      const isCurrentSupport = currentSupportId === p.id;
+                                      return (
+                                        <button
+                                          key={p.id}
+                                          type="button"
+                                          className={`pkg-category-single-picker-option${isCurrentSupport ? ' is-selected' : ''}`}
+                                          onClick={() => {
+                                            addMemberFromCategory(category, p.id);
+                                            if (categoryPickerRefs.current[category]) {
+                                              categoryPickerRefs.current[category].open = false;
+                                            }
+                                          }}
+                                        >
+                                          <span className="pkg-category-single-picker-check" aria-hidden="true">✓</span>
+                                          <span>{p.name}</span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </details>
+                          );
+                        })()}
+                      </div>
                       {isBasePackage && ['entitlement', 'platform', 'support', 'addon'].includes(category) ? (
                         <div className={`pkg-component-list pkg-${category}-list`}>
                           {catMembers.length > 0 ? catMembers.map((member) => {
                             const index = member._index;
                             const referencedProduct = productMap.get(member.component_product_id);
-                            const memberSku = referencedProduct?.sku || '';
                             const isEntitlement = category === 'entitlement';
 
                             return (
@@ -866,7 +1119,6 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                                     </div>
                                     <div className="pkg-product-cell-stack">
                                       <span className="pkg-member-name">{referencedProduct?.name || 'Unknown'}</span>
-                                      <span className="pkg-member-sku">{memberSku || '\u00A0'}</span>
                                     </div>
                                   </div>
                                   <button type="button" className="pkg-remove-btn" onClick={() => removeMember(index)} title="Delete">
@@ -899,11 +1151,12 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                                         <div className="pkg-component-field-row">
                                           <label className="pkg-component-field-label">Qty Behavior</label>
                                           <div className="pkg-component-field-control">
-                                            <select className="field-select pkg-inline-select" value={member.qty_behavior || 'editable'} onChange={(e) => updateMember(index, 'qty_behavior', e.target.value)}>
-                                              {QTY_BEHAVIOR_OPTIONS.map((opt) => (
-                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                              ))}
-                                            </select>
+                                            <CustomSelect
+                                              className="pkg-inline-select"
+                                              value={member.qty_behavior || 'editable'}
+                                              options={QTY_BEHAVIOR_OPTIONS}
+                                              onChange={(val) => updateMember(index, 'qty_behavior', val)}
+                                            />
                                           </div>
                                         </div>
                                       </div>
@@ -911,21 +1164,23 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                                         <div className="pkg-component-field-row">
                                           <label className="pkg-component-field-label">Quote Editability</label>
                                           <div className="pkg-component-field-control">
-                                            <select className="field-select pkg-inline-select" value={member.quote_edit_mode || 'editable_qty'} onChange={(e) => updateMember(index, 'quote_edit_mode', e.target.value)}>
-                                              {QUOTE_EDIT_OPTIONS.map((opt) => (
-                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                              ))}
-                                            </select>
+                                            <CustomSelect
+                                              className="pkg-inline-select"
+                                              value={member.quote_edit_mode || 'editable_qty'}
+                                              options={QUOTE_EDIT_OPTIONS}
+                                              onChange={(val) => updateMember(index, 'quote_edit_mode', val)}
+                                            />
                                           </div>
                                         </div>
                                         <div className="pkg-component-field-row">
                                           <label className="pkg-component-field-label">Pricing Display</label>
                                           <div className="pkg-component-field-control">
-                                            <select className="field-select pkg-inline-select" value={member.pricing_display || 'package_only'} onChange={(e) => updateMember(index, 'pricing_display', e.target.value)}>
-                                              {PRICING_DISPLAY_OPTIONS.map((opt) => (
-                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                              ))}
-                                            </select>
+                                            <CustomSelect
+                                              className="pkg-inline-select"
+                                              value={member.pricing_display || 'package_only'}
+                                              options={PRICING_DISPLAY_OPTIONS}
+                                              onChange={(val) => updateMember(index, 'pricing_display', val)}
+                                            />
                                           </div>
                                         </div>
                                       </div>
@@ -935,21 +1190,23 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                                       <div className="pkg-component-field-row">
                                         <label className="pkg-component-field-label">Quote Editability</label>
                                         <div className="pkg-component-field-control">
-                                          <select className="field-select pkg-inline-select" value={member.quote_edit_mode || 'read_only'} onChange={(e) => updateMember(index, 'quote_edit_mode', e.target.value)}>
-                                            {QUOTE_EDIT_OPTIONS.map((opt) => (
-                                              <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                            ))}
-                                          </select>
+                                          <CustomSelect
+                                            className="pkg-inline-select"
+                                            value={member.quote_edit_mode || 'read_only'}
+                                            options={QUOTE_EDIT_OPTIONS}
+                                            onChange={(val) => updateMember(index, 'quote_edit_mode', val)}
+                                          />
                                         </div>
                                       </div>
                                       <div className="pkg-component-field-row">
                                         <label className="pkg-component-field-label">Pricing Display</label>
                                         <div className="pkg-component-field-control">
-                                          <select className="field-select pkg-inline-select" value={member.pricing_display || 'package_only'} onChange={(e) => updateMember(index, 'pricing_display', e.target.value)}>
-                                            {PRICING_DISPLAY_OPTIONS.map((opt) => (
-                                              <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                            ))}
-                                          </select>
+                                          <CustomSelect
+                                            className="pkg-inline-select"
+                                            value={member.pricing_display || 'package_only'}
+                                            options={PRICING_DISPLAY_OPTIONS}
+                                            onChange={(val) => updateMember(index, 'pricing_display', val)}
+                                          />
                                         </div>
                                       </div>
                                     </>
@@ -985,7 +1242,6 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                             {catMembers.length > 0 ? catMembers.map((member) => {
                               const index = member._index;
                               const referencedProduct = productMap.get(member.component_product_id);
-                              const memberSku = referencedProduct?.sku || '';
 
                               return (
                                 <tr key={`${member.component_product_id}_${index}`}>
@@ -999,75 +1255,58 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                                   <td className="pkg-cell-product">
                                     {category === 'support' ? (
                                       <div className="pkg-product-cell-stack">
-                                        <select
-                                          className="field-select pkg-inline-select"
+                                        <CustomSelect
+                                          className="pkg-inline-select"
                                           value={member.component_product_id}
-                                          onChange={(e) => {
-                                            if (e.target.value) swapMember(index, e.target.value);
+                                          options={catProducts.map((p) => ({ value: p.id, label: p.name }))}
+                                          onChange={(val) => {
+                                            if (val) swapMember(index, val);
                                           }}
-                                        >
-                                          {catProducts.map((p) => (
-                                            <option key={p.id} value={p.id}>{p.sku ? `${p.name} (${p.sku})` : p.name}</option>
-                                          ))}
-                                        </select>
-                                        {memberSku && <span className="pkg-member-sku">{memberSku}</span>}
+                                        />
                                       </div>
                                     ) : (
                                       <div className="pkg-product-cell-stack">
                                         <span className="pkg-member-name">{referencedProduct?.name || 'Unknown'}</span>
-                                        {memberSku && <span className="pkg-member-sku">{memberSku}</span>}
                                       </div>
                                     )}
                                   </td>
                                   {category === 'platform' && (
                                     <>
                                       <td>
-                                        <select
-                                          className="field-select pkg-inline-select"
+                                        <CustomSelect
+                                          className="pkg-inline-select"
                                           value={member.quote_edit_mode || 'read_only'}
-                                          onChange={(e) => updateMember(index, 'quote_edit_mode', e.target.value)}
-                                        >
-                                          {QUOTE_EDIT_OPTIONS.map((opt) => (
-                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                          ))}
-                                        </select>
+                                          options={QUOTE_EDIT_OPTIONS}
+                                          onChange={(val) => updateMember(index, 'quote_edit_mode', val)}
+                                        />
                                       </td>
                                       <td>
-                                        <select
-                                          className="field-select pkg-inline-select"
+                                        <CustomSelect
+                                          className="pkg-inline-select"
                                           value={member.pricing_display || 'package_only'}
-                                          onChange={(e) => updateMember(index, 'pricing_display', e.target.value)}
-                                        >
-                                          {PRICING_DISPLAY_OPTIONS.map((opt) => (
-                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                          ))}
-                                        </select>
+                                          options={PRICING_DISPLAY_OPTIONS}
+                                          onChange={(val) => updateMember(index, 'pricing_display', val)}
+                                        />
                                       </td>
                                     </>
                                   )}
                                   {category === 'support' && (
                                     <>
                                       <td>
-                                        <select
-                                          className="field-select pkg-inline-select"
+                                        <CustomSelect
+                                          className="pkg-inline-select"
                                           value={member.quote_edit_mode || 'read_only'}
-                                          onChange={(e) => updateMember(index, 'quote_edit_mode', e.target.value)}
-                                        >
-                                          {QUOTE_EDIT_OPTIONS.map((opt) => (
-                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                          ))}
-                                        </select>
+                                          options={QUOTE_EDIT_OPTIONS}
+                                          onChange={(val) => updateMember(index, 'quote_edit_mode', val)}
+                                        />
                                       </td>
                                       <td>
-                                        <select
-                                          className="field-select pkg-inline-select"
+                                        <CustomSelect
+                                          className="pkg-inline-select"
                                           value={member.pricing_display || 'package_only'}
-                                          onChange={(e) => updateMember(index, 'pricing_display', e.target.value)}
-                                        >
-                                          {PRICING_DISPLAY_OPTIONS.map((opt) => (
-                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                          ))}
-                                        </select>
+                                          options={PRICING_DISPLAY_OPTIONS}
+                                          onChange={(val) => updateMember(index, 'pricing_display', val)}
+                                        />
                                       </td>
                                     </>
                                   )}
@@ -1122,11 +1361,11 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
               </div>
               <div className="field">
                 <label className="field-label">Term Behavior</label>
-                <select className="field-select" value={f.term_behavior} onChange={(e) => s('term_behavior', e.target.value)}>
-                  {TERM_BEHAVIORS.map((b) => (
-                    <option key={b} value={b}>{b.charAt(0).toUpperCase() + b.slice(1)}</option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={f.term_behavior}
+                  options={TERM_BEHAVIORS.map((b) => ({ value: b, label: b.charAt(0).toUpperCase() + b.slice(1) }))}
+                  onChange={(val) => s('term_behavior', val)}
+                />
               </div>
             </div>
           </div>
@@ -1146,19 +1385,19 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
           <div className={`modal-section-content ${openSections[COLLAPSIBLE_SECTION_KEYS.CONFIGURATION] ? 'is-open' : ''}`}>
             <div className="grid-2">
               <div className="checkbox-row">
-                <input type="checkbox" checked={f.config.lock_quantity} onChange={(e) => sc('lock_quantity', e.target.checked)} id="lockQty" />
+                <input className="checkbox-circle" type="checkbox" checked={f.config.lock_quantity} onChange={(e) => sc('lock_quantity', e.target.checked)} id="lockQty" />
                 <label htmlFor="lockQty" className="checkbox-label">Lock quantity</label>
               </div>
               <div className="checkbox-row">
-                <input type="checkbox" checked={f.config.lock_price} onChange={(e) => sc('lock_price', e.target.checked)} id="lockPrice" />
+                <input className="checkbox-circle" type="checkbox" checked={f.config.lock_price} onChange={(e) => sc('lock_price', e.target.checked)} id="lockPrice" />
                 <label htmlFor="lockPrice" className="checkbox-label">Lock price</label>
               </div>
               <div className="checkbox-row">
-                <input type="checkbox" checked={f.config.lock_discount} onChange={(e) => sc('lock_discount', e.target.checked)} id="lockDisc" />
+                <input className="checkbox-circle" type="checkbox" checked={f.config.lock_discount} onChange={(e) => sc('lock_discount', e.target.checked)} id="lockDisc" />
                 <label htmlFor="lockDisc" className="checkbox-label">Lock discount</label>
               </div>
               <div className="checkbox-row">
-                <input type="checkbox" checked={f.config.lock_term} onChange={(e) => sc('lock_term', e.target.checked)} id="lockTerm" />
+                <input className="checkbox-circle" type="checkbox" checked={f.config.lock_term} onChange={(e) => sc('lock_term', e.target.checked)} id="lockTerm" />
                 <label htmlFor="lockTerm" className="checkbox-label">Lock term</label>
               </div>
             </div>
@@ -1168,23 +1407,23 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                 <div className="field">
                   <label className="field-label">Default Qty</label>
                   <input
-                    className={`field-input ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
-                    type={isCreditProduct ? 'text' : 'number'}
-                    inputMode={isCreditProduct ? 'numeric' : undefined}
-                    value={isCreditProduct
+                    className={`field-input field-input--label-typography ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
+                    type={shouldFormatConfigQtyWithCommas ? 'text' : 'number'}
+                    inputMode={shouldFormatConfigQtyWithCommas ? 'numeric' : undefined}
+                    value={shouldFormatConfigQtyWithCommas
                       ? (Object.prototype.hasOwnProperty.call(creditInputDrafts, 'config:default_quantity')
                         ? creditInputDrafts['config:default_quantity']
                         : formatIntegerWithCommas(parsePositiveIntegerInput(f.config.default_quantity, 1, 1), 1))
                       : f.config.default_quantity}
                     onFocus={() => {
-                      if (!isCreditProduct) return;
+                      if (!shouldFormatConfigQtyWithCommas) return;
                       setCreditInputDrafts((prev) => ({
                         ...prev,
                         'config:default_quantity': formatIntegerForEdit(f.config.default_quantity, 1, 1),
                       }));
                     }}
                     onChange={(e) => {
-                      if (!isCreditProduct) {
+                      if (!shouldFormatConfigQtyWithCommas) {
                         sc('default_quantity', e.target.value);
                         return;
                       }
@@ -1193,7 +1432,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                       sc('default_quantity', parsePositiveIntegerInput(raw, 1, 1));
                     }}
                     onBlur={(e) => {
-                      if (!isCreditProduct) return;
+                      if (!shouldFormatConfigQtyWithCommas) return;
                       sc('default_quantity', parsePositiveIntegerInput(e.target.value, 1, 1));
                       setCreditInputDrafts((prev) => {
                         const clone = { ...prev };
@@ -1206,23 +1445,23 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                 <div className="field">
                   <label className="field-label">Min Qty</label>
                   <input
-                    className={`field-input ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
-                    type={isCreditProduct ? 'text' : 'number'}
-                    inputMode={isCreditProduct ? 'numeric' : undefined}
-                    value={isCreditProduct
+                    className={`field-input field-input--label-typography ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
+                    type={shouldFormatConfigQtyWithCommas ? 'text' : 'number'}
+                    inputMode={shouldFormatConfigQtyWithCommas ? 'numeric' : undefined}
+                    value={shouldFormatConfigQtyWithCommas
                       ? (Object.prototype.hasOwnProperty.call(creditInputDrafts, 'config:min_quantity')
                         ? creditInputDrafts['config:min_quantity']
                         : formatIntegerWithCommas(parsePositiveIntegerInput(f.config.min_quantity, 1, 1), 1))
                       : f.config.min_quantity}
                     onFocus={() => {
-                      if (!isCreditProduct) return;
+                      if (!shouldFormatConfigQtyWithCommas) return;
                       setCreditInputDrafts((prev) => ({
                         ...prev,
                         'config:min_quantity': formatIntegerForEdit(f.config.min_quantity, 1, 1),
                       }));
                     }}
                     onChange={(e) => {
-                      if (!isCreditProduct) {
+                      if (!shouldFormatConfigQtyWithCommas) {
                         sc('min_quantity', e.target.value);
                         return;
                       }
@@ -1231,7 +1470,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                       sc('min_quantity', parsePositiveIntegerInput(raw, 1, 1));
                     }}
                     onBlur={(e) => {
-                      if (!isCreditProduct) return;
+                      if (!shouldFormatConfigQtyWithCommas) return;
                       sc('min_quantity', parsePositiveIntegerInput(e.target.value, 1, 1));
                       setCreditInputDrafts((prev) => {
                         const clone = { ...prev };
@@ -1244,23 +1483,23 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                 <div className="field">
                   <label className="field-label">Max Qty</label>
                   <input
-                    className={`field-input ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
-                    type={isCreditProduct ? 'text' : 'number'}
-                    inputMode={isCreditProduct ? 'numeric' : undefined}
-                    value={isCreditProduct
+                    className={`field-input field-input--label-typography ${isStepperProduct ? 'number-stepper-seat' : ''}`.trim()}
+                    type={shouldFormatConfigQtyWithCommas ? 'text' : 'number'}
+                    inputMode={shouldFormatConfigQtyWithCommas ? 'numeric' : undefined}
+                    value={shouldFormatConfigQtyWithCommas
                       ? (Object.prototype.hasOwnProperty.call(creditInputDrafts, 'config:max_quantity')
                         ? creditInputDrafts['config:max_quantity']
                         : formatIntegerWithCommas(parsePositiveIntegerInput(f.config.max_quantity, 1, 1), 1))
                       : f.config.max_quantity}
                     onFocus={() => {
-                      if (!isCreditProduct) return;
+                      if (!shouldFormatConfigQtyWithCommas) return;
                       setCreditInputDrafts((prev) => ({
                         ...prev,
                         'config:max_quantity': formatIntegerForEdit(f.config.max_quantity, 1, 1),
                       }));
                     }}
                     onChange={(e) => {
-                      if (!isCreditProduct) {
+                      if (!shouldFormatConfigQtyWithCommas) {
                         sc('max_quantity', e.target.value);
                         return;
                       }
@@ -1269,7 +1508,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
                       sc('max_quantity', parsePositiveIntegerInput(raw, 1, 1));
                     }}
                     onBlur={(e) => {
-                      if (!isCreditProduct) return;
+                      if (!shouldFormatConfigQtyWithCommas) return;
                       sc('max_quantity', parsePositiveIntegerInput(e.target.value, 1, 1));
                       setCreditInputDrafts((prev) => {
                         const clone = { ...prev };
@@ -1283,7 +1522,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
             )}
 
             <div className="checkbox-row">
-              <input type="checkbox" checked={f.config.edit_name} onChange={(e) => sc('edit_name', e.target.checked)} id="editName" />
+              <input className="checkbox-circle" type="checkbox" checked={f.config.edit_name} onChange={(e) => sc('edit_name', e.target.checked)} id="editName" />
               <label htmlFor="editName" className="checkbox-label">Allow editing product name on quote</label>
             </div>
 
@@ -1302,11 +1541,7 @@ export default function ProductModal({ product, products, pricebooks, onSave, on
             aria-expanded={openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS]}
           >
             <span className="modal-section-title-with-help">
-              Entitlement Rules
-              <span
-                title="Defines the entitlement behavior for this product — e.g. how credits refresh and over what period. Values entered here are parsed and displayed as tags below the JSON field."
-                className="modal-section-help-icon"
-              >?</span>
+              ADVANCED RULES (JSON)
             </span>
             <span>{openSections[COLLAPSIBLE_SECTION_KEYS.ENTITLEMENTS] ? '▾' : '▸'}</span>
           </button>

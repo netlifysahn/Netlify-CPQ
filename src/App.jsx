@@ -663,7 +663,7 @@ export default function App() {
     return true;
   });
 
-  const statuses = ['All', ...['draft', 'submitted', 'won', 'lost', 'cancelled'].filter((s) => quotes.some((q) => q.status === s))];
+  const statuses = ['All', ...['draft', 'shared', 'sent', 'converted', 'archived', 'submitted', 'won', 'lost', 'cancelled'].filter((s) => quotes.some((q) => q.status === s))];
 
   const handleNavClick = (nextPage) => {
     setPage(nextPage);
@@ -707,12 +707,11 @@ export default function App() {
 
             <div className="toolbar">
               <div className="search-wrap">
-                <span style={{ color: '#9ca3af', fontSize: '13px' }}>Search</span>
                 <input
                   className="search-input"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search products..."
+                  placeholder="Search Products"
                 />
               </div>
               <div className="toolbar-select-wrap">
@@ -725,7 +724,7 @@ export default function App() {
                   <span>▾</span>
                 </span>
               </div>
-              <button className="btn-primary btn-quote-add" onClick={() => setModal({ type: 'product' })}>
+              <button className="btn-primary btn-product-add" onClick={() => setModal({ type: 'product' })}>
                 Add Product
               </button>
             </div>
@@ -753,12 +752,11 @@ export default function App() {
 
                 <div className="toolbar">
                   <div className="search-wrap">
-                    <span style={{ color: '#9ca3af', fontSize: '13px' }}>Search</span>
                     <input
                       className="search-input"
                       value={pricebookSearch}
                       onChange={(event) => setPricebookSearch(event.target.value)}
-                      placeholder="Search price books..."
+                      placeholder="Search Price Books"
                     />
                   </div>
                   <button className="btn-primary btn-product-add" onClick={() => setModal({ type: 'pricebook' })}>
@@ -797,7 +795,7 @@ export default function App() {
 
             <div className="toolbar">
               <div className="search-wrap">
-                <span style={{ color: '#9ca3af', fontSize: '13px' }}>Search</span>
+                <span className="search-label">Search</span>
                 <input
                   className="search-input"
                   value={search}

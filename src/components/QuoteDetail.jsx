@@ -4,7 +4,7 @@ import 'react-quill/dist/quill.snow.css';
 import { isRichTextEmpty, toRichTextHtml } from '../utils/richText';
 import {
   calcQuoteTotals, calcLineExtended,
-  fmtCurrency, STATUS_META, emptyLineItem,
+  fmtCurrency, STATUS_META, ALLOWED_TRANSITIONS, isReadOnlyStatus, emptyLineItem,
   emptyPackageLine, emptySubLineItem,
   syncDiscountFromPercent, syncDiscountFromAmount,
   isIncluded, isQuantityEditable, getEffectiveLineQuantity,
@@ -28,10 +28,10 @@ class QuoteDetailErrorBoundary extends Component {
   render() {
     if (this.state.error) {
       return (
-        <div style={{ padding: 40 }}>
+        <div className="error-boundary-wrap">
           <button className="back-btn" onClick={this.props.onBack}>Back to Quotes</button>
-          <h2 style={{ marginTop: 20, color: '#ef4444' }}>Something went wrong</h2>
-          <pre style={{ marginTop: 12, padding: 16, background: 'rgba(0,0,0,0.05)', borderRadius: 8, whiteSpace: 'pre-wrap', fontSize: 13 }}>
+          <h2 className="error-boundary-heading">Something went wrong</h2>
+          <pre className="error-boundary-trace">
             {this.state.error?.message || String(this.state.error)}
           </pre>
         </div>
@@ -59,7 +59,7 @@ const relativeTime = (timestamp) => {
 };
 
 const ACTIVITY_DOT_COLORS = {
-  draft: '#6b7280', sent: '#2E51ED', draft_revision: '#FBB13D',
+  draft: '#6b7280', shared: '#2E51ED', sent: '#2E51ED', draft_revision: '#FBB13D',
   ready_to_submit: '#05BDBA', pending_approval: '#7C3AED',
   approved: '#059669', rejected: '#ef4444', converted: '#065f46',
   archived: '#9ca3af',
@@ -136,7 +136,7 @@ const groupBasePackageSectionsForDisplay = (subs = []) => {
     included.push(...group.lines);
   });
   return [
-    { key: 'included', label: 'Included Platform', lines: included, isConfiguration: false },
+    { key: 'included', label: 'Included', lines: included, isConfiguration: false },
     { key: 'configuration', label: 'Configuration', lines: configuration, isConfiguration: true },
   ].filter((section) => section.lines.length > 0);
 };
@@ -177,8 +177,8 @@ const fmtQty = (v) => {
   return n.toLocaleString('en-US');
 };
 
-const CARD_ORDER_WITH_PACKAGE = ['bundle', 'support', 'entitlements', 'addon'];
-const CARD_ORDER_NO_PACKAGE = ['platform', 'support', 'entitlements', 'addon'];
+const CARD_ORDER_WITH_PACKAGE = ['bundle', 'support', 'addon', 'entitlements'];
+const CARD_ORDER_NO_PACKAGE = ['platform', 'support', 'addon', 'entitlements'];
 const MULTI_SELECT_CATEGORIES = new Set(['platform', 'entitlements', 'addon']);
 
 const getCategoryCardLabel = (category, hasActiveBasePackage) => {
@@ -189,7 +189,7 @@ const getCategoryCardLabel = (category, hasActiveBasePackage) => {
 const getMultiSelectPlaceholder = (category, cardLabel) => {
   if (category === 'entitlements' && cardLabel === 'Additional Entitlements') return 'Add Product';
   if (category === 'addon') return 'Add Product';
-  return 'Select SKU';
+  return 'Select Product';
 };
 
 const shouldShowPlatformAddonQty = (line) => {
@@ -206,31 +206,27 @@ const setsEqual = (a, b) => {
   return true;
 };
 
-const DC_LABEL_STYLE = { fontSize: '13px', color: '#475569', fontWeight: 500, fontFamily: "'Mulish', sans-serif", marginBottom: '4px' };
-const DC_INPUT_STYLE = { fontSize: '13px', color: '#0a0a0a', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '7px 10px', width: '100%', outline: 'none', boxSizing: 'border-box', background: '#fff', transition: 'border-color 0.15s' };
-
-const handleDcFocus = (e) => { e.target.style.borderColor = '#FBB13D'; };
-const handleDcBlurStyle = (e) => { e.target.style.borderColor = '#e5e7eb'; };
-
-function DetailInput({ label, field, value, placeholder, span2, type, mono, textarea, options, onChange, onBlur }) {
-  const style = mono ? { ...DC_INPUT_STYLE, fontFamily: "'Poppins', sans-serif" } : DC_INPUT_STYLE;
+function DetailInput({ label, field, value, placeholder, span2, type, mono, textarea, options, onChange, onBlur, readOnly }) {
+  const inputCls = `qd-dc-input${mono ? ' qd-dc-input--mono' : ''}`;
   const handleChange = (e) => onChange(field, e.target.value);
-  const handleBlur = (e) => { handleDcBlurStyle(e); onBlur(field, e.target.value); };
+  const handleBlur = (e) => { onBlur(field, e.target.value); };
   let input;
-  if (textarea) {
-    input = <textarea style={{ ...style, resize: 'vertical', minHeight: '60px' }} value={value || ''} placeholder={placeholder} onChange={handleChange} onFocus={handleDcFocus} onBlur={handleBlur} />;
+  if (readOnly) {
+    input = <div className={`${inputCls} qd-dc-input--height qd-dc-input--readonly`}>{value || '\u2014'}</div>;
+  } else if (textarea) {
+    input = <textarea className={`${inputCls} qd-dc-input--textarea`} value={value || ''} placeholder={placeholder} onChange={handleChange} onBlur={handleBlur} />;
   } else if (options) {
     input = (
-      <select className="qd-detail-input-select" style={{ ...style, cursor: 'pointer' }} value={value || ''} onChange={(e) => { handleChange(e); onBlur(field, e.target.value); }} onFocus={handleDcFocus} onBlur={(e) => handleDcBlurStyle(e)}>
+      <select className={`qd-detail-input-select ${inputCls} qd-dc-input--select`} value={value || ''} onChange={(e) => { handleChange(e); onBlur(field, e.target.value); }} onBlur={handleBlur}>
         {options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
       </select>
     );
   } else {
-    input = <input type={type || 'text'} style={style} value={value || ''} placeholder={placeholder} onChange={handleChange} onFocus={handleDcFocus} onBlur={handleBlur} />;
+    input = <input type={type || 'text'} className={`${inputCls} qd-dc-input--height`} value={value || ''} placeholder={placeholder} onChange={handleChange} onBlur={handleBlur} />;
   }
   return (
-    <div style={span2 ? { gridColumn: '1 / -1' } : undefined}>
-      <div style={DC_LABEL_STYLE}>{label}</div>
+    <div className={span2 ? 'qd-dc-span2' : undefined}>
+      <div className="qd-dc-label">{label}</div>
       {input}
     </div>
   );
@@ -290,7 +286,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const [confirm, setConfirm] = useState(null);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [collapsedPkgs, setCollapsedPkgs] = useState(new Set());
-  const [detailCards, setDetailCards] = useState({ customer: false, term: false, billing: false, terms_conditions: false, overage: true, activity: false });
+  const [detailCards, setDetailCards] = useState({ customer: false, term: false, billing: false, terms_conditions: false, activity: false });
   const [editingTitle, setEditingTitle] = useState(false);
   const [feedbackModal, setFeedbackModal] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
@@ -352,8 +348,10 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   );
 
   const enterEditMode = () => {
+    if (isReadOnlyStatus(q.status)) return;
+    const clonedLines = sanitizeSupportQuantities(JSON.parse(JSON.stringify(q.line_items)));
     setDraft({
-      line_items: sanitizeSupportQuantities(JSON.parse(JSON.stringify(q.line_items))),
+      line_items: syncPackageSubLines(clonedLines),
       groups: JSON.parse(JSON.stringify(q.groups)),
       header_discount: q.header_discount || 0,
     });
@@ -441,6 +439,42 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       const line = emptyLineItem(product, getPriceOverride(product.id));
       updateDraft((d) => { d.line_items = [...d.line_items, { ...line, sort_order: d.line_items.length }]; return d; });
     }
+  };
+
+  // Sync package sub-lines with the current product catalog so that newly
+  // added components (including entitlements) appear in quote lines.
+  const syncPackageSubLines = (lineItems) => {
+    const productMap = new Map((products || []).map((p) => [p.id, p]));
+    const packageParents = lineItems.filter((l) => l.is_package && !l.parent_line_id);
+    if (packageParents.length === 0) return lineItems;
+
+    let result = [...lineItems];
+    let changed = false;
+
+    for (const parent of packageParents) {
+      const product = productMap.get(parent.product_id);
+      if (!product || !isBundleProduct(product)) continue;
+
+      const currentComponents = getPackageProductComponents(product, products);
+      const existingSubs = result.filter((l) => l.parent_line_id === parent.id);
+      const existingProductIds = new Set(existingSubs.map((s) => s.product_id));
+
+      for (const component of currentComponents) {
+        if (existingProductIds.has(component.component_product_id)) continue;
+        const memberProduct = productMap.get(component.component_product_id);
+        if (!memberProduct) continue;
+        const newSubLine = emptySubLineItem(
+          memberProduct,
+          component,
+          parent.id,
+          getPriceOverride(component.component_product_id),
+        );
+        result.push({ ...newSubLine, sort_order: result.length });
+        changed = true;
+      }
+    }
+
+    return changed ? result : lineItems;
   };
 
   const updateDraftLine = (lineId, updates) => {
@@ -611,22 +645,60 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   };
 
   const changeStatus = (newStatus) => {
-    persistQuote((prev) => ({
-      ...prev,
-      status: newStatus,
-      activity_log: [...(prev.activity_log || []), { type: 'status_change', from_status: prev.status, to_status: newStatus, timestamp: new Date().toISOString(), actor: prev.prepared_by || '' }],
-    }));
+    persistQuote((prev) => {
+      const allowed = ALLOWED_TRANSITIONS[prev.status];
+      if (allowed && !allowed.includes(newStatus)) return prev;
+      return {
+        ...prev,
+        status: newStatus,
+        activity_log: [...(prev.activity_log || []), { type: 'status_change', from_status: prev.status, to_status: newStatus, timestamp: new Date().toISOString(), actor: prev.prepared_by || '' }],
+      };
+    });
   };
 
-  const liveData = mode === 'edit' && draft ? { line_items: draft.line_items, groups: draft.groups, header_discount: draft.header_discount, term_months: q.term_months } : q;
+  // Keep view-mode line items in sync with the current product catalog.
+  const viewLineItems = useMemo(
+    () => syncPackageSubLines(q.line_items || []),
+    [q.line_items, products],
+  );
+
+  const liveData = mode === 'edit' && draft ? { line_items: draft.line_items, groups: draft.groups, header_discount: draft.header_discount, term_months: q.term_months } : { ...q, line_items: viewLineItems };
   const totals = calcQuoteTotals(liveData);
   const meta = STATUS_META[q.status] || STATUS_META.draft;
+  const entitlementSummary = (() => {
+    const makeBucket = () => ({ includedQty: 0, additionalQty: 0, committedPrice: 0 });
+    const summary = {
+      credits: makeBucket(),
+      seats: makeBucket(),
+      concurrentBuilds: makeBucket(),
+    };
+    const resolveType = (line) => {
+      if (isConcurrentBuildsQuantityLine(line)) return 'concurrentBuilds';
+      if (line?.product_type === 'credits') return 'credits';
+      if (line?.product_type === 'seats') return 'seats';
+      if (isCreditQuantityLine(line)) return 'credits';
+      if (isSeatQuantityLine(line)) return 'seats';
+      return null;
+    };
+    const items = liveData.line_items || [];
+    for (let i = 0; i < items.length; i++) {
+      const line = items[i];
+      const type = resolveType(line);
+      if (!type) continue;
+      const qty = getEffectiveLineQuantity(line);
+      const included = line.parent_line_id
+        ? line.price_behavior !== 'related'
+        : isIncluded(line.unit_type || '');
+      if (included) {
+        summary[type].includedQty += qty;
+        continue;
+      }
+      summary[type].additionalQty += qty;
+      summary[type].committedPrice += calcLineExtended(line);
+    }
+    return summary;
+  })();
 
-  const STATUS_EYEBROW_COLORS = {
-    draft: '#6b7280', sent: '#2E51ED', draft_revision: '#FBB13D',
-    ready_to_submit: '#05BDBA', pending_approval: '#7C3AED',
-    approved: '#16A34A', rejected: '#ef4444', converted: '#15803d', archived: '#9ca3af',
-  };
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
   const getCurrencyInputKey = (lineId, field) => `${lineId}:${field}`;
@@ -717,72 +789,72 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
   const isSupportLine = (line) => getLineCategory(line) === 'support';
 
-  const cardHeaderStyle = { cursor: 'pointer', userSelect: 'none' };
-  const cardBodyStyle = { padding: '4px 20px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px' };
-  const sectionDivider = { height: '1px', background: 'rgba(0,0,0,0.06)', margin: 0 };
-
   const toggleCard = (key) => setDetailCards((p) => ({ ...p, [key]: !p[key] }));
-  const handleFieldChange = (field, value) => setQ((p) => ({ ...p, [field]: value }));
-  const handleFieldBlur = (field, value) => persistQuote((prev) => ({ ...prev, [field]: value }));
+  const readOnlyQuote = isReadOnlyStatus(q.status);
+  const handleFieldChange = (field, value) => { if (readOnlyQuote) return; setQ((p) => ({ ...p, [field]: value })); };
+  const handleFieldBlur = (field, value) => { if (readOnlyQuote) return; persistQuote((prev) => ({ ...prev, [field]: value })); };
 
   const renderDetailCards = (source) => (
-    <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: '12px', padding: 0, marginBottom: '12px' }}>
+    <div className="qd-detail-card-wrap">
       <div>
-        <div className="qd-category-card-header qd-detail-card-header" style={cardHeaderStyle} onClick={() => toggleCard('customer')}>
+        <div className="qd-category-card-header qd-detail-card-header qd-detail-card-header--clickable" onClick={() => toggleCard('customer')}>
           <span className="qd-category-card-title">Customer Information</span>
           <span className="qd-detail-card-chevron">{detailCards.customer ? '▾' : '▸'}</span>
         </div>
         {detailCards.customer && (
-          <div style={cardBodyStyle}>
-            <DetailInput label="Customer Name" field="customer_name" value={source.customer_name} placeholder="Company name" span2 onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Address" field="address" value={source.address} placeholder="Street, City, State, ZIP, Country" span2 onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Primary Contact Name" field="contact_name" value={source.contact_name} placeholder="Full name" onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Primary Contact Email" field="contact_email" value={source.contact_email} placeholder="contact@company.com" type="email" onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Billing Contact Name" field="billing_contact_name" value={source.billing_contact_name} placeholder="Full name" onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Billing Contact Email" field="billing_contact_email" value={source.billing_contact_email} placeholder="billing@company.com" type="email" onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Invoice Email" field="invoice_email" value={source.invoice_email} placeholder="invoices@company.com" type="email" onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Netlify Account ID" field="account_id" value={source.account_id} placeholder="e.g. acct_abc123" mono onChange={handleFieldChange} onBlur={handleFieldBlur} />
+          <div className="qd-detail-card-body">
+            <DetailInput label="Customer Name" field="customer_name" value={source.customer_name} placeholder="Company name" span2 onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Address" field="address" value={source.address} placeholder="Street, City, State, ZIP, Country" span2 onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Primary Contact Name" field="contact_name" value={source.contact_name} placeholder="Full name" onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Primary Contact Email" field="contact_email" value={source.contact_email} placeholder="contact@company.com" type="email" onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Billing Contact Name" field="billing_contact_name" value={source.billing_contact_name} placeholder="Full name" onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Billing Contact Email" field="billing_contact_email" value={source.billing_contact_email} placeholder="billing@company.com" type="email" onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Invoice Email" field="invoice_email" value={source.invoice_email} placeholder="invoices@company.com" type="email" onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Netlify Account ID" field="account_id" value={source.account_id} placeholder="e.g. acct_abc123" mono onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
           </div>
         )}
       </div>
-      <div style={sectionDivider} />
+      <div className="qd-section-divider" />
       <div>
-        <div className="qd-category-card-header qd-detail-card-header" style={cardHeaderStyle} onClick={() => toggleCard('term')}>
+        <div className="qd-category-card-header qd-detail-card-header qd-detail-card-header--clickable" onClick={() => toggleCard('term')}>
           <span className="qd-category-card-title">Subscription Term</span>
           <span className="qd-detail-card-chevron">{detailCards.term ? '▾' : '▸'}</span>
         </div>
         {detailCards.term && (
-          <div style={cardBodyStyle}>
-            <DetailInput label="Subscription Start Date" field="start_date" value={source.start_date} type="date" onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Subscription Term (Months)" field="term_months" value={source.term_months} placeholder="12" onChange={handleFieldChange} onBlur={handleFieldBlur} />
+          <div className="qd-detail-card-body">
+            <DetailInput label="Subscription Start Date" field="start_date" value={source.start_date} type="date" onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Subscription Term (Months)" field="term_months" value={source.term_months} placeholder="12" onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
           </div>
         )}
       </div>
-      <div style={sectionDivider} />
+      <div className="qd-section-divider" />
       <div>
-        <div className="qd-category-card-header qd-detail-card-header" style={cardHeaderStyle} onClick={() => toggleCard('billing')}>
+        <div className="qd-category-card-header qd-detail-card-header qd-detail-card-header--clickable" onClick={() => toggleCard('billing')}>
           <span className="qd-category-card-title">Billing & Payment</span>
           <span className="qd-detail-card-chevron">{detailCards.billing ? '▾' : '▸'}</span>
         </div>
         {detailCards.billing && (
-          <div style={cardBodyStyle}>
-            <DetailInput label="Billing Schedule" field="billing_schedule" value={source.billing_schedule} options={['Annual', 'Semi-Annual', 'Quarterly', 'Monthly']} onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Payment Method" field="payment_method" value={source.payment_method} options={['Credit Card', 'ACH / Bank Transfer', 'Wire Transfer', 'Check', 'Invoice']} onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Payment Terms" field="payment_terms" value={source.payment_terms} options={['Net 30', 'Net 45', 'Net 60', 'Due on Receipt']} onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="PO #" field="po_number" value={source.po_number} placeholder="Optional" mono onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="VAT #" field="vat_number" value={source.vat_number} placeholder="Optional" mono onChange={handleFieldChange} onBlur={handleFieldBlur} />
+          <div className="qd-detail-card-body">
+            <DetailInput label="Billing Schedule" field="billing_schedule" value={source.billing_schedule} options={['Annual', 'Semi-Annual', 'Quarterly', 'Monthly']} onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Payment Method" field="payment_method" value={source.payment_method} options={['Credit Card', 'ACH / Bank Transfer', 'Wire Transfer', 'Check', 'Invoice']} onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Payment Terms" field="payment_terms" value={source.payment_terms} options={['Net 30', 'Net 45', 'Net 60', 'Due on Receipt']} onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="PO #" field="po_number" value={source.po_number} placeholder="Optional" mono onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="VAT #" field="vat_number" value={source.vat_number} placeholder="Optional" mono onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
           </div>
         )}
       </div>
-      <div style={sectionDivider} />
+      <div className="qd-section-divider" />
       <div>
-        <div className="qd-category-card-header qd-detail-card-header" style={cardHeaderStyle} onClick={() => toggleCard('terms_conditions')}>
+        <div className="qd-category-card-header qd-detail-card-header qd-detail-card-header--clickable" onClick={() => toggleCard('terms_conditions')}>
           <span className="qd-category-card-title">Terms & Conditions</span>
           <span className="qd-detail-card-chevron">{detailCards.terms_conditions ? '▾' : '▸'}</span>
         </div>
         {detailCards.terms_conditions && (
           <div className="qd-detail-card-body qd-detail-card-body--terms">
             <div className="qd-terms-editor">
+              {readOnlyQuote ? (
+                <div className="qd-terms-readonly" dangerouslySetInnerHTML={{ __html: toRichTextHtml(source.terms_conditions || '') || '<em style="color:#9ca3af">No terms</em>' }} />
+              ) : (
               <ReactQuill
                 className="qd-terms-quill"
                 value={toRichTextHtml(source.terms_conditions || '')}
@@ -792,6 +864,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                 modules={quillModules}
                 formats={quillFormats}
               />
+              )}
             </div>
           </div>
         )}
@@ -812,19 +885,14 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     const hasActiveBasePackage = !!basePackageLine;
     const showStandalonePlatformCard = !hasActiveBasePackage;
     const editCardOrder = showStandalonePlatformCard
-      ? ['bundle', 'platform', 'support', 'entitlements', 'addon']
-      : ['bundle', 'support', 'entitlements', 'addon'];
+      ? ['bundle', 'platform', 'support', 'addon', 'entitlements']
+      : ['bundle', 'support', 'addon', 'entitlements'];
     const editCategoryGroups = editCardOrder
       .map((category) => ({
         category,
         label: getCategoryCardLabel(category, hasActiveBasePackage),
         lines: topLevelByCategory[category] || [],
-      }))
-      .filter((group) => (
-        !hasActiveBasePackage
-          || group.category === 'bundle'
-          || group.lines.length > 0
-      ));
+      }));
 
     const getCategorySkuOptions = (category, currentProductId) => {
       const options = [...(productsByCategory[category] || [])];
@@ -835,7 +903,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       return options;
     };
 
-    const renderSkuSelect = ({ category, line, onSelect, stopPropagation = false }) => {
+    const renderSkuSelect = ({ category, line, onSelect, stopPropagation = false, className = '' }) => {
       const options = getCategorySkuOptions(category, line?.product_id);
       const noneLabel = category === 'bundle'
         ? 'No Base Package'
@@ -850,7 +918,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       return (
         <select
           id={line ? `qd-product-select-${line.id}` : undefined}
-          className="qd-grid-input qd-grid-select"
+          className={`qd-grid-input qd-grid-select ${className}`.trim()}
           value={line?.product_id || ''}
           onChange={handleChange}
           onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
@@ -859,11 +927,11 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           {includeNoneOption ? (
             <option value="">{noneLabel}</option>
           ) : (
-            <option value="">{options.length === 0 ? 'No SKUs available' : 'Select SKU'}</option>
+            <option value="">{options.length === 0 ? 'No products available' : 'Select Product'}</option>
           )}
           {options.map((product) => (
             <option key={product.id} value={product.id}>
-              {product.sku ? `${product.name} (${product.sku})` : product.name}
+              {product.name}
             </option>
           ))}
         </select>
@@ -915,7 +983,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           }}
         >
           <summary className="qd-grid-input qd-grid-select qd-multi-picker-summary">
-            {hasOptions ? selectedLabel : 'No SKUs available'}
+            {hasOptions ? selectedLabel : 'No products available'}
           </summary>
           {hasOptions && (
             <div className="qd-multi-picker-menu">
@@ -934,7 +1002,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                           setPickerDraft(next);
                         }}
                       />
-                      <span>{product.sku ? `${product.name} (${product.sku})` : product.name}</span>
+                      <span>{product.name}</span>
                     </label>
                   );
                 })}
@@ -1164,37 +1232,15 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       const listKey = getCurrencyInputKey(line.id, listField);
       const isListEditing = Object.prototype.hasOwnProperty.call(currencyInputDrafts, listKey);
       const currentListValue = typeof line.list_price === 'number' && Number.isFinite(line.list_price) ? line.list_price : 0;
-      const focusProductSelect = () => {
-        const target = document.getElementById(`qd-product-select-${line.id}`);
-        target?.focus();
-      };
 
       return (
         <div key={line.id} className="qd-entitlement-row qd-entitlement-row--edit">
           <span className="qd-entitlement-cell qd-entitlement-cell-product">
-            <div className="qd-edit-product-cell">
-              {renderSkuSelect({
-                category: 'entitlements',
-                line,
-                onSelect: (productId) => {
-                  if (!productId) {
-                    removeDraftLine(line.id);
-                    return;
-                  }
-                  swapDraftLineProduct(line.id, productId);
-                },
-              })}
-              <div className="qd-line-actions">
-                <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Edit ${line.product_name}`} title="Edit row" onClick={focusProductSelect}>
-                  <i className="fa-solid fa-pen fa-fw" aria-hidden="true" />
-                </button>
-                <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Clone ${line.product_name}`} title="Clone row" onClick={() => cloneDraftLine(line.id)}>
-                  <i className="fa-solid fa-clone fa-fw" aria-hidden="true" />
-                </button>
-                <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Remove ${line.product_name}`} title="Delete row" onClick={() => removeDraftLine(line.id)}>
-                  <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
-                </button>
-              </div>
+            <span className="qd-entitlement-product-name">{line.product_name || 'Unnamed Product'}</span>
+            <div className="qd-line-actions">
+              <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Remove ${line.product_name}`} title="Delete row" onClick={() => removeDraftLine(line.id)}>
+                <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
+              </button>
             </div>
           </span>
           <span className="qd-entitlement-cell qd-entitlement-cell-qty">{renderQtyInput(line, false)}</span>
@@ -1241,34 +1287,15 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       const listKey = getCurrencyInputKey(line.id, listField);
       const isListEditing = Object.prototype.hasOwnProperty.call(currencyInputDrafts, listKey);
       const currentListValue = typeof line.list_price === 'number' && Number.isFinite(line.list_price) ? line.list_price : 0;
-      const focusProductSelect = () => {
-        const target = document.getElementById(`qd-product-select-${line.id}`);
-        target?.focus();
-      };
 
       return (
         <div key={line.id} className={`qd-platform-addon-row qd-platform-addon-row--edit${showQtyColumn ? ' qd-platform-addon-row--with-qty' : ''}`}>
           <span className="qd-platform-addon-cell qd-platform-addon-cell-product">
-            <div className="qd-edit-product-cell">
-              {renderSkuSelect({
-                category: 'addon',
-                line,
-                onSelect: (productId) => {
-                  if (!productId) {
-                    removeDraftLine(line.id);
-                    return;
-                  }
-                  swapDraftLineProduct(line.id, productId);
-                },
-              })}
-              <div className="qd-line-actions">
-                <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Edit ${line.product_name}`} title="Edit row" onClick={focusProductSelect}>
-                  <i className="fa-solid fa-pen fa-fw" aria-hidden="true" />
-                </button>
-                <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Remove ${line.product_name}`} title="Delete row" onClick={() => removeDraftLine(line.id)}>
-                  <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
-                </button>
-              </div>
+            <span className="qd-platform-addon-product-name">{line.product_name || 'Unnamed Product'}</span>
+            <div className="qd-line-actions">
+              <button type="button" className="qd-line-icon-btn qd-line-icon-btn-visible" aria-label={`Remove ${line.product_name}`} title="Delete row" onClick={() => removeDraftLine(line.id)}>
+                <i className="fa-solid fa-trash fa-fw" aria-hidden="true" />
+              </button>
             </div>
           </span>
           {showQtyColumn && <span className="qd-platform-addon-cell qd-platform-addon-cell-qty">{renderQtyInput(line, false)}</span>}
@@ -1346,23 +1373,20 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     const renderSupportTierSelector = (line) => {
       const options = getCategorySkuOptions('support', line?.product_id);
       return (
-        <div className="qd-support-tier-picker">
-          <label className="qd-support-tier-label" htmlFor="qd-support-tier-select">Support Tier</label>
-          <select
-            id="qd-support-tier-select"
-            className="qd-grid-input qd-grid-select qd-support-tier-select"
-            value={line?.product_id || ''}
-            onChange={(e) => updateSupportSelection(e.target.value || null)}
-            disabled={options.length === 0}
-          >
-            <option value="">{options.length === 0 ? 'No Support SKUs available' : 'No Support'}</option>
-            {options.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.sku ? `${product.name} (${product.sku})` : product.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <select
+          id="qd-support-tier-select"
+          className="qd-grid-input qd-grid-select qd-support-tier-select"
+          value={line?.product_id || ''}
+          onChange={(e) => updateSupportSelection(e.target.value || null)}
+          disabled={options.length === 0}
+        >
+          <option value="">{options.length === 0 ? 'No Support options available' : 'No Support'}</option>
+          {options.map((product) => (
+            <option key={product.id} value={product.id}>
+              {product.name}
+            </option>
+          ))}
+        </select>
       );
     };
 
@@ -1408,45 +1432,51 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       );
     };
 
-    const renderEditSupportRow = (line) => {
-      const extended = calcLineExtended(line);
+    const renderEditableListPriceInput = (line) => {
       const listField = 'list_price';
       const listKey = getCurrencyInputKey(line.id, listField);
       const isListEditing = Object.prototype.hasOwnProperty.call(currencyInputDrafts, listKey);
       const currentListValue = typeof line.list_price === 'number' && Number.isFinite(line.list_price) ? line.list_price : 0;
       return (
+        <span className={`qd-currency-input-wrap${isListEditing ? ' qd-currency-input-wrap--editing' : ''}`}>
+          {isListEditing && <span className="qd-currency-input-symbol" aria-hidden>$</span>}
+          <input
+            className={`qd-grid-input qd-grid-input-discount${isListEditing ? ' qd-grid-input-currency' : ''}`}
+            type="text"
+            inputMode="decimal"
+            value={isListEditing ? currencyInputDrafts[listKey] : displayCurrencyValue(currentListValue)}
+            onFocus={() => {
+              setCurrencyInputDrafts((prev) => ({ ...prev, [listKey]: formatCurrencyForEdit(currentListValue) }));
+            }}
+            onChange={(e) => {
+              const raw = e.target.value;
+              const next = parseCurrencyFromInput(raw);
+              setCurrencyInputDrafts((prev) => ({ ...prev, [listKey]: raw }));
+              updateDraftLineField(line.id, listField, next);
+            }}
+            onBlur={(e) => {
+              const next = parseCurrencyFromInput(e.target.value);
+              updateDraftLineField(line.id, listField, next);
+              setCurrencyInputDrafts((prev) => {
+                const clone = { ...prev };
+                delete clone[listKey];
+                return clone;
+              });
+            }}
+          />
+        </span>
+      );
+    };
+
+    const renderEditSupportRow = (line) => {
+      const extended = calcLineExtended(line);
+      return (
         <div className="qd-support-row qd-support-row--edit">
           <span className="qd-support-cell qd-support-cell-product">
-            <span className="cell-name">{line.product_name}</span>
+            {renderSupportTierSelector(line)}
           </span>
           <span className="qd-support-cell qd-support-cell-list-price">
-            <span className={`qd-currency-input-wrap${isListEditing ? ' qd-currency-input-wrap--editing' : ''}`}>
-              {isListEditing && <span className="qd-currency-input-symbol" aria-hidden>$</span>}
-              <input
-                className={`qd-grid-input qd-grid-input-discount${isListEditing ? ' qd-grid-input-currency' : ''}`}
-                type="text"
-                inputMode="decimal"
-                value={isListEditing ? currencyInputDrafts[listKey] : displayCurrencyValue(currentListValue)}
-                onFocus={() => {
-                  setCurrencyInputDrafts((prev) => ({ ...prev, [listKey]: formatCurrencyForEdit(currentListValue) }));
-                }}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  const next = parseCurrencyFromInput(raw);
-                  setCurrencyInputDrafts((prev) => ({ ...prev, [listKey]: raw }));
-                  updateDraftLineField(line.id, listField, next);
-                }}
-                onBlur={(e) => {
-                  const next = parseCurrencyFromInput(e.target.value);
-                  updateDraftLineField(line.id, listField, next);
-                  setCurrencyInputDrafts((prev) => {
-                    const clone = { ...prev };
-                    delete clone[listKey];
-                    return clone;
-                  });
-                }}
-              />
-            </span>
+            {renderEditableListPriceInput(line)}
           </span>
           <span className="qd-support-cell qd-support-cell-discount">{renderDiscountInput(line, false)}</span>
           <span className="qd-support-cell qd-support-cell-net-price">{renderSupportNetPriceInput(line)}</span>
@@ -1456,10 +1486,61 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       );
     };
 
+    const renderEditBasePackagePricingRow = (line) => {
+      const extended = calcLineExtended(line);
+      return (
+        <div className="qd-support-row qd-support-row--edit qd-base-package-pricing-row">
+          <span className="qd-support-cell qd-support-cell-product">
+            <div className="qd-edit-product-cell">
+              {renderSkuSelect({
+                category: 'bundle',
+                line,
+                className: 'qd-grid-select--package qd-base-package-selector-inline',
+                onSelect: (productId) => {
+                  if (!productId) {
+                    removeDraftLine(line.id);
+                    return;
+                  }
+                  swapDraftLineProduct(line.id, productId);
+                },
+              })}
+            </div>
+          </span>
+          <span className="qd-support-cell qd-support-cell-qty"><span className="cell-locked">1</span></span>
+          <span className="qd-support-cell qd-support-cell-list-price">{renderEditableListPriceInput(line)}</span>
+          <span className="qd-support-cell qd-support-cell-discount">{renderDiscountInput(line, false)}</span>
+          <span className="qd-support-cell qd-support-cell-net-price">{renderSupportNetPriceInput(line)}</span>
+          <span className="qd-support-cell qd-support-cell-monthly">{displayCurrency(extended)}</span>
+          <span className="qd-support-cell qd-support-cell-annual">{displayCurrency(extended * 12)}</span>
+        </div>
+      );
+    };
+
+    const renderEmptyBasePackagePricingRow = () => (
+      <div className="qd-support-row qd-support-row--empty qd-base-package-pricing-row">
+        <span className="qd-support-cell qd-support-cell-product">
+          <div className="qd-edit-product-cell">
+            {renderSkuSelect({
+              category: 'bundle',
+              line: null,
+              className: 'qd-grid-select--package qd-base-package-selector-inline',
+              onSelect: (productId) => addDraftLineFromCategory('bundle', productId),
+            })}
+          </div>
+        </span>
+        <span className="qd-support-cell qd-support-cell-qty">—</span>
+        <span className="qd-support-cell qd-support-cell-list-price">—</span>
+        <span className="qd-support-cell qd-support-cell-discount">—</span>
+        <span className="qd-support-cell qd-support-cell-net-price">—</span>
+        <span className="qd-support-cell qd-support-cell-monthly">—</span>
+        <span className="qd-support-cell qd-support-cell-annual">—</span>
+      </div>
+    );
+
     const renderEmptySupportRow = () => (
       <div className="qd-support-row qd-support-row--empty">
         <span className="qd-support-cell qd-support-cell-product">
-          <span className="cell-muted">Select a support tier</span>
+          {renderSupportTierSelector(null)}
         </span>
         <span className="qd-support-cell qd-support-cell-list-price">—</span>
         <span className="qd-support-cell qd-support-cell-discount">—</span>
@@ -1474,43 +1555,47 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       const sections = groupBasePackageSectionsForDisplay(subs);
       return (
         <div key={line.id} className="qd-pkg-block qd-base-package-block">
-          <div className="qd-base-package-control-row">
-            <span className="qd-base-package-control-label">Package</span>
-            <div className="qd-base-package-control-main">
-              {renderSkuSelect({
-                category: 'bundle',
-                line,
-                onSelect: (productId) => {
-                  if (!productId) {
-                    removeDraftLine(line.id);
-                    return;
-                  }
-                  swapDraftLineProduct(line.id, productId);
-                },
-              })}
-              <button type="button" className="qd-line-icon-btn qd-base-package-remove-btn" aria-label={`Remove ${line.product_name}`} onClick={() => removeDraftLine(line.id)}>×</button>
-            </div>
+          <div className="qd-pkg-table-head qd-support-table-head">
+            <span className="qd-support-col-product">Product</span>
+            <span className="qd-support-col-qty">QTY</span>
+            <span className="qd-support-col-list-price">List Price</span>
+            <span className="qd-support-col-discount">Discount</span>
+            <span className="qd-support-col-net-price">Net Price</span>
+            <span className="qd-support-col-monthly">Monthly Price</span>
+            <span className="qd-support-col-annual">Annual Price</span>
           </div>
-          {sections.length > 0 && (
-            <div className="qd-pkg-members qd-base-package-members">
-              {sections.map((section) => (
-                <div key={section.key} className="qd-pkg-section qd-base-package-section">
-                  <div className="qd-pkg-section-label">{section.label}</div>
-                  {section.lines.map((sub) => (
-                    <div
-                      key={sub.id}
-                      className={`qd-base-package-value-row${section.isConfiguration ? ' qd-base-package-value-row--config' : ''}`}
-                    >
-                      <span className="qd-base-package-value-name">{sub.product_name}</span>
-                      {section.isConfiguration && (
-                        <span className="qd-base-package-value-qty">{renderPackageQtyInput(sub)}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ))}
+          <div className="qd-support-table-body qd-base-package-pricing-body">
+            {renderEditBasePackagePricingRow(line)}
+          </div>
+          {sections.filter((s) => !s.isConfiguration).map((section) => (
+            <div key={section.key} className="qd-base-config-section qd-base-config-section--included">
+              <div className="qd-pkg-section-label qd-base-config-label">{section.label}</div>
+              <div className="qd-base-config-body">
+                {section.lines.map((sub) => (
+                  <div key={sub.id} className="qd-entitlement-row qd-entitlement-row--edit qd-base-config-row">
+                    <span className="qd-entitlement-cell qd-entitlement-cell-product">
+                      <span className="qd-entitlement-product-name">{sub.product_name}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
+          ))}
+          {sections.filter((s) => s.isConfiguration).map((section) => (
+            <div key={section.key} className="qd-base-config-section qd-base-config-section--configuration">
+              <div className="qd-pkg-section-label qd-base-config-label">{section.label}</div>
+              <div className="qd-base-config-body">
+                {section.lines.map((sub) => (
+                  <div key={sub.id} className="qd-entitlement-row qd-entitlement-row--edit qd-base-config-row">
+                    <span className="qd-entitlement-cell qd-entitlement-cell-product">
+                      <span className="qd-entitlement-product-name">{sub.product_name}</span>
+                    </span>
+                    <span className="qd-entitlement-cell qd-entitlement-cell-qty">{renderPackageQtyInput(sub)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       );
     };
@@ -1535,11 +1620,17 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
     const renderEmptyPackageRow = () => (
       <div className="qd-pkg-block qd-base-package-block qd-base-package-block--empty" key="bundle-empty">
-        <div className="qd-base-package-control-row">
-          <span className="qd-base-package-control-label">Package</span>
-          <div className="qd-base-package-control-main">
-            {renderSkuSelect({ category: 'bundle', line: null, onSelect: (productId) => addDraftLineFromCategory('bundle', productId) })}
-          </div>
+        <div className="qd-pkg-table-head qd-support-table-head">
+          <span className="qd-support-col-product">Product</span>
+          <span className="qd-support-col-qty">QTY</span>
+          <span className="qd-support-col-list-price">List Price</span>
+          <span className="qd-support-col-discount">Discount</span>
+          <span className="qd-support-col-net-price">Net Price</span>
+          <span className="qd-support-col-monthly">Monthly Price</span>
+          <span className="qd-support-col-annual">Annual Price</span>
+        </div>
+        <div className="qd-support-table-body qd-base-package-pricing-body">
+          {renderEmptyBasePackagePricingRow()}
         </div>
       </div>
     );
@@ -1547,7 +1638,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     const renderEmptyEntitlementRow = () => (
       <div className="qd-entitlement-row qd-entitlement-row--empty" key="entitlements-empty">
         <span className="qd-entitlement-cell qd-entitlement-cell-product">
-          <span className="cell-muted">Use Add Product to include additional entitlements</span>
+          <span className="cell-muted">Select one or more SKUs above</span>
         </span>
         <span className="qd-entitlement-cell qd-entitlement-cell-qty">—</span>
         <span className="qd-entitlement-cell qd-entitlement-cell-list-price">—</span>
@@ -1561,7 +1652,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     const renderEmptyPlatformAddonRow = (showQtyColumn = false) => (
       <div className={`qd-platform-addon-row qd-platform-addon-row--empty${showQtyColumn ? ' qd-platform-addon-row--with-qty' : ''}`} key="platform-addons-empty">
         <span className="qd-platform-addon-cell qd-platform-addon-cell-product">
-          <span className="cell-muted">Use Add Product to include platform add-ons</span>
+          <span className="cell-muted">Select one or more SKUs above</span>
         </span>
         {showQtyColumn && <span className="qd-platform-addon-cell qd-platform-addon-cell-qty">—</span>}
         <span className="qd-platform-addon-cell qd-platform-addon-cell-list-price">—</span>
@@ -1576,7 +1667,10 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       <div className="qd-lines-card">
         <div className="qd-grouped-cards">
           {editCategoryGroups.map((group) => (
-            <div key={group.category} className="qd-category-card">
+            <div
+              key={group.category}
+              className={`qd-category-card${group.category === 'bundle' ? ' qd-category-card--base-package' : ''}${group.category === 'support' ? ' qd-category-card--support' : ''}`}
+            >
               <div className="qd-category-card-header">
                 <span className="qd-category-card-title">{group.label}</span>
               </div>
@@ -1586,9 +1680,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                 </div>
               ) : group.category === 'support' ? (
                 <div className="qd-pkg-table qd-support-table">
-                  <div className="qd-category-picker-row qd-category-picker-row--support">
-                    {renderSupportTierSelector(group.lines[0] || null)}
-                  </div>
                   <div className="qd-pkg-table-head qd-support-table-head">
                     <span className="qd-support-col-product">Product</span>
                     <span className="qd-support-col-list-price">List Price</span>
@@ -1607,13 +1698,13 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                     {renderCategoryMultiSelect(group.category, group.lines, group.label)}
                   </div>
                   <div className="qd-pkg-table-head qd-entitlements-table-head">
-                    <span className="qd-pkg-col-product">Product</span>
-                    <span className="qd-pkg-col-qty">Qty</span>
-                    <span className="qd-pkg-col-list-price">List Price</span>
-                    <span className="qd-pkg-col-discount">Discount</span>
-                    <span className="qd-pkg-col-net-price">Net Price</span>
-                    <span className="qd-pkg-col-amount">Monthly Price</span>
-                    <span className="qd-pkg-col-annual-price">Annual Price</span>
+                    <span className="qd-support-col-product">Product</span>
+                    <span className="qd-support-col-qty">QTY</span>
+                    <span className="qd-support-col-list-price">List Price</span>
+                    <span className="qd-support-col-discount">Discount</span>
+                    <span className="qd-support-col-net-price">Net Price</span>
+                    <span className="qd-support-col-monthly">Monthly Price</span>
+                    <span className="qd-support-col-annual">Annual Price</span>
                   </div>
                   <div className="qd-entitlements-table-body">
                     {group.lines.length > 0 ? group.lines.map((line) => renderEditEntitlementRow(line)) : renderEmptyEntitlementRow()}
@@ -1687,23 +1778,6 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
     );
   };
 
-  const renderQuoteTotalsBar = (t) => (
-    <div className="qd-quote-totals-bar" aria-label="Quote totals">
-      <div className="qd-quote-totals-item">
-        <div className="qd-quote-totals-label">Total Monthly Price</div>
-        <div className="qd-quote-totals-value">{fmtCurrency(t.monthly)}</div>
-      </div>
-      <div className="qd-quote-totals-item">
-        <div className="qd-quote-totals-label">Total Annual Price</div>
-        <div className="qd-quote-totals-value">{fmtCurrency(t.annual)}</div>
-      </div>
-      <div className="qd-quote-totals-item">
-        <div className="qd-quote-totals-label">Effective Discount</div>
-        <div className="qd-quote-totals-value">{displayPercent(t.effectiveDiscountPercent)}</div>
-      </div>
-    </div>
-  );
-
   const renderFooterInfo = (source) => {
     if (!source.comments && !source.prepared_by) return null;
     return (
@@ -1711,6 +1785,53 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         {source.prepared_by && <div className="qd-footer-row"><span className="qd-footer-label">Prepared by</span><span className="qd-footer-value">{source.prepared_by}</span></div>}
         {source.comments && <div className="qd-footer-row"><span className="qd-footer-label">Comments</span><span className="qd-footer-value">{source.comments}</span></div>}
       </div>
+    );
+  };
+
+  const renderEntitlementsSummaryTable = () => {
+    const rows = [
+      { label: 'Credits', data: entitlementSummary.credits, overageField: 'overage_rate_credits', unitLabel: '/ 1500 credits', unitDivisor: 1500 },
+      { label: 'Enterprise Seats', data: entitlementSummary.seats, overageField: 'overage_rate_seats', unitLabel: '/ seat', unitDivisor: 1 },
+      { label: 'Concurrent Builds', data: entitlementSummary.concurrentBuilds, overageField: 'overage_rate_concurrent_builds', unitLabel: '/ build', unitDivisor: 1 },
+    ];
+    return (
+      <table className="qd-entitlements-summary-table">
+        <thead>
+          <tr>
+            <th className="qd-es-th qd-es-th--product"></th>
+            <th className="qd-es-th qd-es-th--qty">COMMITTED TOTAL</th>
+            <th className="qd-es-th qd-es-th--rate">COMMITTED RATE</th>
+            <th className="qd-es-th qd-es-th--rate">OVERAGE RATE</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => {
+            const totalQty = row.data.includedQty + row.data.additionalQty;
+            if (totalQty === 0) return null;
+            const committedRate = row.data.additionalQty > 0
+              ? fmtCurrency((row.data.committedPrice / row.data.additionalQty) * row.unitDivisor)
+              : '—';
+            return (
+              <tr key={row.label}>
+                <td className="qd-es-cell qd-es-cell--product">{row.label}</td>
+                <td className="qd-es-cell qd-es-cell--qty"><strong>{fmtQty(totalQty)}</strong></td>
+                <td className="qd-es-cell qd-es-cell--rate">
+                  {committedRate !== '—'
+                    ? <><strong className="qd-es-rate-value">{committedRate}</strong><span className="qd-es-rate-unit"> {row.unitLabel}</span></>
+                    : <span className="qd-es-rate-value">—</span>}
+                </td>
+                <td className="qd-es-cell qd-es-cell--rate">
+                  {isEditing && !readOnlyQuote
+                    ? <input className="qd-overage-input" value={q[row.overageField] || ''} placeholder="$0.00" onChange={(e) => handleFieldChange(row.overageField, e.target.value)} onBlur={(e) => handleFieldBlur(row.overageField, e.target.value)} />
+                    : q[row.overageField]
+                      ? <><strong className="qd-es-rate-value">{q[row.overageField]}</strong><span className="qd-es-rate-unit"> {row.unitLabel}</span></>
+                      : <span className="qd-es-rate-value">—</span>}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     );
   };
 
@@ -1728,7 +1849,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   );
 
   const isEditing = mode === 'edit';
-  const canEditLines = ['draft', 'draft_revision'].includes(q.status);
+  const canEditLines = !isReadOnlyStatus(q.status);
 
   const groupLinesByCategory = (items) => {
     const hasPackage = items.some((l) => l.is_package);
@@ -1753,26 +1874,50 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         <button className="back-btn" onClick={onBack}>Back to Quotes</button>
         <div className="qd-header-info" style={{ flex: 1 }}>
           <div className="qd-quote-number">{q.quote_number}</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '24px' }}>
-            {editingTitle ? (
+          <div className="qd-header-title-row">
+            {editingTitle && canEditLines ? (
               <input autoFocus type="text" value={q.name} placeholder="Quote name"
                 onChange={(e) => setQ((prev) => ({ ...prev, name: e.target.value }))}
                 onBlur={(e) => { setEditingTitle(false); persistQuote((prev) => ({ ...prev, name: e.target.value })); }}
                 onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setEditingTitle(false); }}
-                style={{ fontFamily: "'Poppins', sans-serif", fontSize: '34px', fontWeight: 300, letterSpacing: '-0.01em', color: 'var(--text-strong)', background: 'transparent', border: 'none', borderBottom: '1px solid #FBB13D', outline: 'none', padding: 0, margin: 0, flex: 1, lineHeight: 'inherit' }} />
+                className="qd-title-input" />
             ) : (
-              <h1 className="qd-title" onClick={() => setEditingTitle(true)} style={{ cursor: 'pointer', flex: 1 }}>{q.name || 'Untitled Quote'}</h1>
+              <h1 className="qd-title" onClick={() => { if (canEditLines) setEditingTitle(true); }} style={{ cursor: canEditLines ? 'pointer' : 'default', flex: 1 }}>{q.name || 'Untitled Quote'}</h1>
             )}
-            {!isEditing && (
-              <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: STATUS_EYEBROW_COLORS[q.status] || '#6b7280', whiteSpace: 'nowrap', paddingRight: '8px' }}>
-                {(STATUS_META[q.status] || STATUS_META.draft).label}
-              </div>
-            )}
+            {!isEditing && (() => {
+              const meta = STATUS_META[q.status] || STATUS_META.draft;
+              const tone = meta.color || 'grey';
+              return (
+                <span className={`qd-status-pill qd-status-pill--${tone}${readOnlyQuote ? ' qd-status-pill--readonly' : ''}`}>
+                  {readOnlyQuote && (
+                    <svg className="qd-status-pill-lock" width="10" height="10" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4.5 7V4.5a3.5 3.5 0 1 1 7 0V7M3 7h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                  {meta.label}
+                </span>
+              );
+            })()}
           </div>
         </div>
       </div>
 
-      {q.status === 'archived' && <div className="qd-archived-banner">This quote is archived</div>}
+      {q.status === 'converted' && (
+        <div className="qd-readonly-banner qd-readonly-banner--converted">
+          <svg className="qd-readonly-banner-icon" width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4.5 7V4.5a3.5 3.5 0 1 1 7 0V7M3 7h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Converted — read-only
+        </div>
+      )}
+      {q.status === 'archived' && (
+        <div className="qd-readonly-banner qd-readonly-banner--archived">
+          <svg className="qd-readonly-banner-icon" width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4.5 7V4.5a3.5 3.5 0 1 1 7 0V7M3 7h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Archived — read-only
+        </div>
+      )}
 
       {validationErrors && (
         <div className="qd-validation-errors">
@@ -1781,20 +1926,29 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         </div>
       )}
 
-      <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', margin: '0 0 24px', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+      <div className="qd-action-bar">
         {isEditing ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="qd-action-group">
             <button className="qd-action-btn" onClick={cancelEdit}>Cancel</button>
             <button className="qd-action-btn qd-action-btn-primary" onClick={saveEdit}>Save</button>
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="qd-action-group">
 
             {q.status === 'draft' && (
               <>
                 <button className="qd-action-btn" onClick={enterEditMode}>{q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}</button>
                 <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings, { preview: true })}>Preview PDF</button>
-                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('sent')}>Send to Customer</button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('shared')}>Share</button>
+              </>
+            )}
+
+            {q.status === 'shared' && (
+              <>
+                <button className="qd-action-btn" onClick={enterEditMode}>{q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}</button>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings, { preview: true })}>Preview PDF</button>
+                <button className="qd-action-btn" onClick={() => changeStatus('draft')}>Return to Draft</button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => setConfirm({ msg: 'Convert this quote? It will become read-only.', label: 'Convert', fn: () => { changeStatus('converted'); setConfirm(null); } })}>Convert</button>
               </>
             )}
 
@@ -1848,28 +2002,30 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
             {q.status === 'converted' && (
               <>
-                <button className="qd-action-btn" onClick={() => showToast('Order view coming soon')}>View Order</button>
-                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings)}>Download Executed Quote PDF</button>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings)}>Download PDF</button>
+                <button className="qd-action-btn" onClick={() => setConfirm({ msg: 'Archive this quote? It will remain read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } })}>Archive</button>
               </>
             )}
 
             {q.status === 'archived' && (
-              <button className="qd-action-btn" onClick={() => setConfirm({ msg: 'Restore this quote as a Draft? It will become editable again.', label: 'Restore', fn: () => { changeStatus('draft'); setConfirm(null); } })}>Restore as Draft</button>
+              <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings)}>Download PDF</button>
             )}
 
-            {['draft', 'sent', 'draft_revision', 'ready_to_submit', 'pending_approval', 'rejected', 'archived'].includes(q.status) && (
+            {['draft', 'shared', 'sent', 'draft_revision', 'ready_to_submit', 'pending_approval', 'rejected', 'converted', 'archived'].includes(q.status) && (
               <div className="qd-more-wrap" ref={moreRef}>
-                <button className="qd-more-btn" style={{ border: 'none', background: 'transparent', boxShadow: 'none', outline: 'none', color: '#FBB13D', cursor: 'pointer', padding: '0 8px' }} onClick={() => setShowMoreMenu(!showMoreMenu)}>···</button>
+                <button className="qd-more-btn qd-more-btn--reset" onClick={() => setShowMoreMenu(!showMoreMenu)}>···</button>
                 {showMoreMenu && (
                   <div className="qd-more-menu">
-                    {q.status === 'draft' && (<><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); onClone(q); }}>Clone Quote</button><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>Archive</button></>)}
+                    {q.status === 'draft' && (<><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); onClone(q); }}>Clone Quote</button><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Convert this quote? It will become read-only.', label: 'Convert', fn: () => { changeStatus('converted'); setConfirm(null); } }); }}>Convert</button><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>Archive</button></>)}
+                    {q.status === 'shared' && (<><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); onClone(q); }}>Clone Quote</button></>)}
                     {q.status === 'sent' && (<><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); onClone(q); }}>Clone Quote</button><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>Archive</button></>)}
                     {q.status === 'draft_revision' && (<button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this scenario? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>Archive Scenario</button>)}
                     {q.status === 'ready_to_submit' && (<><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); generateQuotePDF(q, products, settings); }}>Download PDF</button><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); changeStatus('draft'); }}>Revise Quote</button></>)}
                     {q.status === 'pending_approval' && (<button className="qd-more-item" onClick={() => { setShowMoreMenu(false); generateQuotePDF(q, products, settings); }}>Download PDF</button>)}
                     {q.status === 'rejected' && (<button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>Archive</button>)}
+                    {q.status === 'converted' && (<button className="qd-more-item" onClick={() => { setShowMoreMenu(false); generateQuotePDF(q, products, settings); }}>Download PDF</button>)}
                     {q.status === 'archived' && (<button className="qd-more-item" onClick={() => { setShowMoreMenu(false); generateQuotePDF(q, products, settings); }}>Download PDF</button>)}
-                    <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(q.id); }}>Delete Quote</button>
+                    {!readOnlyQuote && <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(q.id); }}>Delete Quote</button>}
                   </div>
                 )}
               </div>
@@ -1883,7 +2039,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       <div className={`qd-lines-section${isEditing ? ' qd-lines-section--editing' : ''}`}>
         {isEditing ? renderEditTable() : (
           <>
-            {q.line_items.length === 0 ? (
+            {viewLineItems.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-numeral">0</div>
                 <div className="empty-state-title">No line items</div>
@@ -1891,46 +2047,75 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
               </div>
             ) : (
               <div className="qd-grouped-cards">
-                {groupLinesByCategory(q.line_items).map((group) => (
-                  <div key={group.category} className="qd-category-card">
+                {groupLinesByCategory(viewLineItems).map((group) => (
+                  <div
+                    key={group.category}
+                    className={`qd-category-card${group.category === 'bundle' ? ' qd-category-card--base-package' : ''}${group.category === 'support' ? ' qd-category-card--support' : ''}`}
+                  >
                     <div className="qd-category-card-header">
                       <span className="qd-category-card-title">{group.label}</span>
                     </div>
                     {group.category === 'bundle' ? (
                       <div className="qd-pkg-table qd-base-package-table">
                         {group.lines.map((line) => {
-                          const subs = getSubLines(q.line_items, line.id);
+                          const subs = getSubLines(viewLineItems, line.id);
                           const sections = groupBasePackageSectionsForDisplay(subs);
+                          const extended = calcLineExtended(line);
                           return (
                             <div key={line.id} className="qd-pkg-block qd-base-package-block">
-                              <div className="qd-base-package-control-row">
-                                <span className="qd-base-package-control-label">Package</span>
-                                <div className="qd-base-package-selected">
-                                  <span className="cell-name qd-pkg-name">{line.product_name}</span>
+                              <div className="qd-pkg-table-head qd-support-table-head">
+                                <span className="qd-support-col-product">Product</span>
+                                <span className="qd-support-col-qty">QTY</span>
+                                <span className="qd-support-col-list-price">List Price</span>
+                                <span className="qd-support-col-discount">Discount</span>
+                                <span className="qd-support-col-net-price">Net Price</span>
+                                <span className="qd-support-col-monthly">Monthly Price</span>
+                                <span className="qd-support-col-annual">Annual Price</span>
+                              </div>
+                              <div className="qd-support-table-body qd-base-package-pricing-body">
+                                <div className="qd-support-row">
+                                  <span className="qd-support-cell qd-support-cell-product">
+                                    <span className="cell-name">{line.product_name}</span>
+                                  </span>
+                                  <span className="qd-support-cell qd-support-cell-qty">1</span>
+                                  <span className="qd-support-cell qd-support-cell-list-price">{displayCurrency(line.list_price ?? 0)}</span>
+                                  <span className="qd-support-cell qd-support-cell-discount">{displayCurrency(line.discount_amount ?? 0)}</span>
+                                  <span className="qd-support-cell qd-support-cell-net-price">{displayCurrency(line.net_price ?? line.list_price ?? 0)}</span>
+                                  <span className="qd-support-cell qd-support-cell-monthly">{displayCurrency(extended)}</span>
+                                  <span className="qd-support-cell qd-support-cell-annual">{displayCurrency(extended * 12)}</span>
                                 </div>
                               </div>
-                              {sections.length > 0 && (
-                                <div className="qd-pkg-members qd-base-package-members">
-                                  {sections.map((section) => (
-                                    <div key={section.key} className="qd-pkg-section qd-base-package-section">
-                                      <div className="qd-pkg-section-label">{section.label}</div>
-                                      {section.lines.map((sub) => (
-                                        <div
-                                          key={sub.id}
-                                          className={`qd-base-package-value-row${section.isConfiguration ? ' qd-base-package-value-row--config' : ''}`}
-                                        >
-                                          <span className="qd-base-package-value-name">{sub.product_name}</span>
-                                          {section.isConfiguration && (
-                                            <span className="qd-base-package-value-qty">
-                                              {isPackageComponentQtyVisible(sub) ? fmtQty(sub.quantity ?? 1) : ''}
-                                            </span>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ))}
+                              {sections.filter((s) => !s.isConfiguration).map((section) => (
+                                <div key={section.key} className="qd-base-config-section qd-base-config-section--included">
+                                  <div className="qd-pkg-section-label qd-base-config-label">{section.label}</div>
+                                  <div className="qd-base-config-body">
+                                    {section.lines.map((sub) => (
+                                      <div key={sub.id} className="qd-entitlement-row qd-base-config-row">
+                                        <span className="qd-entitlement-cell qd-entitlement-cell-product">
+                                          <span className="qd-entitlement-product-name">{sub.product_name}</span>
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
-                              )}
+                              ))}
+                              {sections.filter((s) => s.isConfiguration).map((section) => (
+                                <div key={section.key} className="qd-base-config-section qd-base-config-section--configuration">
+                                  <div className="qd-pkg-section-label qd-base-config-label">{section.label}</div>
+                                  <div className="qd-base-config-body">
+                                    {section.lines.map((sub) => (
+                                      <div key={sub.id} className="qd-entitlement-row qd-base-config-row">
+                                        <span className="qd-entitlement-cell qd-entitlement-cell-product">
+                                          <span className="qd-entitlement-product-name">{sub.product_name}</span>
+                                        </span>
+                                        <span className="qd-entitlement-cell qd-entitlement-cell-qty">
+                                          {isPackageComponentQtyVisible(sub) ? fmtQty(sub.quantity ?? 1) : ''}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           );
                         })}
@@ -1974,13 +2159,13 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                     ) : group.category === 'entitlements' ? (
                       <div className="qd-pkg-table qd-entitlements-table qd-entitlements-table--readonly">
                         <div className="qd-pkg-table-head qd-entitlements-table-head">
-                          <span className="qd-pkg-col-product">Product</span>
-                          <span className="qd-pkg-col-qty">Qty</span>
-                          <span className="qd-pkg-col-list-price">List Price</span>
-                          <span className="qd-pkg-col-discount">Discount</span>
-                          <span className="qd-pkg-col-net-price">Net Price</span>
-                          <span className="qd-pkg-col-amount">Monthly Price</span>
-                          <span className="qd-pkg-col-annual-price">Annual Price</span>
+                          <span className="qd-support-col-product">Product</span>
+                          <span className="qd-support-col-qty">QTY</span>
+                          <span className="qd-support-col-list-price">List Price</span>
+                          <span className="qd-support-col-discount">Discount</span>
+                          <span className="qd-support-col-net-price">Net Price</span>
+                          <span className="qd-support-col-monthly">Monthly Price</span>
+                          <span className="qd-support-col-annual">Annual Price</span>
                         </div>
                         <div className="qd-entitlements-table-body">
                           {group.lines.map((line) => {
@@ -2085,42 +2270,61 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         )}
       </div>
 
-      <div className="qd-overage-section">
+      <div className="qd-overage-section qd-summary-row">
         <div className="qd-overage-card">
-          <div className="qd-category-card-header qd-detail-card-header" style={cardHeaderStyle} onClick={() => toggleCard('overage')}>
-            <span className="qd-category-card-title">Overage Rates</span>
-            <span className="qd-detail-card-chevron">{detailCards.overage ? '▾' : '▸'}</span>
+          <div className="qd-category-card-header qd-detail-card-header">
+            <span className="qd-category-card-title">Entitlements Summary</span>
           </div>
-          {detailCards.overage && (
-            <div className="qd-overage-body">
-              <div className="qd-overage-group">
-                <div className="qd-overage-group-title">Credits</div>
-                <div className="qd-overage-row">
-                  <span className="qd-overage-row-label">Overage Rate per 1,500 Credits</span>
-                  {isEditing
-                    ? <input className="qd-overage-input" value={q.overage_rate_credits || ''} placeholder="$0.00" onChange={(e) => handleFieldChange('overage_rate_credits', e.target.value)} onBlur={(e) => handleFieldBlur('overage_rate_credits', e.target.value)} />
-                    : <span className="qd-overage-value">{q.overage_rate_credits || '—'}</span>}
-                </div>
+          <div className="qd-overage-body">
+            {renderEntitlementsSummaryTable()}
+          </div>
+        </div>
+        <div className="qd-overage-card qd-pricing-summary-card">
+          <div className="qd-category-card-header qd-detail-card-header">
+            <span className="qd-category-card-title">Summary</span>
+          </div>
+          <div className="qd-overage-body qd-pricing-summary-body">
+            <div className="qd-pricing-summary-group">
+              <div className="qd-pricing-summary-row">
+                <span className="qd-pricing-summary-label">Annual Subtotal</span>
+                <span className="qd-pricing-summary-value">{fmtCurrency(totals.preDiscountAnnual)}</span>
               </div>
-              <div className="qd-overage-group">
-                <div className="qd-overage-group-title">Users</div>
-                <div className="qd-overage-row">
-                  <span className="qd-overage-row-label">Overage Rate per User / Seat</span>
-                  {isEditing
-                    ? <input className="qd-overage-input" value={q.overage_rate_seats || ''} placeholder="$0.00" onChange={(e) => handleFieldChange('overage_rate_seats', e.target.value)} onBlur={(e) => handleFieldBlur('overage_rate_seats', e.target.value)} />
-                    : <span className="qd-overage-value">{q.overage_rate_seats || '—'}</span>}
-                </div>
+              <div className="qd-pricing-summary-row">
+                <span className="qd-pricing-summary-label">Discount</span>
+                {isEditing
+                  ? <input className="qd-overage-input" type="number" min="0" max="100" step="any" value={draft.header_discount || ''} placeholder="0%" onChange={(e) => updateDraft((d) => ({ ...d, header_discount: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 }))} />
+                  : <span className="qd-pricing-summary-value">{totals.preDiscountAnnual - totals.annual > 0 ? `−${fmtCurrency(totals.preDiscountAnnual - totals.annual)}` : '-'}</span>}
               </div>
             </div>
-          )}
+            <div className="qd-pricing-summary-divider" />
+            <div className="qd-pricing-summary-group">
+              <div className="qd-pricing-summary-row qd-pricing-summary-row--bold">
+                <span className="qd-pricing-summary-label">Net Total</span>
+                <span className="qd-pricing-summary-value">{fmtCurrency(totals.annual)}</span>
+              </div>
+            </div>
+            <div className="qd-pricing-summary-divider" />
+            <div className="qd-pricing-summary-group">
+              <div className="qd-pricing-summary-row qd-pricing-summary-row--bold">
+                <span className="qd-pricing-summary-label">Total Monthly</span>
+                <span className="qd-pricing-summary-value">{fmtCurrency(totals.monthly)}</span>
+              </div>
+              <div className="qd-pricing-summary-row qd-pricing-summary-row--bold">
+                <span className="qd-pricing-summary-label">Total Annual</span>
+                <span className="qd-pricing-summary-value">{fmtCurrency(totals.annual)}</span>
+              </div>
+              <div className="qd-pricing-summary-row">
+                <span className="qd-pricing-summary-label">Effective Discount</span>
+                <span className="qd-pricing-summary-value">{displayPercent(totals.effectiveDiscountPercent)}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {renderQuoteTotalsBar(totals)}
-
       <div>{renderFooterInfo(q)}</div>
 
-      <div style={{ marginTop: '28px' }}>
+      <div className="qd-activity-section">
         <div className="qd-footer-label" style={{ marginBottom: '12px' }}>Activity</div>
         <div className="qd-activity-timeline">
           {[...(q.activity_log || [])].reverse().map((entry, i, arr) => {
@@ -2153,18 +2357,18 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
               </div>
             );
           })}
-          {(!q.activity_log || q.activity_log.length === 0) && <div style={{ fontSize: '13px', color: '#9ca3af' }}>No activity recorded.</div>}
+          {(!q.activity_log || q.activity_log.length === 0) && <div className="text-empty">No activity recorded.</div>}
         </div>
       </div>
 
       {feedbackModal && (
         <div className="modal-overlay" onClick={() => setFeedbackModal(false)}>
-          <div className="modal modal-theme-quotes" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
+          <div className="modal modal-theme-quotes modal--sm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-title">Customer Feedback</div>
             <div className="modal-section">
               <div className="field">
                 <label className="field-label">Revision Notes</label>
-                <textarea className="field-textarea" value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} placeholder="Enter customer feedback and revision notes..." style={{ minHeight: 120 }} autoFocus />
+                <textarea className="field-textarea field-textarea--tall" value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} placeholder="Enter customer feedback and revision notes..." autoFocus />
               </div>
             </div>
             <div className="modal-actions">
@@ -2181,10 +2385,10 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
       {ddNotesModal && (
         <div className="modal-overlay" onClick={() => setDdNotesModal(false)}>
-          <div className="modal modal-theme-quotes" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
+          <div className="modal modal-theme-quotes modal--sm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-title">Deal Desk Notes</div>
             <div className="modal-section">
-              <div style={{ fontSize: '14px', color: '#374151', lineHeight: 1.6, whiteSpace: 'pre-wrap', minHeight: 60 }}>{q.comments || 'No notes recorded.'}</div>
+              <div className="qd-notes-body">{q.comments || 'No notes recorded.'}</div>
             </div>
             <div className="modal-actions"><button className="btn-cancel" onClick={() => setDdNotesModal(false)}>Close</button></div>
           </div>

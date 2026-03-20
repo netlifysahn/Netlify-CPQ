@@ -29,7 +29,7 @@ NOT Vercel. No grainy gradients, no blur effects.
 ### Accent
 | Token       | Value                    | Usage              |
 |-------------|--------------------------|---------------------|
-| teal        | `#32e6e2`                | Interactive only    |
+| teal        | `#05bdba`                | Interactive only    |
 | teal-dark   | `#00c7b7`                | Gradient end        |
 | teal-muted  | `rgba(50,230,226,.12)`   | Tinted backgrounds  |
 
@@ -45,7 +45,7 @@ NOT Vercel. No grainy gradients, no blur effects.
 ## Components
 
 ### Buttons
-- **Primary**: teal gradient (`#32e6e2` -> `#00c7b7`), dark text
+- **Primary**: teal gradient (`#05bdba` -> `#00c7b7`), dark text
 - **Secondary**: transparent, 1px border
 - **Destructive**: red background
 

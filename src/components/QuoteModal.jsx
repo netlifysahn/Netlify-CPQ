@@ -227,7 +227,7 @@ export default function QuoteModal({ quote, existingQuotes, pricebooks, onSave, 
               </div>
               <div className="field">
                 <label className="field-label">Netlify Account ID</label>
-                <input className="field-input" value={f.account_id} onChange={(e) => s('account_id', e.target.value)} placeholder="e.g. acct_abc123" style={{ fontFamily: "'Menlo', monospace" }} />
+                <input className="field-input input-mono" value={f.account_id} onChange={(e) => s('account_id', e.target.value)} placeholder="e.g. acct_abc123" />
               </div>
             </div>
             {activePricebooks.length > 0 && (

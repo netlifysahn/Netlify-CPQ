@@ -32,6 +32,13 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
 
   const existing = existingProductIds || new Set();
 
+  const renderRecurringPrice = (amount) => {
+    if (!(amount > 0)) return 'Custom';
+    const monthly = fmtPrice(amount);
+    const annual = fmtPrice(amount * 12);
+    return `${monthly}/mo • ${annual}/yr`;
+  };
+
   const toggleSelect = (productId) => {
     if (existing.has(productId)) return;
     setSelected((prev) => {
@@ -57,7 +64,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
         <div className="modal picker-modal modal-theme-products" onClick={(e) => e.stopPropagation()}>
           <div className="modal-title">Add Product</div>
           <div className="search-wrap" style={{ marginBottom: 16 }}>
-            <span style={{ color: '#9ca3af', fontSize: '13px' }}>Search</span>
+            <span className="search-label">Search</span>
             <input
               className="search-input"
               value={search}
@@ -79,7 +86,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
                   <div className="picker-item-meta">
                     <span className="picker-item-sku">{p.sku}</span>
                     <span className="picker-item-price">
-                      {p.default_price?.amount > 0 ? fmtPrice(p.default_price.amount) + '/mo' : 'Custom'}
+                      {renderRecurringPrice(p.default_price?.amount)}
                     </span>
                   </div>
                 </button>
@@ -99,7 +106,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
         <div className="picker-v2-header">
           <div className="picker-v2-title">Quote — Add Products</div>
           <div className="search-wrap picker-v2-search">
-            <span style={{ color: '#9ca3af', fontSize: '13px' }}>Search</span>
+            <span className="search-label">Search</span>
             <input
               className="search-input"
               value={search}
@@ -134,7 +141,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
 
           <div className="picker-v2-grid-wrap">
             {filtered.length === 0 ? (
-              <div className="picker-empty" style={{ gridColumn: '1 / -1', padding: 40, textAlign: 'center' }}>No matching products</div>
+              <div className="picker-empty picker-empty--full">No matching products</div>
             ) : (
               <div className="picker-v2-grid">
                 {filtered.map((p) => {
@@ -152,10 +159,10 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
                     >
                       <div className="picker-v2-card-check">
                         {isExisting ? (
-                          <span style={{ color: 'var(--text-faint)', fontSize: 12 }}>Added</span>
+                          <span className="picker-added-label">Added</span>
                         ) : (
                           <div className={`picker-v2-checkbox${isSelected ? ' checked' : ''}`}>
-                            {isSelected && <span style={{ fontSize: '11px' }}>✓</span>}
+                            {isSelected && <span className="picker-checkmark">✓</span>}
                           </div>
                         )}
                       </div>
@@ -165,7 +172,7 @@ export default function ProductPicker({ products, onAdd, onClose, multiSelect, e
                       <div className="picker-v2-card-sku">{p.sku}</div>
                       <div className="picker-v2-card-bottom">
                         <span className="picker-v2-card-price">
-                          {p.default_price?.amount > 0 ? fmtPrice(p.default_price.amount) + '/mo' : 'Custom'}
+                          {renderRecurringPrice(p.default_price?.amount)}
                         </span>
                         <span className={`type-pill type-${category}`}>{TYPE_LABELS[category] || category}</span>
                       </div>
