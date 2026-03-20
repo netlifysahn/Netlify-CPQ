@@ -6689,7 +6689,11 @@ select.qd-detail-input-select::-ms-expand {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 24px;
+  height: 34px;
+  padding: 4px 32px 4px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
   list-style: none;
   cursor: pointer;
   color: var(--text-label-color);
@@ -6702,6 +6706,7 @@ select.qd-detail-input-select::-ms-expand {
 }
 .quote-detail--editing .qd-add-control:hover {
   color: #111827;
+  border-color: rgba(15, 23, 42, 0.24);
 }
 .quote-detail--editing .qd-add-control--disabled {
   color: #94a3b8;
@@ -6724,20 +6729,22 @@ select.qd-detail-input-select::-ms-expand {
   align-items: center;
   width: 100%;
   list-style: none;
+  cursor: pointer;
 }
 .quote-detail--editing .qd-multi-picker-summary::-webkit-details-marker {
   display: none;
 }
 .quote-detail--editing .qd-multi-picker-menu {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 2px);
   left: 0;
-  width: min(420px, 84vw);
+  width: 100%;
+  max-width: 360px;
   z-index: 9999;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: var(--radius-sm);
   background: var(--surface);
-  box-shadow: 0 12px 30px #0f172a24;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
   display: flex;
   flex-direction: column;
   max-height: 300px;
@@ -6752,7 +6759,7 @@ select.qd-detail-input-select::-ms-expand {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
+  padding: 7px 10px;
   border-radius: var(--radius-sm);
   font-size: 13px;
   color: #111827;
@@ -6765,7 +6772,8 @@ select.qd-detail-input-select::-ms-expand {
   margin: 0;
 }
 .quote-detail--editing .qd-support-picker-menu {
-  width: min(360px, 84vw);
+  width: 100%;
+  max-width: 360px;
 }
 .quote-detail--editing .qd-support-picker-option {
   width: 100%;
@@ -6790,8 +6798,8 @@ select.qd-detail-input-select::-ms-expand {
 .quote-detail--editing .qd-multi-picker-footer {
   display: flex;
   justify-content: flex-end;
-  padding: 8px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 6px 10px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
   background: var(--surface);
   flex: 0 0 auto;
   position: sticky;
