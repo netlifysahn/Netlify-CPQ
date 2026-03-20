@@ -44,6 +44,7 @@ export default function QuoteList({ quotes, onNew, onOpen, onDupe, onDelete }) {
           <div className="quote-summary-cell quote-summary-money" role="columnheader">MRR</div>
           <div className="quote-summary-cell quote-summary-money" role="columnheader">ARR</div>
           <div className="quote-summary-cell" role="columnheader">TERM</div>
+          <div className="quote-summary-cell" role="columnheader"></div>
         </div>
         <div className="quote-summary-body" role="rowgroup">
           {quotes.map((q) => {
@@ -69,6 +70,14 @@ export default function QuoteList({ quotes, onNew, onOpen, onDupe, onDelete }) {
                 </div>
                 <div className="quote-summary-cell quote-summary-term" role="cell">
                   {formatTerm(q.term_months)}
+                </div>
+                <div className="quote-summary-cell cell-actions" role="cell" onClick={(e) => e.stopPropagation()}>
+                  <button className="row-action-btn" title="Clone" onClick={() => onDupe(q)}>
+                    <i className="fa-solid fa-clone fa-fw" />
+                  </button>
+                  <button className="row-action-btn row-action-btn--danger" title="Delete" onClick={() => onDelete(q.id)}>
+                    <i className="fa-solid fa-trash fa-fw" />
+                  </button>
                 </div>
               </div>
             );
