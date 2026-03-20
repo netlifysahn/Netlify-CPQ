@@ -250,13 +250,13 @@ body{font-family:'Mulish',sans-serif;color:#1a1a2e;background:#fff;line-height:1
 
 /* CUSTOMER NAME BLOCK */
 .customer-name-block{margin-bottom:20px}
-.customer-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+.customer-top{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;margin-bottom:0}
 .customer-name{font-family:'Poppins',sans-serif;font-size:13pt;font-weight:700;color:#0a0a0a;letter-spacing:-.02em;line-height:1.2;margin-bottom:3px}
 .customer-address{font-size:8.5pt;color:#9ca3af;line-height:1.5}
 .primary-contact-block{text-align:left;min-width:200px}
 
 /* BILLING META — 3 cols, no top border */
-.billing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:18px 0 0;margin-top:0;border-top:none}
+.billing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:18px 0 0;margin-top:20px;border-top:none}
 .bcol-label{font-size:7pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
 .bcol-line{font-size:9pt;color:#374151;line-height:1.85}
 
