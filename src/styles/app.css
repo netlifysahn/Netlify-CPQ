@@ -3243,15 +3243,7 @@ tr.drag-over {
   line-height: 1.15;
   margin-bottom: var(--space-sm);
 }
-.qd-status-eyebrow {
-  font-family: var(--font-heading);
-  font-size: var(--qd-text-meta);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-  padding-right: 8px;
-}
+/* Legacy status eyebrow – now replaced by .qd-status-pill */
 .qd-meta {
   display: flex;
   align-items: center;
@@ -5533,25 +5525,7 @@ tr.drag-over {
   border: none;
   color: #065f46;
 }
-.qd-archived-banner {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: #f9fafb;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
-  margin-bottom: 16px;
-  font-family: var(--font-heading);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #9ca3af;
-}
-.qd-archived-banner i {
-  font-size: 13px;
-}
+/* Legacy archived banner – now replaced by .qd-readonly-banner */
 .qd-action-btn {
   padding: 8px 16px;
   height: 36px;
@@ -8120,10 +8094,8 @@ button {
   gap: 10px;
   flex: 0 0 auto;
 }
-.quote-detail .qd-status-eyebrow {
-  padding-right: 0;
+.quote-detail .qd-status-pill {
   margin: 0;
-  text-align: right;
 }
 .quote-detail .qd-action-bar {
   display: flex;
@@ -8240,7 +8212,7 @@ button {
     width: 100%;
     align-items: flex-start;
   }
-  .quote-detail .qd-status-eyebrow,
+  .quote-detail .qd-status-pill,
   .quote-detail .qd-action-bar {
     width: 100%;
     justify-content: flex-start;
@@ -9475,7 +9447,7 @@ button {
   margin-bottom: 2px !important;
 }
 .quote-detail .qd-overage-body {
-  padding: 10px 20px 20px !important;
+  padding: 14px 24px 24px !important;
 }
 .quote-detail .qd-overage-columns {
   gap: 20px !important;
@@ -9515,19 +9487,19 @@ button {
 .qd-pricing-summary-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 .qd-pricing-summary-divider {
   height: 1px;
-  background: rgba(15, 23, 42, 0.06);
-  margin: 10px 0;
+  background: rgba(15, 23, 42, 0.08);
+  margin: 12px 0;
 }
 .qd-pricing-summary-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 2px 0;
+  padding: 3px 0;
 }
 .qd-pricing-summary-label {
   font-family: var(--font-body);
@@ -9568,12 +9540,13 @@ button {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #47556994;
-  padding: 0 0 8px;
+  padding: 0 12px 12px;
   text-align: right;
   white-space: nowrap;
 }
 .qd-es-th--product {
   text-align: left;
+  padding-left: 0;
 }
 .qd-es-th--qty {
   text-align: right;
@@ -9584,18 +9557,20 @@ button {
 .qd-es-cell {
   font-family: var(--qd-quote-content-font-family, "Poppins", sans-serif);
   font-size: var(--qd-quote-content-font-size, 13px);
-  font-weight: 600;
+  font-weight: 400;
   color: #0f172a;
-  padding: 6px 0;
+  padding: 10px 12px;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
 }
 .qd-es-cell--product {
   text-align: left;
   font-family: var(--font-body);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-label-color);
+  padding-left: 0;
 }
 .qd-es-cell--qty {
   text-align: right;
@@ -9604,11 +9579,12 @@ button {
   text-align: right;
 }
 .qd-es-rate-value {
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 .qd-es-rate-unit {
   font-family: var(--font-body);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
   color: #94a3b8;
   margin-left: 2px;
@@ -11199,6 +11175,19 @@ button {
 .qd-dc-input--height {
   height: var(--app-control-height);
 }
+.qd-dc-input--readonly {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-body);
+  cursor: default;
+}
+.qd-terms-readonly {
+  font-size: 13px;
+  color: var(--text-body);
+  line-height: 1.6;
+}
 .qd-dc-span2 {
   grid-column: 1 / -1;
 }
@@ -11228,15 +11217,90 @@ button {
   line-height: inherit;
 }
 
-/* QuoteDetail status eyebrow */
-.qd-status-eyebrow {
+/* QuoteDetail status pill */
+.qd-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-family: var(--font-heading);
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   white-space: nowrap;
-  padding-right: var(--space-sm);
+  border-radius: 999px;
+  padding: 3px 10px;
+  line-height: 1.4;
+}
+.qd-status-pill--grey {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+.qd-status-pill--blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+.qd-status-pill--darkgreen {
+  background: #ecfdf5;
+  color: #065f46;
+}
+.qd-status-pill--muted {
+  background: #f9fafb;
+  color: #9ca3af;
+}
+.qd-status-pill--gold {
+  background: #fffbeb;
+  color: #d97706;
+}
+.qd-status-pill--teal {
+  background: #f0fdfa;
+  color: #0d9488;
+}
+.qd-status-pill--purple {
+  background: #faf5ff;
+  color: #7c3aed;
+}
+.qd-status-pill--green {
+  background: #f0fdf4;
+  color: #059669;
+}
+.qd-status-pill--red {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.qd-status-pill--readonly {
+  opacity: 0.85;
+}
+.qd-status-pill-lock {
+  flex-shrink: 0;
+}
+
+/* QuoteDetail read-only banner */
+.qd-readonly-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.qd-readonly-banner--converted {
+  background: #ecfdf5;
+  color: #065f46;
+  border-left: 3px solid #065f46;
+}
+.qd-readonly-banner--archived {
+  background: #f9fafb;
+  color: #9ca3af;
+  border-left: 3px solid #d1d5db;
+}
+.qd-readonly-banner-icon {
+  flex-shrink: 0;
 }
 
 /* QuoteDetail action bar */
