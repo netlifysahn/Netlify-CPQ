@@ -11719,3 +11719,31 @@ button {
 .quote-detail .qd-entitlement-row {
   grid-template-columns: minmax(180px, 1.85fr) 0.62fr 1fr 1fr 1fr 1fr 1fr;
 }
+
+/* ── Card restoration for detail/edit pages ────────────────────────────────── */
+.quote-detail .qd-detail-card-wrap {
+  background: var(--surface, #fff) !important;
+  border: 1px solid var(--border-default, #e5e7eb) !important;
+  border-radius: 8px !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.quote-detail .qd-category-card {
+  background: var(--surface, #fff) !important;
+  border: 1px solid var(--border-default, #e5e7eb) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+.quote-detail .qd-detail-cards {
+  background: var(--surface, #fff) !important;
+  border: 1px solid var(--border-default, #e5e7eb) !important;
+  border-radius: 8px !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.quote-detail .qd-overage-card {
+  background: var(--surface, #fff) !important;
+  border: 1px solid var(--border-default, #e5e7eb) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
