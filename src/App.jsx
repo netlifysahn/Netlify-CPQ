@@ -663,7 +663,7 @@ export default function App() {
     return true;
   });
 
-  const statuses = ['All', ...['draft', 'submitted', 'won', 'lost', 'cancelled'].filter((s) => quotes.some((q) => q.status === s))];
+  const statuses = ['All', ...['draft', 'shared', 'sent', 'converted', 'archived', 'submitted', 'won', 'lost', 'cancelled'].filter((s) => quotes.some((q) => q.status === s))];
 
   const handleNavClick = (nextPage) => {
     setPage(nextPage);

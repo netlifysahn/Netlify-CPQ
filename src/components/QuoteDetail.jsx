@@ -4,7 +4,7 @@ import 'react-quill/dist/quill.snow.css';
 import { isRichTextEmpty, toRichTextHtml } from '../utils/richText';
 import {
   calcQuoteTotals, calcLineExtended,
-  fmtCurrency, STATUS_META, emptyLineItem,
+  fmtCurrency, STATUS_META, ALLOWED_TRANSITIONS, isReadOnlyStatus, emptyLineItem,
   emptyPackageLine, emptySubLineItem,
   syncDiscountFromPercent, syncDiscountFromAmount,
   isIncluded, isQuantityEditable, getEffectiveLineQuantity,
@@ -59,7 +59,7 @@ const relativeTime = (timestamp) => {
 };
 
 const ACTIVITY_DOT_COLORS = {
-  draft: '#6b7280', sent: '#2E51ED', draft_revision: '#FBB13D',
+  draft: '#6b7280', shared: '#2E51ED', sent: '#2E51ED', draft_revision: '#FBB13D',
   ready_to_submit: '#05BDBA', pending_approval: '#7C3AED',
   approved: '#059669', rejected: '#ef4444', converted: '#065f46',
   archived: '#9ca3af',
@@ -206,12 +206,14 @@ const setsEqual = (a, b) => {
   return true;
 };
 
-function DetailInput({ label, field, value, placeholder, span2, type, mono, textarea, options, onChange, onBlur }) {
+function DetailInput({ label, field, value, placeholder, span2, type, mono, textarea, options, onChange, onBlur, readOnly }) {
   const inputCls = `qd-dc-input${mono ? ' qd-dc-input--mono' : ''}`;
   const handleChange = (e) => onChange(field, e.target.value);
   const handleBlur = (e) => { onBlur(field, e.target.value); };
   let input;
-  if (textarea) {
+  if (readOnly) {
+    input = <div className={`${inputCls} qd-dc-input--height qd-dc-input--readonly`}>{value || '\u2014'}</div>;
+  } else if (textarea) {
     input = <textarea className={`${inputCls} qd-dc-input--textarea`} value={value || ''} placeholder={placeholder} onChange={handleChange} onBlur={handleBlur} />;
   } else if (options) {
     input = (
@@ -346,8 +348,10 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   );
 
   const enterEditMode = () => {
+    if (isReadOnlyStatus(q.status)) return;
+    const clonedLines = sanitizeSupportQuantities(JSON.parse(JSON.stringify(q.line_items)));
     setDraft({
-      line_items: sanitizeSupportQuantities(JSON.parse(JSON.stringify(q.line_items))),
+      line_items: syncPackageSubLines(clonedLines),
       groups: JSON.parse(JSON.stringify(q.groups)),
       header_discount: q.header_discount || 0,
     });
@@ -435,6 +439,42 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       const line = emptyLineItem(product, getPriceOverride(product.id));
       updateDraft((d) => { d.line_items = [...d.line_items, { ...line, sort_order: d.line_items.length }]; return d; });
     }
+  };
+
+  // Sync package sub-lines with the current product catalog so that newly
+  // added components (including entitlements) appear in quote lines.
+  const syncPackageSubLines = (lineItems) => {
+    const productMap = new Map((products || []).map((p) => [p.id, p]));
+    const packageParents = lineItems.filter((l) => l.is_package && !l.parent_line_id);
+    if (packageParents.length === 0) return lineItems;
+
+    let result = [...lineItems];
+    let changed = false;
+
+    for (const parent of packageParents) {
+      const product = productMap.get(parent.product_id);
+      if (!product || !isBundleProduct(product)) continue;
+
+      const currentComponents = getPackageProductComponents(product, products);
+      const existingSubs = result.filter((l) => l.parent_line_id === parent.id);
+      const existingProductIds = new Set(existingSubs.map((s) => s.product_id));
+
+      for (const component of currentComponents) {
+        if (existingProductIds.has(component.component_product_id)) continue;
+        const memberProduct = productMap.get(component.component_product_id);
+        if (!memberProduct) continue;
+        const newSubLine = emptySubLineItem(
+          memberProduct,
+          component,
+          parent.id,
+          getPriceOverride(component.component_product_id),
+        );
+        result.push({ ...newSubLine, sort_order: result.length });
+        changed = true;
+      }
+    }
+
+    return changed ? result : lineItems;
   };
 
   const updateDraftLine = (lineId, updates) => {
@@ -605,51 +645,60 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   };
 
   const changeStatus = (newStatus) => {
-    persistQuote((prev) => ({
-      ...prev,
-      status: newStatus,
-      activity_log: [...(prev.activity_log || []), { type: 'status_change', from_status: prev.status, to_status: newStatus, timestamp: new Date().toISOString(), actor: prev.prepared_by || '' }],
-    }));
+    persistQuote((prev) => {
+      const allowed = ALLOWED_TRANSITIONS[prev.status];
+      if (allowed && !allowed.includes(newStatus)) return prev;
+      return {
+        ...prev,
+        status: newStatus,
+        activity_log: [...(prev.activity_log || []), { type: 'status_change', from_status: prev.status, to_status: newStatus, timestamp: new Date().toISOString(), actor: prev.prepared_by || '' }],
+      };
+    });
   };
 
-  const liveData = mode === 'edit' && draft ? { line_items: draft.line_items, groups: draft.groups, header_discount: draft.header_discount, term_months: q.term_months } : q;
+  // Keep view-mode line items in sync with the current product catalog.
+  const viewLineItems = useMemo(
+    () => syncPackageSubLines(q.line_items || []),
+    [q.line_items, products],
+  );
+
+  const liveData = mode === 'edit' && draft ? { line_items: draft.line_items, groups: draft.groups, header_discount: draft.header_discount, term_months: q.term_months } : { ...q, line_items: viewLineItems };
   const totals = calcQuoteTotals(liveData);
   const meta = STATUS_META[q.status] || STATUS_META.draft;
-  const entitlementSummary = useMemo(() => {
+  const entitlementSummary = (() => {
     const makeBucket = () => ({ includedQty: 0, additionalQty: 0, committedPrice: 0 });
     const summary = {
       credits: makeBucket(),
       seats: makeBucket(),
+      concurrentBuilds: makeBucket(),
     };
     const resolveType = (line) => {
+      if (isConcurrentBuildsQuantityLine(line)) return 'concurrentBuilds';
       if (line?.product_type === 'credits') return 'credits';
       if (line?.product_type === 'seats') return 'seats';
       if (isCreditQuantityLine(line)) return 'credits';
       if (isSeatQuantityLine(line)) return 'seats';
       return null;
     };
-    (liveData.line_items || []).forEach((line) => {
+    const items = liveData.line_items || [];
+    for (let i = 0; i < items.length; i++) {
+      const line = items[i];
       const type = resolveType(line);
-      if (!type) return;
+      if (!type) continue;
       const qty = getEffectiveLineQuantity(line);
       const included = line.parent_line_id
         ? line.price_behavior !== 'related'
         : isIncluded(line.unit_type || '');
       if (included) {
         summary[type].includedQty += qty;
-        return;
+        continue;
       }
       summary[type].additionalQty += qty;
       summary[type].committedPrice += calcLineExtended(line);
-    });
+    }
     return summary;
-  }, [liveData.line_items]);
+  })();
 
-  const STATUS_EYEBROW_COLORS = {
-    draft: '#6b7280', sent: '#2E51ED', draft_revision: '#FBB13D',
-    ready_to_submit: '#05BDBA', pending_approval: '#7C3AED',
-    approved: '#16A34A', rejected: '#ef4444', converted: '#15803d', archived: '#9ca3af',
-  };
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
   const getCurrencyInputKey = (lineId, field) => `${lineId}:${field}`;
@@ -741,8 +790,9 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   const isSupportLine = (line) => getLineCategory(line) === 'support';
 
   const toggleCard = (key) => setDetailCards((p) => ({ ...p, [key]: !p[key] }));
-  const handleFieldChange = (field, value) => setQ((p) => ({ ...p, [field]: value }));
-  const handleFieldBlur = (field, value) => persistQuote((prev) => ({ ...prev, [field]: value }));
+  const readOnlyQuote = isReadOnlyStatus(q.status);
+  const handleFieldChange = (field, value) => { if (readOnlyQuote) return; setQ((p) => ({ ...p, [field]: value })); };
+  const handleFieldBlur = (field, value) => { if (readOnlyQuote) return; persistQuote((prev) => ({ ...prev, [field]: value })); };
 
   const renderDetailCards = (source) => (
     <div className="qd-detail-card-wrap">
@@ -753,14 +803,14 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         </div>
         {detailCards.customer && (
           <div className="qd-detail-card-body">
-            <DetailInput label="Customer Name" field="customer_name" value={source.customer_name} placeholder="Company name" span2 onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Address" field="address" value={source.address} placeholder="Street, City, State, ZIP, Country" span2 onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Primary Contact Name" field="contact_name" value={source.contact_name} placeholder="Full name" onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Primary Contact Email" field="contact_email" value={source.contact_email} placeholder="contact@company.com" type="email" onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Billing Contact Name" field="billing_contact_name" value={source.billing_contact_name} placeholder="Full name" onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Billing Contact Email" field="billing_contact_email" value={source.billing_contact_email} placeholder="billing@company.com" type="email" onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Invoice Email" field="invoice_email" value={source.invoice_email} placeholder="invoices@company.com" type="email" onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Netlify Account ID" field="account_id" value={source.account_id} placeholder="e.g. acct_abc123" mono onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Customer Name" field="customer_name" value={source.customer_name} placeholder="Company name" span2 onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Address" field="address" value={source.address} placeholder="Street, City, State, ZIP, Country" span2 onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Primary Contact Name" field="contact_name" value={source.contact_name} placeholder="Full name" onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Primary Contact Email" field="contact_email" value={source.contact_email} placeholder="contact@company.com" type="email" onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Billing Contact Name" field="billing_contact_name" value={source.billing_contact_name} placeholder="Full name" onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Billing Contact Email" field="billing_contact_email" value={source.billing_contact_email} placeholder="billing@company.com" type="email" onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Invoice Email" field="invoice_email" value={source.invoice_email} placeholder="invoices@company.com" type="email" onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Netlify Account ID" field="account_id" value={source.account_id} placeholder="e.g. acct_abc123" mono onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
           </div>
         )}
       </div>
@@ -772,8 +822,8 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         </div>
         {detailCards.term && (
           <div className="qd-detail-card-body">
-            <DetailInput label="Subscription Start Date" field="start_date" value={source.start_date} type="date" onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Subscription Term (Months)" field="term_months" value={source.term_months} placeholder="12" onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Subscription Start Date" field="start_date" value={source.start_date} type="date" onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Subscription Term (Months)" field="term_months" value={source.term_months} placeholder="12" onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
           </div>
         )}
       </div>
@@ -785,11 +835,11 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         </div>
         {detailCards.billing && (
           <div className="qd-detail-card-body">
-            <DetailInput label="Billing Schedule" field="billing_schedule" value={source.billing_schedule} options={['Annual', 'Semi-Annual', 'Quarterly', 'Monthly']} onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Payment Method" field="payment_method" value={source.payment_method} options={['Credit Card', 'ACH / Bank Transfer', 'Wire Transfer', 'Check', 'Invoice']} onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="Payment Terms" field="payment_terms" value={source.payment_terms} options={['Net 30', 'Net 45', 'Net 60', 'Due on Receipt']} onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="PO #" field="po_number" value={source.po_number} placeholder="Optional" mono onChange={handleFieldChange} onBlur={handleFieldBlur} />
-            <DetailInput label="VAT #" field="vat_number" value={source.vat_number} placeholder="Optional" mono onChange={handleFieldChange} onBlur={handleFieldBlur} />
+            <DetailInput label="Billing Schedule" field="billing_schedule" value={source.billing_schedule} options={['Annual', 'Semi-Annual', 'Quarterly', 'Monthly']} onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Payment Method" field="payment_method" value={source.payment_method} options={['Credit Card', 'ACH / Bank Transfer', 'Wire Transfer', 'Check', 'Invoice']} onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="Payment Terms" field="payment_terms" value={source.payment_terms} options={['Net 30', 'Net 45', 'Net 60', 'Due on Receipt']} onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="PO #" field="po_number" value={source.po_number} placeholder="Optional" mono onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
+            <DetailInput label="VAT #" field="vat_number" value={source.vat_number} placeholder="Optional" mono onChange={handleFieldChange} onBlur={handleFieldBlur} readOnly={readOnlyQuote} />
           </div>
         )}
       </div>
@@ -802,6 +852,9 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         {detailCards.terms_conditions && (
           <div className="qd-detail-card-body qd-detail-card-body--terms">
             <div className="qd-terms-editor">
+              {readOnlyQuote ? (
+                <div className="qd-terms-readonly" dangerouslySetInnerHTML={{ __html: toRichTextHtml(source.terms_conditions || '') || '<em style="color:#9ca3af">No terms</em>' }} />
+              ) : (
               <ReactQuill
                 className="qd-terms-quill"
                 value={toRichTextHtml(source.terms_conditions || '')}
@@ -811,6 +864,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                 modules={quillModules}
                 formats={quillFormats}
               />
+              )}
             </div>
           </div>
         )}
@@ -1736,15 +1790,16 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
   const renderEntitlementsSummaryTable = () => {
     const rows = [
-      { label: 'Credits', data: entitlementSummary.credits, overageField: 'overage_rate_credits', unitLabel: '/1,500 Credits', unitDivisor: 1500 },
-      { label: 'Seats', data: entitlementSummary.seats, overageField: 'overage_rate_seats', unitLabel: '/Seat/Month', unitDivisor: 1 },
+      { label: 'Credits', data: entitlementSummary.credits, overageField: 'overage_rate_credits', unitLabel: '/ 1500 credits', unitDivisor: 1500 },
+      { label: 'Enterprise Seats', data: entitlementSummary.seats, overageField: 'overage_rate_seats', unitLabel: '/ seat', unitDivisor: 1 },
+      { label: 'Concurrent Builds', data: entitlementSummary.concurrentBuilds, overageField: 'overage_rate_concurrent_builds', unitLabel: '/ build', unitDivisor: 1 },
     ];
     return (
       <table className="qd-entitlements-summary-table">
         <thead>
           <tr>
             <th className="qd-es-th qd-es-th--product"></th>
-            <th className="qd-es-th qd-es-th--qty">QTY</th>
+            <th className="qd-es-th qd-es-th--qty">COMMITTED TOTAL</th>
             <th className="qd-es-th qd-es-th--rate">COMMITTED RATE</th>
             <th className="qd-es-th qd-es-th--rate">OVERAGE RATE</th>
           </tr>
@@ -1752,24 +1807,25 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         <tbody>
           {rows.map((row) => {
             const totalQty = row.data.includedQty + row.data.additionalQty;
+            if (totalQty === 0) return null;
             const committedRate = row.data.additionalQty > 0
               ? fmtCurrency((row.data.committedPrice / row.data.additionalQty) * row.unitDivisor)
               : '—';
             return (
               <tr key={row.label}>
                 <td className="qd-es-cell qd-es-cell--product">{row.label}</td>
-                <td className="qd-es-cell qd-es-cell--qty">{fmtQty(totalQty)}</td>
+                <td className="qd-es-cell qd-es-cell--qty"><strong>{fmtQty(totalQty)}</strong></td>
                 <td className="qd-es-cell qd-es-cell--rate">
-                  <span className="qd-es-rate-value">{committedRate}</span>
-                  {committedRate !== '—' && <span className="qd-es-rate-unit">{row.unitLabel}</span>}
+                  {committedRate !== '—'
+                    ? <><strong className="qd-es-rate-value">{committedRate}</strong><span className="qd-es-rate-unit"> {row.unitLabel}</span></>
+                    : <span className="qd-es-rate-value">—</span>}
                 </td>
                 <td className="qd-es-cell qd-es-cell--rate">
-                  {isEditing
+                  {isEditing && !readOnlyQuote
                     ? <input className="qd-overage-input" value={q[row.overageField] || ''} placeholder="$0.00" onChange={(e) => handleFieldChange(row.overageField, e.target.value)} onBlur={(e) => handleFieldBlur(row.overageField, e.target.value)} />
-                    : <>
-                        <span className="qd-es-rate-value">{q[row.overageField] || '—'}</span>
-                        {q[row.overageField] && <span className="qd-es-rate-unit">{row.unitLabel}</span>}
-                      </>}
+                    : q[row.overageField]
+                      ? <><strong className="qd-es-rate-value">{q[row.overageField]}</strong><span className="qd-es-rate-unit"> {row.unitLabel}</span></>
+                      : <span className="qd-es-rate-value">—</span>}
                 </td>
               </tr>
             );
@@ -1793,7 +1849,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
   );
 
   const isEditing = mode === 'edit';
-  const canEditLines = ['draft', 'draft_revision'].includes(q.status);
+  const canEditLines = !isReadOnlyStatus(q.status);
 
   const groupLinesByCategory = (items) => {
     const hasPackage = items.some((l) => l.is_package);
@@ -1819,25 +1875,49 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         <div className="qd-header-info" style={{ flex: 1 }}>
           <div className="qd-quote-number">{q.quote_number}</div>
           <div className="qd-header-title-row">
-            {editingTitle ? (
+            {editingTitle && canEditLines ? (
               <input autoFocus type="text" value={q.name} placeholder="Quote name"
                 onChange={(e) => setQ((prev) => ({ ...prev, name: e.target.value }))}
                 onBlur={(e) => { setEditingTitle(false); persistQuote((prev) => ({ ...prev, name: e.target.value })); }}
                 onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setEditingTitle(false); }}
                 className="qd-title-input" />
             ) : (
-              <h1 className="qd-title" onClick={() => setEditingTitle(true)} style={{ cursor: 'pointer', flex: 1 }}>{q.name || 'Untitled Quote'}</h1>
+              <h1 className="qd-title" onClick={() => { if (canEditLines) setEditingTitle(true); }} style={{ cursor: canEditLines ? 'pointer' : 'default', flex: 1 }}>{q.name || 'Untitled Quote'}</h1>
             )}
-            {!isEditing && (
-              <div className="qd-status-eyebrow" style={{ color: STATUS_EYEBROW_COLORS[q.status] || '#6b7280' }}>
-                {(STATUS_META[q.status] || STATUS_META.draft).label}
-              </div>
-            )}
+            {!isEditing && (() => {
+              const meta = STATUS_META[q.status] || STATUS_META.draft;
+              const tone = meta.color || 'grey';
+              return (
+                <span className={`qd-status-pill qd-status-pill--${tone}${readOnlyQuote ? ' qd-status-pill--readonly' : ''}`}>
+                  {readOnlyQuote && (
+                    <svg className="qd-status-pill-lock" width="10" height="10" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4.5 7V4.5a3.5 3.5 0 1 1 7 0V7M3 7h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                  {meta.label}
+                </span>
+              );
+            })()}
           </div>
         </div>
       </div>
 
-      {q.status === 'archived' && <div className="qd-archived-banner">This quote is archived</div>}
+      {q.status === 'converted' && (
+        <div className="qd-readonly-banner qd-readonly-banner--converted">
+          <svg className="qd-readonly-banner-icon" width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4.5 7V4.5a3.5 3.5 0 1 1 7 0V7M3 7h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Converted — read-only
+        </div>
+      )}
+      {q.status === 'archived' && (
+        <div className="qd-readonly-banner qd-readonly-banner--archived">
+          <svg className="qd-readonly-banner-icon" width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4.5 7V4.5a3.5 3.5 0 1 1 7 0V7M3 7h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Archived — read-only
+        </div>
+      )}
 
       {validationErrors && (
         <div className="qd-validation-errors">
@@ -1859,7 +1939,16 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
               <>
                 <button className="qd-action-btn" onClick={enterEditMode}>{q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}</button>
                 <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings, { preview: true })}>Preview PDF</button>
-                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('sent')}>Send to Customer</button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('shared')}>Share</button>
+              </>
+            )}
+
+            {q.status === 'shared' && (
+              <>
+                <button className="qd-action-btn" onClick={enterEditMode}>{q.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}</button>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings, { preview: true })}>Preview PDF</button>
+                <button className="qd-action-btn" onClick={() => changeStatus('draft')}>Return to Draft</button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => setConfirm({ msg: 'Convert this quote? It will become read-only.', label: 'Convert', fn: () => { changeStatus('converted'); setConfirm(null); } })}>Convert</button>
               </>
             )}
 
@@ -1913,28 +2002,30 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
 
             {q.status === 'converted' && (
               <>
-                <button className="qd-action-btn" onClick={() => showToast('Order view coming soon')}>View Order</button>
-                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings)}>Download Executed Quote PDF</button>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings)}>Download PDF</button>
+                <button className="qd-action-btn" onClick={() => setConfirm({ msg: 'Archive this quote? It will remain read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } })}>Archive</button>
               </>
             )}
 
             {q.status === 'archived' && (
-              <button className="qd-action-btn" onClick={() => setConfirm({ msg: 'Restore this quote as a Draft? It will become editable again.', label: 'Restore', fn: () => { changeStatus('draft'); setConfirm(null); } })}>Restore as Draft</button>
+              <button className="qd-action-btn" onClick={() => generateQuotePDF(q, products, settings)}>Download PDF</button>
             )}
 
-            {['draft', 'sent', 'draft_revision', 'ready_to_submit', 'pending_approval', 'rejected', 'archived'].includes(q.status) && (
+            {['draft', 'shared', 'sent', 'draft_revision', 'ready_to_submit', 'pending_approval', 'rejected', 'converted', 'archived'].includes(q.status) && (
               <div className="qd-more-wrap" ref={moreRef}>
                 <button className="qd-more-btn qd-more-btn--reset" onClick={() => setShowMoreMenu(!showMoreMenu)}>···</button>
                 {showMoreMenu && (
                   <div className="qd-more-menu">
-                    {q.status === 'draft' && (<><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); onClone(q); }}>Clone Quote</button><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>Archive</button></>)}
+                    {q.status === 'draft' && (<><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); onClone(q); }}>Clone Quote</button><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Convert this quote? It will become read-only.', label: 'Convert', fn: () => { changeStatus('converted'); setConfirm(null); } }); }}>Convert</button><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>Archive</button></>)}
+                    {q.status === 'shared' && (<><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); onClone(q); }}>Clone Quote</button></>)}
                     {q.status === 'sent' && (<><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); onClone(q); }}>Clone Quote</button><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>Archive</button></>)}
                     {q.status === 'draft_revision' && (<button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this scenario? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>Archive Scenario</button>)}
                     {q.status === 'ready_to_submit' && (<><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); generateQuotePDF(q, products, settings); }}>Download PDF</button><button className="qd-more-item" onClick={() => { setShowMoreMenu(false); changeStatus('draft'); }}>Revise Quote</button></>)}
                     {q.status === 'pending_approval' && (<button className="qd-more-item" onClick={() => { setShowMoreMenu(false); generateQuotePDF(q, products, settings); }}>Download PDF</button>)}
                     {q.status === 'rejected' && (<button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Archive this quote? It will become read-only.', label: 'Archive', fn: () => { changeStatus('archived'); setConfirm(null); } }); }}>Archive</button>)}
+                    {q.status === 'converted' && (<button className="qd-more-item" onClick={() => { setShowMoreMenu(false); generateQuotePDF(q, products, settings); }}>Download PDF</button>)}
                     {q.status === 'archived' && (<button className="qd-more-item" onClick={() => { setShowMoreMenu(false); generateQuotePDF(q, products, settings); }}>Download PDF</button>)}
-                    <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(q.id); }}>Delete Quote</button>
+                    {!readOnlyQuote && <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(q.id); }}>Delete Quote</button>}
                   </div>
                 )}
               </div>
@@ -1948,7 +2039,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
       <div className={`qd-lines-section${isEditing ? ' qd-lines-section--editing' : ''}`}>
         {isEditing ? renderEditTable() : (
           <>
-            {q.line_items.length === 0 ? (
+            {viewLineItems.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-numeral">0</div>
                 <div className="empty-state-title">No line items</div>
@@ -1956,7 +2047,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
               </div>
             ) : (
               <div className="qd-grouped-cards">
-                {groupLinesByCategory(q.line_items).map((group) => (
+                {groupLinesByCategory(viewLineItems).map((group) => (
                   <div
                     key={group.category}
                     className={`qd-category-card${group.category === 'bundle' ? ' qd-category-card--base-package' : ''}${group.category === 'support' ? ' qd-category-card--support' : ''}`}
@@ -1967,7 +2058,7 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
                     {group.category === 'bundle' ? (
                       <div className="qd-pkg-table qd-base-package-table">
                         {group.lines.map((line) => {
-                          const subs = getSubLines(q.line_items, line.id);
+                          const subs = getSubLines(viewLineItems, line.id);
                           const sections = groupBasePackageSectionsForDisplay(subs);
                           const extended = calcLineExtended(line);
                           return (
@@ -2195,31 +2286,31 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
           <div className="qd-overage-body qd-pricing-summary-body">
             <div className="qd-pricing-summary-group">
               <div className="qd-pricing-summary-row">
-                <span className="qd-pricing-summary-label">Subtotal</span>
-                <span className="qd-pricing-summary-value">{fmtCurrency(totals.preDiscountMonthly)}</span>
+                <span className="qd-pricing-summary-label">Annual Subtotal</span>
+                <span className="qd-pricing-summary-value">{fmtCurrency(totals.preDiscountAnnual)}</span>
               </div>
               <div className="qd-pricing-summary-row">
                 <span className="qd-pricing-summary-label">Discount</span>
                 {isEditing
                   ? <input className="qd-overage-input" type="number" min="0" max="100" step="any" value={draft.header_discount || ''} placeholder="0%" onChange={(e) => updateDraft((d) => ({ ...d, header_discount: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 }))} />
-                  : <span className="qd-pricing-summary-value">{totals.preDiscountMonthly - totals.monthly > 0 ? `−${fmtCurrency(totals.preDiscountMonthly - totals.monthly)}` : '—'}</span>}
+                  : <span className="qd-pricing-summary-value">{totals.preDiscountAnnual - totals.annual > 0 ? `−${fmtCurrency(totals.preDiscountAnnual - totals.annual)}` : '-'}</span>}
               </div>
             </div>
             <div className="qd-pricing-summary-divider" />
             <div className="qd-pricing-summary-group">
               <div className="qd-pricing-summary-row qd-pricing-summary-row--bold">
                 <span className="qd-pricing-summary-label">Net Total</span>
-                <span className="qd-pricing-summary-value">{fmtCurrency(totals.monthly)}</span>
+                <span className="qd-pricing-summary-value">{fmtCurrency(totals.annual)}</span>
               </div>
             </div>
             <div className="qd-pricing-summary-divider" />
             <div className="qd-pricing-summary-group">
               <div className="qd-pricing-summary-row qd-pricing-summary-row--bold">
-                <span className="qd-pricing-summary-label">Total Monthly Price</span>
+                <span className="qd-pricing-summary-label">Total Monthly</span>
                 <span className="qd-pricing-summary-value">{fmtCurrency(totals.monthly)}</span>
               </div>
               <div className="qd-pricing-summary-row qd-pricing-summary-row--bold">
-                <span className="qd-pricing-summary-label">Total Annual Price</span>
+                <span className="qd-pricing-summary-label">Total Annual</span>
                 <span className="qd-pricing-summary-value">{fmtCurrency(totals.annual)}</span>
               </div>
               <div className="qd-pricing-summary-row">

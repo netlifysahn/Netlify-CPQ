@@ -2,7 +2,8 @@
 
 import { genId, getProductCategory, getProductPackageComponents, UNIT_LABELS, isBundleProduct } from './catalog';
 
-export const QUOTE_STATUSES = ['draft', 'sent', 'draft_revision', 'ready_to_submit', 'pending_approval', 'approved', 'rejected', 'converted', 'archived'];
+export const QUOTE_STATUSES = ['draft', 'shared', 'converted', 'archived',
+  /* legacy */ 'sent', 'draft_revision', 'ready_to_submit', 'pending_approval', 'approved', 'rejected'];
 export const TERM_OPTIONS = [12, 24, 36];
 
 let _quoteCounter = 0;
@@ -320,6 +321,7 @@ export const fmtCurrency = (v) => {
 
 export const STATUS_META = {
   draft: { label: 'Draft', color: 'grey' },
+  shared: { label: 'Shared', color: 'blue' },
   sent: { label: 'Sent', color: 'blue' },
   draft_revision: { label: 'Draft — Revision', color: 'gold' },
   ready_to_submit: { label: 'Ready to Submit', color: 'teal' },
@@ -329,3 +331,13 @@ export const STATUS_META = {
   converted: { label: 'Converted', color: 'darkgreen' },
   archived: { label: 'Archived', color: 'muted' },
 };
+
+/* Allowed status transitions for the four-state quote workflow */
+export const ALLOWED_TRANSITIONS = {
+  draft: ['shared', 'converted', 'archived'],
+  shared: ['draft', 'converted'],
+  converted: ['archived'],
+  archived: [],
+};
+
+export const isReadOnlyStatus = (status) => status === 'converted' || status === 'archived';
