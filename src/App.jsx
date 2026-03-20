@@ -11,6 +11,9 @@ import PricebookDetail from './components/PricebookDetail';
 import QuoteList from './components/QuoteList';
 import QuoteModal from './components/QuoteModal';
 import QuoteDetail from './components/QuoteDetail';
+import OrderList from './components/OrderList';
+import OrderModal from './components/OrderModal';
+import OrderDetail from './components/OrderDetail';
 import Confirm from './components/Confirm';
 import Settings from './components/Settings';
 import seedProducts from './data/products.json';
@@ -29,7 +32,6 @@ const NAV_ITEMS = [
 
 const COMING_SOON_META = {
   scope: { icon: 'fa-bullseye', title: 'Scope', label: 'Deal Scope', subtitle: 'Define and manage deal scope for quotes' },
-  orders: { icon: 'fa-cart-shopping', title: 'Orders', label: 'Order Management', subtitle: 'Track and manage customer orders' },
 };
 
 const FALLBACK_SETTINGS = {
@@ -220,6 +222,9 @@ export default function App() {
   const catalogSnapshotRef = useRef(JSON.stringify({ products: seedProducts, pricebooks: seedPricebooks }));
   const [quotes, setQuotes] = useState([]);
   const [quotesLoaded, setQuotesLoaded] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [ordersLoaded, setOrdersLoaded] = useState(false);
+  const [activeOrder, setActiveOrder] = useState(null);
 
   useEffect(() => {
     let isCancelled = false;
@@ -336,6 +341,13 @@ export default function App() {
       body: JSON.stringify(quotes),
     }).catch(() => {});
   }, [quotes, quotesLoaded]);
+  useEffect(() => {
+    fetch('/api/orders').then(r => r.json()).then(data => { setOrders(Array.isArray(data) ? data : []); setOrdersLoaded(true); }).catch(() => { setOrders([]); setOrdersLoaded(true); });
+  }, []);
+  useEffect(() => {
+    if (!ordersLoaded) return;
+    fetch('/api/orders', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orders) }).catch(() => {});
+  }, [orders, ordersLoaded]);
   const [settings, setSettings] = useState(() => normalizeSettings(seedSettings));
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [settingsSaveError, setSettingsSaveError] = useState('');
@@ -617,6 +629,11 @@ export default function App() {
     return newQ;
   };
 
+  const saveOrder = (o) => { setOrders((prev) => { const i = prev.findIndex((x) => x.id === o.id); return i >= 0 ? prev.map((x) => (x.id === o.id ? { ...o, updated_at: new Date().toISOString() } : x)) : [...prev, o]; }); setModal(null); };
+  const saveOrderFromDetail = (o) => { setOrders((prev) => { const i = prev.findIndex((x) => x.id === o.id); return i >= 0 ? prev.map((x) => (x.id === o.id ? o : x)) : [...prev, o]; }); setActiveOrder(o); };
+  const delOrder = (id) => setConfirm({ msg: 'Delete this order? This action cannot be undone.', fn: () => { setOrders((p) => p.filter((x) => x.id !== id)); setActiveOrder(null); setConfirm(null); } });
+  const dupeOrder = (o) => { const newO = { ...o, id: genId(), order_number: `ORD-${String(Math.max(0, ...orders.map(x => parseInt((x.order_number||'').replace('ORD-',''),10)||0)) + 1).padStart(4,'0')}`, name: o.name + ' (copy)', status: 'draft', created_at: new Date().toISOString(), updated_at: new Date().toISOString() }; setOrders((prev) => [...prev, newO]); return newO; };
+
   // Filters
   const filteredProducts = useMemo(
     () =>
@@ -673,6 +690,7 @@ export default function App() {
     setStatusFilter('All');
     setActivePricebookId(null);
     setActiveQuote(null);
+    setActiveOrder(null);
   };
 
   return (
@@ -848,6 +866,20 @@ export default function App() {
           <Settings settings={settings} onSave={saveSettings} saveError={settingsSaveError} />
         )}
 
+        {page === 'orders' && !activeOrder && (
+          <>
+            <div className="page-header"><div className="page-label">Order Management</div><h1 className="page-title">Orders</h1></div>
+            <div className="toolbar">
+              <div className="search-wrap"><span className="search-label">Search</span><input className="search-input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search orders..." /></div>
+              <button className="btn-primary" onClick={() => setModal({ type: 'order' })}>New Order</button>
+            </div>
+            <OrderList orders={orders.filter((o) => { if (!search) return true; const q = search.toLowerCase(); return (o.name||'').toLowerCase().includes(q)||(o.order_number||'').toLowerCase().includes(q)||(o.customer_name||'').toLowerCase().includes(q); })} onNew={() => setModal({ type: 'order' })} onOpen={(o) => setActiveOrder(o)} onDupe={dupeOrder} onDelete={delOrder} />
+          </>
+        )}
+        {page === 'orders' && activeOrder && (
+          <OrderDetail key={activeOrder.id} order={orders.find((o) => o.id === activeOrder.id) || activeOrder} products={products} pricebooks={pricebooks} settings={settings} onSave={saveOrderFromDetail} onBack={() => setActiveOrder(null)} onDelete={delOrder} onClone={(o) => { const cloned = dupeOrder(o); setActiveOrder(cloned); }} />
+        )}
+
         {/* Coming Soon */}
         {COMING_SOON_META[page] && (
           <>
@@ -887,6 +919,9 @@ export default function App() {
           onSave={(q) => { saveQuote(q); setActiveQuote(q); }}
           onClose={() => setModal(null)}
         />
+      )}
+      {modal?.type === 'order' && (
+        <OrderModal order={modal.data} existingOrders={orders} pricebooks={pricebooks} onSave={(o) => { saveOrder(o); setActiveOrder(o); }} onClose={() => setModal(null)} />
       )}
       {confirm && <Confirm msg={confirm.msg} onYes={confirm.fn} onNo={() => setConfirm(null)} />}
     </div>
