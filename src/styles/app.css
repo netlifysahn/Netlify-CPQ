@@ -518,7 +518,7 @@
 }
 .data-table.data-table-products th,
 .data-table.data-table-products td {
-  padding: 14px 12px;
+  padding: 10px 16px;
   height: auto;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -584,7 +584,7 @@
 }
 .data-table.data-table-pricebooks th,
 .data-table.data-table-pricebooks td {
-  padding: 16px 24px;
+  padding: 10px 16px;
   height: auto;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -594,6 +594,10 @@
   letter-spacing: 0.08em;
   color: #ffffff73;
   background: transparent;
+}
+.data-table-pricebooks td:nth-child(3),
+.data-table-pricebooks th:nth-child(3) {
+  text-align: right;
 }
 .data-table-pricebooks .name-link {
   font-weight: 600;
@@ -5416,7 +5420,7 @@ tr.drag-over {
 .data-table.data-table-products td,
 .data-table.data-table-orders th,
 .data-table.data-table-orders td {
-  padding: 14px 12px;
+  padding: 10px 16px;
 }
 .data-table-products th.col-annual,
 .data-table-products .price-annual,
@@ -7428,7 +7432,7 @@ button {
 :root {
   --list-header-font-size: 12px;
   --list-header-font-weight: 600;
-  --list-header-letter-spacing: 0.06em;
+  --list-header-letter-spacing: 0.08em;
   --list-row-font-size: 13px;
   --list-row-font-weight: 400;
   --list-label-font-size: 13px;
@@ -7632,7 +7636,7 @@ button {
 .qd-pkg-col-annual-price {
   font-size: var(--ds-type-table-header) !important;
   font-weight: 500 !important;
-  letter-spacing: 0.06em !important;
+  letter-spacing: 0.08em !important;
   opacity: 0.72;
 }
 .qd-summary-value {
@@ -7745,19 +7749,6 @@ button {
 .qd-entitlement-row,
 .qd-platform-addon-row {
   border-bottom: 1px solid rgba(15, 23, 42, 0.08) !important;
-}
-.data-table.data-table-products th,
-.data-table.data-table-products td,
-.data-table.data-table-pricebooks th,
-.data-table.data-table-pricebooks td,
-.data-table.data-table-quotes th,
-.data-table.data-table-quotes td,
-.data-table.data-table-orders th,
-.data-table.data-table-orders td,
-.quote-summary-header,
-.quote-summary-body .quote-summary-row {
-  padding-top: var(--ds-space-row) !important;
-  padding-bottom: var(--ds-space-row) !important;
 }
 .field,
 .modal-theme-products.product-modal .field,
@@ -10263,7 +10254,7 @@ button {
 
 /* 11. Compact quote list rows to match Products / Price Books tables */
 .quote-summary-header {
-  padding: 8px 16px !important;
+  padding: 10px 16px !important;
   background: transparent !important;
 }
 .quote-summary-header .quote-summary-cell {
@@ -10272,19 +10263,7 @@ button {
   color: var(--text-faint) !important;
 }
 .quote-summary-body .quote-summary-row {
-  padding: 8px 16px !important;
-}
-
-/* 11b. List page row height (Products, Price Books, Quotes, Orders) */
-.data-table.data-table-products td,
-.data-table.data-table-pricebooks td,
-.data-table.data-table-orders td {
-  padding-top: 10px !important;
-  padding-bottom: 10px !important;
-}
-.quote-summary-body .quote-summary-row {
-  padding-top: 8px !important;
-  padding-bottom: 8px !important;
+  padding: 10px 16px !important;
 }
 
 /* 12. Terms & Conditions rich text editor */
@@ -11056,7 +11035,7 @@ button {
 
 .data-table.data-table-orders th,
 .data-table.data-table-orders td {
-  padding: 14px 16px;
+  padding: 10px 16px;
   height: auto;
   border-bottom: 1px solid var(--border);
 }
