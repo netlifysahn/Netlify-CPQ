@@ -1888,36 +1888,20 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
               const meta = STATUS_META[q.status] || STATUS_META.draft;
               const tone = meta.color || 'grey';
               return (
-                <span className={`qd-status-pill qd-status-pill--${tone}${readOnlyQuote ? ' qd-status-pill--readonly' : ''}`}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                  <span className={`qd-status-pill qd-status-pill--${tone}`}>
+                    {meta.label}
+                  </span>
                   {readOnlyQuote && (
-                    <svg className="qd-status-pill-lock" width="10" height="10" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M4.5 7V4.5a3.5 3.5 0 1 1 7 0V7M3 7h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
+                    <span style={{ fontSize: '10px', color: '#9ca3af', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Read Only</span>
                   )}
-                  {meta.label}
-                </span>
+                </div>
               );
             })()}
           </div>
         </div>
       </div>
 
-      {q.status === 'converted' && (
-        <div className="qd-readonly-banner qd-readonly-banner--converted">
-          <svg className="qd-readonly-banner-icon" width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4.5 7V4.5a3.5 3.5 0 1 1 7 0V7M3 7h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          Converted — read-only
-        </div>
-      )}
-      {q.status === 'archived' && (
-        <div className="qd-readonly-banner qd-readonly-banner--archived">
-          <svg className="qd-readonly-banner-icon" width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4.5 7V4.5a3.5 3.5 0 1 1 7 0V7M3 7h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          Archived — read-only
-        </div>
-      )}
 
       {validationErrors && (
         <div className="qd-validation-errors">
