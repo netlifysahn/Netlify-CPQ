@@ -4,7 +4,7 @@ import { isRichTextEmpty, toRichTextHtml } from './richText';
 function fmtDate(s) {
   if (!s) return '';
   const d = new Date(s + 'T00:00:00');
-  return isNaN(d) ? s : d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  return isNaN(d) ? s : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 function fmtQty(n) { return n == null ? '' : Number(n).toLocaleString('en-US'); }
 function esc(str) {
@@ -15,9 +15,7 @@ function hasLineDiscount(lines) {
 }
 const EXHIBIT_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 function toExhibitLabel(i) {
-  let n=i,s='';
-  while(n>=0){s=EXHIBIT_CHARS[n%26]+s;n=Math.floor(n/26)-1;}
-  return `Exhibit ${s}`;
+  let n=i,s=''; while(n>=0){s=EXHIBIT_CHARS[n%26]+s;n=Math.floor(n/26)-1;} return `Exhibit ${s}`;
 }
 function collectLineTermExhibits(lines=[]) {
   const exhibitEntries=[],exhibitByLineId=new Map(),exhibitByLineRef=new Map();
@@ -49,7 +47,7 @@ function buildQuoteHTML(quote, settings, logoB64) {
     ? `<img src="data:image/png;base64,${logoB64}" class="logo" alt="Netlify">`
     : `<span class="logo-fallback">netlify</span>`;
 
-  // ── TOTALS MATH ────────────────────────────────────────────────────────────
+  // TOTALS MATH
   const priceable = allLines.filter(l => l.parent_line_id ? l.price_behavior==='related' : true);
   const listTotal = priceable.reduce((s,l)=>{
     const qty=getEffectiveLineQuantity(l),list=l.list_price??0;
@@ -68,7 +66,7 @@ function buildQuoteHTML(quote, settings, logoB64) {
   const totalDisc=lineDiscAmt+headerDiscAmt;
   const hasDiscount=totalDisc>0.01;
 
-  // ── SECTION RENDERER ───────────────────────────────────────────────────────
+  // SECTION RENDERER
   const renderSection = (label, lines) => {
     if(!lines.length)return'';
     const showDisc=hasLineDiscount(lines);
@@ -79,8 +77,7 @@ function buildQuoteHTML(quote, settings, logoB64) {
       rows=lines.map(l=>{
         const list=l.list_price??0,net=l.net_price??list;
         return{
-          cells:showDisc?[getLineLabel(l),fmtCurrency(list),fmtCurrency(net),fmtCurrency(net*12)]
-                        :[getLineLabel(l),fmtCurrency(net),fmtCurrency(net*12)],
+          cells:showDisc?[getLineLabel(l),fmtCurrency(list),fmtCurrency(net),fmtCurrency(net*12)]:[getLineLabel(l),fmtCurrency(net),fmtCurrency(net*12)],
           features:Array.isArray(l.features)?l.features:[]
         };
       });
@@ -91,8 +88,7 @@ function buildQuoteHTML(quote, settings, logoB64) {
         const isCred=l.product_type==='credits'&&l.unit_type==='per_credit';
         const annual=isCred?net*qty:net*qty*12;
         return{
-          cells:showDisc?[getLineLabel(l),fmtQty(qty),fmtCurrency(list),fmtCurrency(net),fmtCurrency(annual)]
-                        :[getLineLabel(l),fmtQty(qty),fmtCurrency(net),fmtCurrency(annual)],
+          cells:showDisc?[getLineLabel(l),fmtQty(qty),fmtCurrency(list),fmtCurrency(net),fmtCurrency(annual)]:[getLineLabel(l),fmtQty(qty),fmtCurrency(net),fmtCurrency(annual)],
           features:Array.isArray(l.features)?l.features:[]
         };
       });
@@ -113,7 +109,7 @@ function buildQuoteHTML(quote, settings, logoB64) {
 </div>`;
   };
 
-  // ── BASE PACKAGE ───────────────────────────────────────────────────────────
+  // BASE PACKAGE
   const packageLines=allLines.filter(l=>l.is_package);
   const basePkgHtml=packageLines.length?`
 <div class="section">
@@ -122,8 +118,7 @@ function buildQuoteHTML(quote, settings, logoB64) {
     const subs=allLines.filter(l=>l.parent_line_id===pkg.id);
     const monthly=pkg.net_price??pkg.list_price??0;
     const annual=monthly*12;
-    return`
-  <table class="data-table">
+    return`<table class="data-table">
     <thead><tr>
       <th class="td-name"></th>
       <th class="td-num">Monthly</th>
@@ -131,24 +126,22 @@ function buildQuoteHTML(quote, settings, logoB64) {
     </tr></thead>
     <tbody>
       <tr class="pkg-name-row">
-        <td class="td-name"><strong>${getLineLabel(pkg)}</strong></td>
-        <td class="td-num">${fmtCurrency(monthly)}</td>
-        <td class="td-num">${fmtCurrency(annual)}</td>
+        <td class="td-name"><span class="pkg-title">${getLineLabel(pkg)}</span></td>
+        <td class="td-num pkg-price">${fmtCurrency(monthly)}</td>
+        <td class="td-num pkg-price">${fmtCurrency(annual)}</td>
       </tr>
-      <tr class="included-header-row">
-        <td class="included-label" colspan="3">Included</td>
-      </tr>
+      <tr><td class="included-label" colspan="3">Included</td></tr>
       ${subs.map(s=>{
         const qty=getEffectiveLineQuantity(s);
         const qtyStr=qty>1?` <span class="qty-muted">${fmtQty(qty)}</span>`:'';
-        return`<tr class="included-row"><td class="td-name included-item" colspan="3">${getLineLabel(s)}${qtyStr}</td></tr>`;
+        return`<tr class="included-row"><td colspan="3" class="included-item">${getLineLabel(s)}${qtyStr}</td></tr>`;
       }).join('')}
     </tbody>
   </table>`;
   }).join('')}
 </div>`:'';
 
-  // ── OVERAGE ────────────────────────────────────────────────────────────────
+  // OVERAGE
   const overageRows=[];
   const seen=new Set();
   allLines.filter(l=>['seats','credits','entitlements'].includes(l.product_type)).forEach(l=>{
@@ -168,28 +161,22 @@ function buildQuoteHTML(quote, settings, logoB64) {
   </table>
 </div>`:'';
 
-  // ── ORDER FORM TEXT ────────────────────────────────────────────────────────
   const ofHtml=toRichTextHtml(settings?.orderFormHeaderText||'');
   const orderFormText=!isRichTextEmpty(ofHtml)?`<div class="of-text">${ofHtml}</div>`:'';
 
-  // ── STANDALONES ────────────────────────────────────────────────────────────
   const standaloneSupport=allLines.filter(l=>!l.parent_line_id&&!l.is_package&&l.product_type==='support');
   const standaloneAddons=allLines.filter(l=>!l.parent_line_id&&!l.is_package&&l.product_type==='addon');
   const standaloneEnt=allLines.filter(l=>!l.parent_line_id&&!l.is_package&&['entitlements','seats','credits'].includes(l.product_type));
 
-  // ── TERMS ──────────────────────────────────────────────────────────────────
+  // TERMS
   const hasTerms=exhibitEntries.length>0||quote.terms_conditions?.trim();
   const termsHtml=hasTerms?`
 <div class="page-break"></div>
 <div class="terms-wrap">
   <h2 class="terms-title">Terms &amp; Conditions</h2>
   <div class="thick-rule"></div>
-  ${quote.terms_conditions?.trim()?`
-  <h3 class="terms-h3">Additional Terms</h3>
-  <div class="terms-body">${toRichTextHtml(quote.terms_conditions.trim())}</div>`:''}
-  ${exhibitEntries.map(e=>`
-  <h3 class="terms-h3 exhibit-h3">${esc(e.exhibitLabel)} — ${esc(e.productName)}</h3>
-  <div class="terms-body">${e.termsHtml}</div>`).join('')}
+  ${quote.terms_conditions?.trim()?`<h3 class="terms-h3">Additional Terms</h3><div class="terms-body">${toRichTextHtml(quote.terms_conditions.trim())}</div>`:''}
+  ${exhibitEntries.map(e=>`<h3 class="terms-h3 exhibit-h3">${esc(e.exhibitLabel)} — ${esc(e.productName)}</h3><div class="terms-body">${e.termsHtml}</div>`).join('')}
   ${quote.quote_type==='order_form'?`
   <div class="sig-block">
     <h2 class="sig-title">Signature</h2>
@@ -199,10 +186,7 @@ function buildQuoteHTML(quote, settings, logoB64) {
       <div class="sig-col">
         <div class="sig-party">${esc(party)}</div>
         ${['Signature','Print Name','Title','Date'].map(f=>`
-        <div class="sig-field">
-          <span class="sig-label">${esc(f)}</span>
-          <span class="sig-line"></span>
-        </div>`).join('')}
+        <div class="sig-field"><span class="sig-label">${esc(f)}</span><span class="sig-line"></span></div>`).join('')}
       </div>`).join('')}
     </div>
   </div>`:''}
@@ -216,226 +200,135 @@ function buildQuoteHTML(quote, settings, logoB64) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(quote.quote_number||'Quote')} — ${esc(quote.customer_name||'')}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Mulish:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:10pt}
-body{
-  font-family:-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;
-  color:#111;
-  background:#fff;
-  line-height:1.5;
-  -webkit-print-color-adjust:exact;
-  print-color-adjust:exact;
-}
+body{font-family:'Mulish',sans-serif;color:#1a1a2e;background:#fff;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 
-/* ── PRINT BAR ── */
-.print-bar{
-  position:fixed;top:0;left:0;right:0;
-  background:#fff;
-  border-bottom:1px solid #e5e7eb;
-  padding:10px 32px;
-  display:flex;align-items:center;justify-content:space-between;
-  z-index:999;
-}
-.print-tip{font-size:8pt;color:#9ca3af}
-.btn-save{
-  background:#00ad9f;color:#fff;border:none;border-radius:5px;
-  padding:7px 18px;font-size:9pt;font-weight:500;cursor:pointer;
-  letter-spacing:.01em;
-}
+.print-bar{position:fixed;top:0;left:0;right:0;background:#fff;border-bottom:1px solid #e5e7eb;padding:10px 40px;display:flex;align-items:center;justify-content:space-between;z-index:999}
+.print-tip{font-size:7.5pt;color:#9ca3af;font-family:'Mulish',sans-serif}
+.btn-save{background:#00ad9f;color:#fff;border:none;border-radius:5px;padding:7px 20px;font-size:9pt;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif}
 .btn-save:hover{background:#009e91}
 
-/* ── PAGE ── */
-.page{
-  max-width:720px;
-  margin:0 auto;
-  padding:72px 48px 64px;
-}
+.page{max-width:740px;margin:0 auto;padding:68px 52px 64px}
 
-/* ── PRINT ── */
 @media print{
-  @page{margin:15mm 17mm 15mm;size:A4}
+  @page{margin:14mm 16mm 14mm;size:A4}
   .print-bar{display:none!important}
   .page{padding:0;max-width:100%}
   .page-break{page-break-before:always}
   body{font-size:9pt}
 }
 
-/* ── DRAFT ── */
-.draft-bg{
-  position:fixed;top:50%;left:50%;
-  transform:translate(-50%,-50%) rotate(-35deg);
-  font-size:100pt;font-weight:800;
-  color:rgba(0,0,0,.035);
-  pointer-events:none;z-index:0;letter-spacing:.1em;
-}
+.draft-bg{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:100pt;font-weight:800;color:rgba(0,0,0,.03);pointer-events:none;z-index:0;font-family:'Poppins',sans-serif}
 
-/* ── HEADER ── */
-.doc-header{
-  display:flex;justify-content:space-between;align-items:flex-start;
-  margin-bottom:24px;
-}
-.logo{height:20px;width:auto}
-.logo-fallback{font-size:15pt;font-weight:700}
+/* HEADER */
+.doc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.logo{height:19px;width:auto}
+.logo-fallback{font-size:14pt;font-weight:700;font-family:'Poppins',sans-serif}
 .partner-tag{font-size:8pt;color:#9ca3af;margin-left:10px}
-.qnum{font-size:8pt;color:#9ca3af;letter-spacing:.05em}
-.h-rule{border:none;border-top:1.5px solid #111;margin-bottom:22px}
+.header-right{text-align:right}
+.qnum{font-size:9pt;color:#9ca3af;letter-spacing:.03em;display:block;margin-bottom:6px}
+.header-meta{font-size:8.5pt;color:#6b7280;line-height:1.9;text-align:right}
 
-/* ── CUSTOMER BLOCK ── */
-.customer-row{
-  display:flex;justify-content:space-between;align-items:flex-start;
-  margin-bottom:6px;
-}
-.customer-name{
-  font-size:22pt;font-weight:700;color:#0a0a0a;
-  letter-spacing:-.03em;line-height:1.1;
-}
-.customer-address{font-size:9pt;color:#9ca3af;margin-top:5px;line-height:1.5}
-.meta-stack{text-align:right}
-.meta-item{margin-bottom:7px}
-.meta-lbl{display:block;font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:1px}
-.meta-val{display:block;font-size:9pt;color:#374151;font-weight:400}
+/* ONE thin rule */
+.h-rule{border:none;border-top:1px solid #e5e7eb;margin:0 0 22px}
 
-/* ── DIVIDERS ── */
-.rule{border:none;border-top:1px solid #e5e7eb;margin:18px 0}
-.rule-heavy{border-top-width:1.5px;border-top-color:#111;margin:22px 0}
+/* CUSTOMER BLOCK — 2 col */
+.customer-block{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;margin-bottom:0}
+.customer-name{font-family:'Poppins',sans-serif;font-size:13pt;font-weight:700;color:#0a0a0a;letter-spacing:-.02em;line-height:1.2;margin-bottom:3px}
+.customer-address{font-size:8.5pt;color:#9ca3af;line-height:1.5}
+.primary-contact{}
+.pc-row{display:flex;align-items:baseline;gap:8px;margin-bottom:2px}
+.pc-label{font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;min-width:88px;white-space:nowrap}
+.pc-name{font-size:9.5pt;color:#1a1a2e;font-weight:600}
+.pc-email{font-size:8.5pt;color:#6b7280;margin-left:96px;margin-top:1px}
 
-/* ── 3-COL BILLING META ── */
-.billing-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:24px;
-  margin-bottom:24px;
-}
-.bcol-label{
-  font-size:6pt;color:#9ca3af;text-transform:uppercase;
-  letter-spacing:.08em;margin-bottom:6px;
-}
-.bcol-line{font-size:9pt;color:#374151;line-height:1.7}
+/* BILLING META */
+.billing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:20px 0 0;border-top:1px solid #e5e7eb;margin-top:20px}
+.bcol-label{font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+.bcol-line{font-size:9pt;color:#374151;line-height:1.85}
 
-/* ── SECTIONS ── */
-.section{margin-bottom:24px}
-.section-label{
-  font-size:6pt;color:#9ca3af;text-transform:uppercase;
-  letter-spacing:.09em;margin-bottom:7px;
-}
+/* LINE SECTIONS */
+.section-divider{border:none;border-top:1px solid #e5e7eb;margin:24px 0}
+.section{margin-bottom:28px}
+.section-label{font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.09em;margin-bottom:8px}
 
-/* ── DATA TABLE ── */
+/* DATA TABLE */
 .data-table{width:100%;border-collapse:collapse;font-size:9.5pt}
 .data-table thead tr{border-bottom:1px solid #e5e7eb}
-.data-table th{
-  font-size:6pt;font-weight:400;color:#9ca3af;
-  text-transform:uppercase;letter-spacing:.08em;
-  padding:0 8px 7px;
-}
+.data-table th{font-size:6pt;font-weight:400;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;padding:0 8px 8px}
 .td-name{text-align:left;padding-left:0!important}
 .td-num{text-align:right;white-space:nowrap}
 .data-table tbody tr{border-top:1px solid #f3f4f6}
 .data-table tbody tr:first-child{border-top:none}
-.data-table td{padding:8px 8px;color:#374151;vertical-align:top}
+.data-table td{padding:9px 8px;color:#374151;vertical-align:top}
 .data-table td.td-name{padding-left:0}
 
-/* ── BASE PACKAGE SPECIFICS ── */
-.pkg-name-row td{padding-top:12px;padding-bottom:8px}
-.pkg-name-row .td-name strong{font-size:12pt;font-weight:700;color:#0a0a0a;letter-spacing:-.01em}
-.pkg-name-row .td-num{font-size:11pt;color:#111;font-weight:500}
-.included-header-row td{padding-top:6px;padding-bottom:3px;border-top:none}
-.included-label{
-  font-size:6pt;color:#9ca3af;text-transform:uppercase;
-  letter-spacing:.08em;padding-left:0!important;
-}
-.included-row td{border-top:none!important;padding:2px 0 2px 10px}
+/* BASE PACKAGE */
+.pkg-title{font-family:'Poppins',sans-serif;font-size:11pt;font-weight:600;color:#0a0a0a;letter-spacing:-.01em}
+.pkg-price{font-size:10pt;font-weight:600;color:#1a1a2e;font-family:'Poppins',sans-serif}
+.pkg-name-row td{padding-top:12px;padding-bottom:6px}
+.included-label{font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;padding:4px 0 2px!important;border-top:none!important}
+.included-row td{border-top:none!important;padding:2.5px 0 2.5px 10px}
 .included-item{font-size:9pt;color:#4b5563}
 .qty-muted{color:#9ca3af;margin-left:4px}
 .ex-ref{color:#9ca3af;font-size:.85em}
-
-/* ── FEATURE SUB-ROWS ── */
-.feat-row td{
-  font-size:8pt;color:#9ca3af;
-  padding:1px 8px 1px 20px;
-  border-top:none!important;
-}
+.feat-row td{font-size:8pt;color:#9ca3af;padding:1px 8px 1px 20px;border-top:none!important}
 .feat-cell{text-align:left!important;padding-left:20px!important}
 
-/* ── ORDER FORM TEXT ── */
-.of-text{
-  font-size:8.5pt;color:#6b7280;
-  line-height:1.65;
-  margin-bottom:20px;
-  padding:16px 0;
-  border-top:1px solid #e5e7eb;
-  border-bottom:1px solid #e5e7eb;
-}
+.of-text{font-size:8.5pt;color:#6b7280;line-height:1.7;margin-bottom:20px;padding:16px 0;border-top:1px solid #f3f4f6;border-bottom:1px solid #f3f4f6}
 .of-text p{margin-bottom:6px}
 
-/* ── TOTALS ── */
-.totals-wrap{
-  display:flex;justify-content:flex-end;
-  margin-top:4px;
-  margin-bottom:8px;
-}
-.totals-inner{width:300px}
+/* TOTALS */
+.totals-wrap{display:flex;justify-content:flex-end;margin-top:8px;margin-bottom:8px}
+.totals-inner{width:310px}
 .totals-table{width:100%;border-collapse:collapse}
-.totals-table td{padding:4px 0;font-size:9pt}
-.t-label{color:#6b7280}
-.t-value{text-align:right;color:#374151}
+.totals-table td{padding:5px 0}
+.t-label{color:#6b7280;font-size:9pt}
+.t-value{text-align:right;color:#374151;font-size:9pt}
 .t-disc .t-label,.t-disc .t-value{color:#9ca3af}
 .t-acv{border-top:1px solid #e5e7eb}
-.t-acv td{padding-top:12px}
-.t-acv .t-label{
-  font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;
-}
-.t-acv .t-value{
-  font-size:24pt;font-weight:700;color:#0a0a0a;
-  letter-spacing:-.03em;line-height:1;
-}
-.mo-equiv{font-size:8pt;color:#9ca3af;text-align:right;margin-top:4px}
+.t-acv td{padding-top:14px}
+.t-acv .t-label{font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;vertical-align:top;padding-top:16px}
+.t-acv .t-value{font-family:'Poppins',sans-serif;font-size:26pt;font-weight:700;color:#0a0a0a;letter-spacing:-.03em;line-height:1}
+.mo-equiv{font-size:8pt;color:#9ca3af;text-align:right;margin-top:5px}
 .term-badge{font-size:7pt;color:#f59e0b;text-align:right;margin-top:4px;text-transform:uppercase;letter-spacing:.06em}
-.disclaimer{font-size:7pt;color:#d1d5db;margin-top:18px;line-height:1.6}
+.disclaimer{font-size:7pt;color:#d1d5db;margin-top:20px;line-height:1.6}
 
-/* ── TERMS ── */
+/* TERMS */
 .terms-wrap{padding-top:4px}
-.terms-title{font-size:18pt;font-weight:700;color:#0a0a0a;letter-spacing:-.03em;margin-bottom:10px}
+.terms-title{font-family:'Poppins',sans-serif;font-size:17pt;font-weight:700;color:#0a0a0a;letter-spacing:-.02em;margin-bottom:10px}
 .thick-rule{border:none;border-top:1.5px solid #111;margin-bottom:24px}
-.terms-h3{
-  font-size:10pt;font-weight:600;color:#111;
-  margin-top:24px;margin-bottom:8px;
-  padding-bottom:5px;border-bottom:1px solid #f3f4f6;
-}
+.terms-h3{font-family:'Poppins',sans-serif;font-size:10pt;font-weight:600;color:#111;margin-top:24px;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid #f3f4f6}
 .exhibit-h3{margin-top:36px}
 .terms-body{font-size:9pt;color:#374151;line-height:1.7}
 .terms-body p{margin-bottom:8px}
 .terms-body>ol,.terms-body>ul{padding-left:20px;margin-bottom:8px}
-.terms-body ol ol,.terms-body ul ul,.terms-body ol ul,.terms-body ul ol{padding-left:18px;margin-top:3px;margin-bottom:3px}
+.terms-body ol ol,.terms-body ul ul{padding-left:18px;margin-top:3px;margin-bottom:3px}
 .terms-body li{margin-bottom:4px}
 .terms-body ol{list-style-type:decimal}
 .terms-body ol ol{list-style-type:lower-alpha}
 .terms-body ol ol ol{list-style-type:lower-roman}
 
-/* ── SIGNATURE ── */
+/* SIGNATURE */
 .sig-block{margin-top:48px}
-.sig-title{font-size:15pt;font-weight:700;color:#0a0a0a;letter-spacing:-.02em;margin-bottom:6px}
+.sig-title{font-family:'Poppins',sans-serif;font-size:15pt;font-weight:700;color:#0a0a0a;letter-spacing:-.02em;margin-bottom:6px}
 .sig-note{font-size:8.5pt;color:#6b7280;margin-bottom:28px;line-height:1.5;max-width:540px}
 .sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px}
-.sig-party{font-size:10.5pt;font-weight:600;color:#0a0a0a;margin-bottom:22px}
+.sig-party{font-family:'Poppins',sans-serif;font-size:10.5pt;font-weight:600;color:#0a0a0a;margin-bottom:22px}
 .sig-field{display:flex;align-items:flex-end;gap:10px;margin-bottom:22px}
 .sig-label{font-size:8pt;color:#9ca3af;white-space:nowrap;min-width:72px}
 .sig-line{flex:1;border-bottom:1px solid #d1d5db;height:16px}
-
-/* ── PRINT FOOTER ── */
-@media print{
-  .print-footer{
-    position:running(footer);
-    display:flex;justify-content:space-between;
-    font-size:7pt;color:#d1d5db;
-    border-top:1px solid #e5e7eb;
-    padding-top:6px;
-  }
-}
 </style>
 </head>
 <body>
 
 <div class="print-bar">
-  <span class="print-tip">When saving: set Margins → None · uncheck Headers and Footers</span>
+  <span class="print-tip">When saving: Margins → None · uncheck Headers and Footers</span>
   <button class="btn-save" onclick="window.print()">Save as PDF</button>
 </div>
 
@@ -443,65 +336,48 @@ ${isDraft?'<div class="draft-bg">DRAFT</div>':''}
 
 <div class="page">
 
-  <!-- HEADER -->
   <div class="doc-header">
     <div style="display:flex;align-items:center">
       ${logoHtml}
       ${quote.partner_name?`<span class="partner-tag">× ${esc(quote.partner_name)}</span>`:''}
     </div>
-    <span class="qnum">${esc((quote.quote_number||'').replace('QUO-','QUOTE · '))}</span>
+    <div class="header-right">
+      <span class="qnum">${esc((quote.quote_number||'').replace('QUO-','QUOTE - '))}</span>
+      <div class="header-meta">${[
+        quote.prepared_by&&`Prepared by ${esc(quote.prepared_by)}`,
+        quote.start_date&&`Quote Date: ${fmtDate(quote.start_date)}`,
+        quote.expiration_date&&`Quote Expiration Date: ${fmtDate(quote.expiration_date)}`,
+      ].filter(Boolean).join('<br>')}</div>
+    </div>
   </div>
+
   <hr class="h-rule">
 
-  <!-- CUSTOMER -->
-  <div class="customer-row">
+  <div class="customer-block">
     <div>
       <div class="customer-name">${esc(quote.customer_name||'')}</div>
       ${quote.address?`<div class="customer-address">${esc(quote.address)}</div>`:''}
     </div>
-    <div class="meta-stack">
-      ${[
-        quote.prepared_by&&['Prepared by',quote.prepared_by],
-        quote.start_date&&['Quote Date',fmtDate(quote.start_date)],
-        quote.expiration_date&&['Expires',fmtDate(quote.expiration_date)],
-      ].filter(Boolean).map(([l,v])=>`
-      <div class="meta-item">
-        <span class="meta-lbl">${esc(l)}</span>
-        <span class="meta-val">${esc(v)}</span>
-      </div>`).join('')}
+    <div class="primary-contact">
+      ${quote.contact_name?`
+      <div class="pc-row">
+        <span class="pc-label">Primary Contact</span>
+        <span class="pc-name">${esc(quote.contact_name)}</span>
+      </div>`:''}
+      ${quote.contact_email?`<div class="pc-email">${esc(quote.contact_email)}</div>`:''}
     </div>
   </div>
 
-  <hr class="rule">
-
-  <!-- BILLING META -->
   <div class="billing-grid">
     ${[
-      {label:'Bill To',lines:[quote.contact_name,quote.contact_email].filter(Boolean)},
-      {label:'Billing Contact',lines:[
-        quote.billing_contact_name,
-        quote.billing_contact_email,
-        quote.billing_contact_phone,
-        quote.invoice_email?`Invoice: ${quote.invoice_email}`:null,
-      ].filter(Boolean)},
-      {label:'Contract Terms',lines:[
-        quote.payment_terms?`Payment: ${quote.payment_terms}`:null,
-        quote.billing_schedule?`Billing: ${quote.billing_schedule}`:null,
-        quote.payment_method?`Method: ${quote.payment_method}`:null,
-        quote.start_date?`Start: ${fmtDate(quote.start_date)}`:null,
-        quote.term_months?`Term: ${quote.term_months} Months`:null,
-        quote.account_id?`Account: ${quote.account_id}`:null,
-      ].filter(Boolean)},
-    ].map(col=>col.lines.length?`
-    <div>
-      <div class="bcol-label">${esc(col.label)}</div>
-      ${col.lines.map(l=>`<div class="bcol-line">${esc(l)}</div>`).join('')}
-    </div>`:'').join('')}
+      {label:'Billing Contact',lines:[quote.billing_contact_name,quote.billing_contact_email,quote.billing_contact_phone,quote.invoice_email?`Invoice: ${quote.invoice_email}`:null].filter(Boolean)},
+      {label:'Payment Terms',lines:[quote.payment_terms?`Payment: ${quote.payment_terms}`:null,quote.billing_schedule?`Billing: ${quote.billing_schedule}`:null,quote.payment_method?`Method: ${quote.payment_method}`:null].filter(Boolean)},
+      {label:'Subscription',lines:[quote.start_date?`Start: ${fmtDate(quote.start_date)}`:null,quote.term_months?`Term: ${quote.term_months} Months`:null,quote.account_id?`Account: ${quote.account_id}`:null].filter(Boolean)},
+    ].map(col=>col.lines.length?`<div><div class="bcol-label">${esc(col.label)}</div>${col.lines.map(l=>`<div class="bcol-line">${esc(l)}</div>`).join('')}</div>`:'').join('')}
   </div>
 
-  <hr class="rule-heavy">
+  <hr class="section-divider">
 
-  <!-- LINE SECTIONS -->
   ${basePkgHtml}
   ${renderSection('Support',standaloneSupport)}
   ${renderSection('Platform Add-Ons',standaloneAddons)}
@@ -509,21 +385,15 @@ ${isDraft?'<div class="draft-bg">DRAFT</div>':''}
   ${overageHtml}
   ${orderFormText}
 
-  <!-- TOTALS -->
-  <hr class="rule-heavy">
+  <hr class="section-divider">
+
   <div class="totals-wrap">
     <div class="totals-inner">
       <table class="totals-table">
         <tbody>
           ${hasDiscount?`
-          <tr>
-            <td class="t-label">Total Annual List Price</td>
-            <td class="t-value">${fmtCurrency(listTotal)}</td>
-          </tr>
-          <tr class="t-disc">
-            <td class="t-label">${headerDiscPct>0?`Discount (${headerDiscPct}%)`:'Discount'}</td>
-            <td class="t-value">–${fmtCurrency(totalDisc)}</td>
-          </tr>`:''}
+          <tr><td class="t-label">Total Annual List Price</td><td class="t-value">${fmtCurrency(listTotal)}</td></tr>
+          <tr class="t-disc"><td class="t-label">${headerDiscPct>0?`Discount (${headerDiscPct}%)`:'Discount'}</td><td class="t-value">–${fmtCurrency(totalDisc)}</td></tr>`:''}
           <tr class="t-acv">
             <td class="t-label">Net Annual Fees</td>
             <td class="t-value">${fmtCurrency(finalACV)}</td>
@@ -537,7 +407,6 @@ ${isDraft?'<div class="draft-bg">DRAFT</div>':''}
 
   <p class="disclaimer">All prices are quoted in USD and are exclusive of any applicable taxes, commissions, import duties, or other similar fees.</p>
 
-  <!-- TERMS -->
   ${termsHtml}
 
 </div>
@@ -555,9 +424,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     win.addEventListener('beforeunload', () => URL.revokeObjectURL(url), { once: true });
   } else {
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `${quote.quote_number || 'quote'}.html`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    a.href = url; a.download = `${quote.quote_number||'quote'}.html`;
+    a.click(); setTimeout(() => URL.revokeObjectURL(url), 5000);
   }
 }
