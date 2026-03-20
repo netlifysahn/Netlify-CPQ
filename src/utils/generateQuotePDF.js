@@ -1,26 +1,5 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { fmtCurrency, getEffectiveLineQuantity } from '../data/quotes';
-import { isRichTextEmpty, renderRichText, toRichTextHtml } from './richText';
-
-// ── DESIGN TOKENS ─────────────────────────────────────────────────────────────
-const F       = 'helvetica';
-const C_BLACK = [15,  17,  20];
-const C_INK   = [30,  32,  36];
-const C_BODY  = [50,  52,  58];
-const C_MUTED = [130, 133, 140];
-const C_GHOST = [185, 188, 194];
-const C_RULE  = [224, 226, 230];
-const C_GOLD  = [251, 177,  61];
-
-const PW     = 210;
-const PH     = 297;
-const ML     = 20;
-const MR     = 20;
-const CW     = PW - ML - MR;
-const FOOT_H = 14;
-
-const EXHIBIT_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+import { isRichTextEmpty, toRichTextHtml } from './richText';
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
 function fmtDate(s) {
@@ -33,11 +12,19 @@ function fmtQty(n) {
   return n == null ? '' : Number(n).toLocaleString('en-US');
 }
 
-function checkPage(doc, y, needed = 28) {
-  if (y + needed > PH - FOOT_H - 6) { doc.addPage(); return ML; }
-  return y;
+function esc(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
+function hasLineDiscount(lines) {
+  return lines.some(l => l.list_price != null && l.net_price != null && l.net_price < l.list_price);
+}
+
+const EXHIBIT_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 function toExhibitLabel(index) {
   let n = index, s = '';
   while (n >= 0) { s = EXHIBIT_CHARS[n % 26] + s; n = Math.floor(n / 26) - 1; }
@@ -58,147 +45,8 @@ function collectLineTermExhibits(lines = []) {
   return { exhibitEntries, exhibitByLineId, exhibitByLineRef };
 }
 
-function hasLineDiscount(lines) {
-  return lines.some(l => l.list_price != null && l.net_price != null && l.net_price < l.list_price);
-}
-
-// ── DRAWING PRIMITIVES ────────────────────────────────────────────────────────
-function rule(doc, y, { x = ML, w = CW, color = C_RULE, weight = 0.2 } = {}) {
-  doc.setDrawColor(...color);
-  doc.setLineWidth(weight);
-  doc.line(x, y, x + w, y);
-}
-
-function set(doc, { font = F, style = 'normal', size = 9, color = C_BODY } = {}) {
-  doc.setFont(font, style);
-  doc.setFontSize(size);
-  doc.setTextColor(...color);
-}
-
-function txt(doc, text, x, y, opts = {}) {
-  doc.text(String(text), x, y, opts);
-}
-
-function microLabel(doc, text, x, y) {
-  set(doc, { size: 6.5, color: C_MUTED });
-  txt(doc, text.toUpperCase(), x, y);
-  return y + 3.8;
-}
-
-// ── FOOTER ────────────────────────────────────────────────────────────────────
-function addFooters(doc, quoteNumber) {
-  const n = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= n; i++) {
-    doc.setPage(i);
-    rule(doc, PH - FOOT_H);
-    set(doc, { size: 7, color: C_GHOST });
-    txt(doc, 'Confidential – Do Not Distribute', ML, PH - FOOT_H + 5);
-    txt(doc, quoteNumber || '', PW / 2, PH - FOOT_H + 5, { align: 'center' });
-    txt(doc, `${i} / ${n}`, PW - MR, PH - FOOT_H + 5, { align: 'right' });
-  }
-}
-
-// ── SECTION EYEBROW ───────────────────────────────────────────────────────────
-function sectionEyebrow(doc, label, y, extraRight = []) {
-  y = checkPage(doc, y, 14);
-  set(doc, { size: 7, color: C_MUTED });
-  txt(doc, label.toUpperCase(), ML, y);
-  extraRight.forEach(([text, offset]) => {
-    txt(doc, text, PW - MR - offset, y, { align: 'right' });
-  });
-  y += 3.5;
-  rule(doc, y);
-  return y + 6;
-}
-
-// ── LINE SECTION TABLE ────────────────────────────────────────────────────────
-function renderLineSection(doc, label, lines, getLineLabel, y) {
-  if (!lines.length) return y;
-  const showDisc = hasLineDiscount(lines);
-
-  let head, colStyles;
-  let bodyRows = [], meta = [];
-
-  const addRows = (l, rowFn, colCount) => {
-    bodyRows.push(rowFn(l));
-    meta.push({ isFeature: false });
-    (Array.isArray(l.features) ? l.features : []).forEach(f => {
-      bodyRows.push([f, ...Array(colCount - 1).fill('')]);
-      meta.push({ isFeature: true });
-    });
-  };
-
-  const isEntitlements = !['Support', 'Platform Add-Ons'].includes(label);
-
-  if (!isEntitlements) {
-    if (showDisc) {
-      head = [['', 'List Price', 'Disc. Monthly', 'Disc. Annual']];
-      colStyles = { 0:{cellWidth:'auto'}, 1:{halign:'right',cellWidth:32}, 2:{halign:'right',cellWidth:36}, 3:{halign:'right',cellWidth:36} };
-      lines.forEach(l => addRows(l, (l) => {
-        const list = l.list_price ?? 0, net = l.net_price ?? list;
-        return [getLineLabel(l), fmtCurrency(list), fmtCurrency(net), fmtCurrency(net * 12)];
-      }, 4));
-    } else {
-      head = [['', 'Monthly', 'Annual']];
-      colStyles = { 0:{cellWidth:'auto'}, 1:{halign:'right',cellWidth:40}, 2:{halign:'right',cellWidth:40} };
-      lines.forEach(l => addRows(l, (l) => {
-        const net = l.net_price ?? l.list_price ?? 0;
-        return [getLineLabel(l), fmtCurrency(net), fmtCurrency(net * 12)];
-      }, 3));
-    }
-  } else {
-    if (showDisc) {
-      head = [['', 'Qty', 'List', 'Unit Price', 'Annual']];
-      colStyles = { 0:{cellWidth:'auto'}, 1:{halign:'right',cellWidth:20}, 2:{halign:'right',cellWidth:28}, 3:{halign:'right',cellWidth:28}, 4:{halign:'right',cellWidth:34} };
-      lines.forEach(l => addRows(l, (l) => {
-        const qty = getEffectiveLineQuantity(l), list = l.list_price ?? 0, net = l.net_price ?? list;
-        const isCred = l.product_type === 'credits' && l.unit_type === 'per_credit';
-        return [getLineLabel(l), fmtQty(qty), fmtCurrency(list), fmtCurrency(net), fmtCurrency(isCred ? net*qty : net*qty*12)];
-      }, 5));
-    } else {
-      head = [['', 'Qty', 'Unit Price', 'Annual']];
-      colStyles = { 0:{cellWidth:'auto'}, 1:{halign:'right',cellWidth:22}, 2:{halign:'right',cellWidth:32}, 3:{halign:'right',cellWidth:36} };
-      lines.forEach(l => addRows(l, (l) => {
-        const qty = getEffectiveLineQuantity(l), net = l.net_price ?? l.list_price ?? 0;
-        const isCred = l.product_type === 'credits' && l.unit_type === 'per_credit';
-        return [getLineLabel(l), fmtQty(qty), fmtCurrency(net), fmtCurrency(isCred ? net*qty : net*qty*12)];
-      }, 4));
-    }
-  }
-
-  y = sectionEyebrow(doc, label, y);
-
-  autoTable(doc, {
-    startY: y - 3,
-    head,
-    body: bodyRows,
-    margin: { left: ML, right: MR },
-    theme: 'plain',
-    styles: { font: F, fontSize: 9.5, cellPadding: { top: 4.5, bottom: 4.5, left: 2, right: 2 }, textColor: C_BODY, lineWidth: 0 },
-    headStyles: { font: F, fontStyle: 'normal', fontSize: 7, textColor: C_MUTED, cellPadding: { top: 2, bottom: 4, left: 2, right: 2 } },
-    columnStyles: colStyles,
-    didParseCell: (data) => {
-      if (data.section !== 'body') return;
-      const m = meta[data.row.index];
-      if (!m) return;
-      if (m.isFeature) {
-        data.cell.styles.fontSize = 8;
-        data.cell.styles.textColor = C_MUTED;
-        data.cell.styles.cellPadding = { top: 0.5, bottom: 0.5, left: 14, right: 2 };
-      }
-      if (!m.isFeature && data.row.index > 0 && !meta[data.row.index - 1]?.isFeature) {
-        data.cell.styles.lineWidth = { top: 0.15 };
-        data.cell.styles.lineColor = C_RULE;
-      }
-    },
-  });
-
-  return doc.lastAutoTable.finalY + 14;
-}
-
-// ── MAIN ──────────────────────────────────────────────────────────────────────
-export async function generateQuotePDF(quote, products, settings, { preview = false } = {}) {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+// ── HTML BUILDER ──────────────────────────────────────────────────────────────
+function buildQuoteHTML(quote, settings, logoB64) {
   const allLines = quote.line_items || [];
   const { exhibitEntries, exhibitByLineId, exhibitByLineRef } = collectLineTermExhibits(allLines);
 
@@ -208,176 +56,155 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
   };
   const getLineLabel = (line, fallback = line?.product_name || 'Product') => {
     const ex = getLineExhibit(line);
-    return ex ? `${fallback} (${ex})` : fallback;
+    return ex ? `${esc(fallback)} <span class="exhibit-ref">(${esc(ex)})</span>` : esc(fallback);
   };
 
-  let y = ML;
+  // ── LOGO ────────────────────────────────────────────────────────────────────
+  const logoHtml = logoB64
+    ? `<img src="data:image/png;base64,${logoB64}" class="logo" alt="Netlify" />`
+    : `<span class="logo-text">netlify</span>`;
 
-  // ── DRAFT WATERMARK ────────────────────────────────────────────────────────
-  if (quote.status === 'draft' || quote.status === 'draft_revision') {
-    doc.saveGraphicsState();
-    set(doc, { style: 'bold', size: 80, color: [244, 244, 244] });
-    const wt = 'DRAFT';
-    txt(doc, wt, (PW - doc.getTextWidth(wt)) / 2, 150);
-    doc.restoreGraphicsState();
-  }
+  const partnerHtml = quote.partner_name
+    ? `<span class="partner">× ${esc(quote.partner_name)}</span>`
+    : '';
 
-  // ── LOGO + QUOTE NUMBER ────────────────────────────────────────────────────
-  const { NETLIFY_LOGO_B64 } = await import('../assets/netlifyLogo.js').catch(() => ({ NETLIFY_LOGO_B64: null }));
-  if (NETLIFY_LOGO_B64) doc.addImage('data:image/png;base64,' + NETLIFY_LOGO_B64, 'PNG', ML, y, 26, 10);
-  if (quote.partner_name) {
-    set(doc, { size: 8.5, color: C_MUTED });
-    txt(doc, `× ${quote.partner_name}`, ML + 30, y + 7);
-  }
-  set(doc, { size: 8, color: C_MUTED });
-  txt(doc, (quote.quote_number || '').replace('QUO-', 'QUOTE · '), PW - MR, y + 3, { align: 'right' });
-  y += 16;
-  rule(doc, y, { weight: 0.3 });
-  y += 9;
+  // ── HEADER META ─────────────────────────────────────────────────────────────
+  const metaRight = [
+    quote.prepared_by     && `<div class="meta-item"><span class="meta-label">Prepared by</span><span class="meta-value">${esc(quote.prepared_by)}</span></div>`,
+    quote.start_date      && `<div class="meta-item"><span class="meta-label">Quote Date</span><span class="meta-value">${fmtDate(quote.start_date)}</span></div>`,
+    quote.expiration_date && `<div class="meta-item"><span class="meta-label">Expires</span><span class="meta-value">${fmtDate(quote.expiration_date)}</span></div>`,
+  ].filter(Boolean).join('');
 
-  // ── CUSTOMER BLOCK ─────────────────────────────────────────────────────────
-  set(doc, { style: 'bold', size: 16, color: C_BLACK });
-  txt(doc, quote.customer_name || '', ML, y);
-
-  // Quote meta — top right, stacked
-  const metaItems = [
-    quote.prepared_by     && ['Prepared by',  quote.prepared_by],
-    quote.start_date      && ['Quote Date',   fmtDate(quote.start_date)],
-    quote.expiration_date && ['Expires',      fmtDate(quote.expiration_date)],
+  // ── BILLING METADATA ────────────────────────────────────────────────────────
+  const billToLines = [quote.contact_name, quote.contact_email].filter(Boolean);
+  const billingLines = [
+    quote.billing_contact_name,
+    quote.billing_contact_email,
+    quote.billing_contact_phone,
+    quote.invoice_email ? `Invoice: ${quote.invoice_email}` : null,
+  ].filter(Boolean);
+  const termLines = [
+    quote.payment_terms    ? `Payment: ${quote.payment_terms}` : null,
+    quote.billing_schedule ? `Billing: ${quote.billing_schedule}` : null,
+    quote.payment_method   ? `Method: ${quote.payment_method}` : null,
+    quote.start_date       ? `Start: ${fmtDate(quote.start_date)}` : null,
+    quote.term_months      ? `Term: ${quote.term_months} Months` : null,
+    quote.account_id       ? `Account: ${quote.account_id}` : null,
   ].filter(Boolean);
 
-  let metaY = y - 3;
-  metaItems.forEach(([label, value]) => {
-    set(doc, { size: 6.5, color: C_MUTED });
-    txt(doc, label.toUpperCase(), PW - MR, metaY, { align: 'right' });
-    metaY += 3.5;
-    set(doc, { size: 9, color: C_INK });
-    txt(doc, value, PW - MR, metaY, { align: 'right' });
-    metaY += 5.5;
-  });
+  const renderMetaCol = (label, lines) => {
+    if (!lines.length) return '';
+    return `
+      <div class="meta-col">
+        <div class="col-label">${esc(label)}</div>
+        ${lines.map(l => `<div class="col-value">${esc(l)}</div>`).join('')}
+      </div>`;
+  };
 
-  y += 6;
-  if (quote.address) {
-    set(doc, { size: 9, color: C_MUTED });
-    const addrLines = doc.splitTextToSize(quote.address, CW * 0.55);
-    doc.text(addrLines, ML, y);
-    y += addrLines.length * 4.5;
-  }
-
-  y = Math.max(y, metaY) + 4;
-  rule(doc, y);
-  y += 8;
-
-  // ── BILLING METADATA (3-col) ───────────────────────────────────────────────
-  const colW = CW / 3;
-  const cols = [ML, ML + colW, ML + colW * 2];
-
-  const metaCols = [
-    {
-      label: 'Bill To',
-      lines: [quote.contact_name, quote.contact_email].filter(Boolean),
-    },
-    {
-      label: 'Billing Contact',
-      lines: [
-        quote.billing_contact_name,
-        quote.billing_contact_email,
-        quote.billing_contact_phone,
-        quote.invoice_email ? `Invoice: ${quote.invoice_email}` : null,
-      ].filter(Boolean),
-    },
-    {
-      label: 'Contract Terms',
-      lines: [
-        quote.payment_terms    ? `Payment: ${quote.payment_terms}` : null,
-        quote.billing_schedule ? `Billing: ${quote.billing_schedule}` : null,
-        quote.payment_method   ? `Method: ${quote.payment_method}` : null,
-        quote.start_date       ? `Start: ${fmtDate(quote.start_date)}` : null,
-        quote.term_months      ? `Term: ${quote.term_months} Months` : null,
-        quote.account_id       ? `Account ID: ${quote.account_id}` : null,
-      ].filter(Boolean),
-    },
-  ];
-
-  let maxColY = y;
-  metaCols.forEach((col, i) => {
-    if (!col.lines.length) return;
-    let cy = y;
-    cy = microLabel(doc, col.label, cols[i], cy);
-    col.lines.forEach((line) => {
-      set(doc, { size: 9, color: C_BODY });
-      const wrapped = doc.splitTextToSize(line, colW - 4);
-      doc.text(wrapped, cols[i], cy);
-      cy += wrapped.length * 4.5;
-    });
-    maxColY = Math.max(maxColY, cy);
-  });
-  y = maxColY + 14;
-
-  rule(doc, y, { weight: 0.3 });
-  y += 12;
-
-  // ── BASE PACKAGE ───────────────────────────────────────────────────────────
+  // ── BASE PACKAGE ────────────────────────────────────────────────────────────
   const packageLines = allLines.filter(l => l.is_package);
-  if (packageLines.length) {
-    y = checkPage(doc, y, 16);
-    set(doc, { size: 7, color: C_MUTED });
-    txt(doc, 'BASE PACKAGE', ML, y);
-    txt(doc, 'ANNUAL',  PW - MR,      y, { align: 'right' });
-    txt(doc, 'MONTHLY', PW - MR - 40, y, { align: 'right' });
-    y += 3.5;
-    rule(doc, y);
-    y += 7;
+  const basePackageHtml = packageLines.map(pkg => {
+    const subs = allLines.filter(l => l.parent_line_id === pkg.id);
+    const monthly = pkg.net_price ?? pkg.list_price ?? 0;
+    const annual = monthly * 12;
+    return `
+      <div class="pkg-row">
+        <div class="pkg-name">${getLineLabel(pkg)}</div>
+        <div class="pkg-prices">
+          <div class="price-group">
+            <div class="price-label">Monthly</div>
+            <div class="price-value">${fmtCurrency(monthly)}</div>
+          </div>
+          <div class="price-group">
+            <div class="price-label">Annual</div>
+            <div class="price-value">${fmtCurrency(annual)}</div>
+          </div>
+        </div>
+      </div>
+      <div class="pkg-included">
+        <div class="included-label">Included</div>
+        <div class="included-items">
+          ${subs.map(s => {
+            const qty = getEffectiveLineQuantity(s);
+            const qtyStr = qty > 1 ? `<span class="qty">${fmtQty(qty)}</span>` : '';
+            return `<div class="included-item">${getLineLabel(s)}${qtyStr}</div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }).join('');
 
-    packageLines.forEach((pkg) => {
-      y = checkPage(doc, y, 20);
-      const subs    = allLines.filter(l => l.parent_line_id === pkg.id);
-      const monthly = pkg.net_price ?? pkg.list_price ?? 0;
-      const annual  = monthly * 12;
+  // ── LINE SECTION RENDERER ───────────────────────────────────────────────────
+  const renderSection = (label, lines) => {
+    if (!lines.length) return '';
+    const showDisc = hasLineDiscount(lines);
+    const isEnt = !['Support', 'Platform Add-Ons'].includes(label);
 
-      set(doc, { style: 'bold', size: 11.5, color: C_BLACK });
-      txt(doc, getLineLabel(pkg), ML, y);
-      set(doc, { size: 10, color: C_INK });
-      txt(doc, fmtCurrency(annual),  PW - MR,      y, { align: 'right' });
-      txt(doc, fmtCurrency(monthly), PW - MR - 40, y, { align: 'right' });
-      y += 8;
+    let headCols, rows;
 
-      y = microLabel(doc, 'Included', ML, y);
-      y += 3;
-
-      subs.forEach((s) => {
-        y = checkPage(doc, y, 6);
-        const qty  = getEffectiveLineQuantity(s);
-        const name = getLineLabel(s);
-        set(doc, { size: 9.5, color: C_BODY });
-        txt(doc, name, ML + 4, y);
-        if (qty > 1) {
-          set(doc, { size: 9.5, color: C_MUTED });
-          txt(doc, fmtQty(qty), ML + 4 + doc.getTextWidth(name) + 2, y);
-        }
-        y += 6;
+    if (!isEnt) {
+      headCols = showDisc
+        ? ['', 'List Price', 'Disc. Monthly', 'Disc. Annual']
+        : ['', 'Monthly', 'Annual'];
+      rows = lines.map(l => {
+        const list = l.list_price ?? 0;
+        const net = l.net_price ?? list;
+        const cells = showDisc
+          ? [getLineLabel(l), fmtCurrency(list), fmtCurrency(net), fmtCurrency(net * 12)]
+          : [getLineLabel(l), fmtCurrency(net), fmtCurrency(net * 12)];
+        return { cells, features: Array.isArray(l.features) ? l.features : [] };
       });
-      y += 8;
-    });
-  }
+    } else {
+      headCols = showDisc
+        ? ['', 'Qty', 'List', 'Unit Price', 'Annual']
+        : ['', 'Qty', 'Unit Price', 'Annual'];
+      rows = lines.map(l => {
+        const qty = getEffectiveLineQuantity(l);
+        const list = l.list_price ?? 0;
+        const net = l.net_price ?? list;
+        const isCred = l.product_type === 'credits' && l.unit_type === 'per_credit';
+        const annual = isCred ? net * qty : net * qty * 12;
+        const cells = showDisc
+          ? [getLineLabel(l), fmtQty(qty), fmtCurrency(list), fmtCurrency(net), fmtCurrency(annual)]
+          : [getLineLabel(l), fmtQty(qty), fmtCurrency(net), fmtCurrency(annual)];
+        return { cells, features: Array.isArray(l.features) ? l.features : [] };
+      });
+    }
 
-  // ── STANDALONE SUPPORT ─────────────────────────────────────────────────────
-  const standaloneSupport = allLines.filter(l => !l.parent_line_id && !l.is_package && l.product_type === 'support');
-  y = renderLineSection(doc, 'Support', standaloneSupport, getLineLabel, y);
+    const colCount = headCols.length;
+    const firstColClass = 'col-name';
+    const numColClass = 'col-num';
 
-  // ── PLATFORM ADD-ONS ───────────────────────────────────────────────────────
-  const standaloneAddons = allLines.filter(l => !l.parent_line_id && !l.is_package && l.product_type === 'addon');
-  y = renderLineSection(doc, 'Platform Add-Ons', standaloneAddons, getLineLabel, y);
+    return `
+      <div class="section">
+        <div class="section-eyebrow">${esc(label)}</div>
+        <table class="line-table">
+          <thead>
+            <tr>
+              ${headCols.map((h, i) => `<th class="${i === 0 ? firstColClass : numColClass}">${esc(h)}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(row => `
+              <tr class="line-row">
+                ${row.cells.map((c, i) => `<td class="${i === 0 ? firstColClass : numColClass}">${i === 0 ? c : esc(c)}</td>`).join('')}
+              </tr>
+              ${row.features.map(f => `
+                <tr class="feature-row">
+                  <td class="feature-cell" colspan="${colCount}">${esc(f)}</td>
+                </tr>`).join('')}
+            `).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  };
 
-  // ── ADDITIONAL ENTITLEMENTS ────────────────────────────────────────────────
-  const standaloneEnt = allLines.filter(l => !l.parent_line_id && !l.is_package && ['entitlements', 'seats', 'credits'].includes(l.product_type));
-  y = renderLineSection(doc, 'Additional Entitlements', standaloneEnt, getLineLabel, y);
-
-  // ── CONSUMPTION LIMITS & OVERAGE RATES ────────────────────────────────────
+  // ── OVERAGE RATES ───────────────────────────────────────────────────────────
   const overageRows = [];
   const seen = new Set();
-  allLines.filter(l => ['seats', 'credits', 'entitlements'].includes(l.product_type)).forEach((l) => {
-    const key = l.product_type === 'seats' ? 'Enterprise Seats' : l.product_type === 'credits' ? 'Credits' : l.product_name;
+  allLines.filter(l => ['seats', 'credits', 'entitlements'].includes(l.product_type)).forEach(l => {
+    const key = l.product_type === 'seats' ? 'Enterprise Seats'
+      : l.product_type === 'credits' ? 'Credits'
+      : l.product_name;
     if (seen.has(key)) return;
     seen.add(key);
     let overage = '—';
@@ -385,254 +212,579 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     if (l.product_type === 'credits' && quote.overage_rate_credits) overage = quote.overage_rate_credits;
     overageRows.push([key, fmtQty(l.quantity), overage]);
   });
-  if (overageRows.length) {
-    y = sectionEyebrow(doc, 'Consumption Limits & Overage Rates', y);
-    autoTable(doc, {
-      startY: y - 3,
-      head: [['', 'Included (Monthly)', 'Overage Rate']],
-      body: overageRows,
-      margin: { left: ML, right: MR },
-      theme: 'plain',
-      styles: { font: F, fontSize: 9.5, cellPadding: { top: 4.5, bottom: 4.5, left: 2, right: 2 }, textColor: C_BODY, lineWidth: 0 },
-      headStyles: { font: F, fontStyle: 'normal', fontSize: 7, textColor: C_MUTED, cellPadding: { top: 2, bottom: 4, left: 2, right: 2 } },
-      columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'right', cellWidth: 42 }, 2: { halign: 'right', cellWidth: 42 } },
-      didParseCell: (data) => {
-        if (data.section === 'body' && data.row.index > 0 && data.column.index === 0) {
-          data.cell.styles.lineWidth = { top: 0.15 };
-          data.cell.styles.lineColor = C_RULE;
-        }
-      },
-    });
-    y = doc.lastAutoTable.finalY + 14;
-  }
 
-  // ── ORDER FORM HEADER TEXT ─────────────────────────────────────────────────
+  const overageHtml = overageRows.length ? `
+    <div class="section">
+      <div class="section-eyebrow">Consumption Limits &amp; Overage Rates</div>
+      <table class="line-table">
+        <thead>
+          <tr>
+            <th class="col-name"></th>
+            <th class="col-num">Included</th>
+            <th class="col-num">Overage Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${overageRows.map(([name, qty, rate]) => `
+            <tr class="line-row">
+              <td class="col-name">${esc(name)}</td>
+              <td class="col-num">${esc(qty)}</td>
+              <td class="col-num">${esc(rate)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : '';
+
+  // ── ORDER FORM HEADER TEXT ──────────────────────────────────────────────────
   const ofHtml = toRichTextHtml(settings?.orderFormHeaderText || '');
-  if (!isRichTextEmpty(ofHtml)) {
-    y = checkPage(doc, y, 18);
-    set(doc, { size: 8.5, color: C_MUTED });
-    y = renderRichText(doc, ofHtml, {
-      x: ML, y, maxWidth: CW, fontSize: 9, lineHeight: 4.5, paragraphGap: 2, textColor: C_BODY,
-      beforeLine: (nextY) => checkPage(doc, nextY, 6),
-    });
-    y += 8;
-  }
+  const orderFormText = !isRichTextEmpty(ofHtml)
+    ? `<div class="order-form-text">${ofHtml}</div>`
+    : '';
 
-  // ── TOTALS ─────────────────────────────────────────────────────────────────
-  y = checkPage(doc, y, 50);
-  rule(doc, y, { weight: 0.3 });
-  y += 10;
-
-  // Calculate list and net totals
+  // ── TOTALS ──────────────────────────────────────────────────────────────────
   const priceable = allLines.filter(l => l.parent_line_id ? l.price_behavior === 'related' : true);
-
   const listTotal = priceable.reduce((s, l) => {
     const qty = getEffectiveLineQuantity(l), list = l.list_price ?? 0;
     const isCred = l.product_type === 'credits' && l.unit_type === 'per_credit';
     return s + (isCred ? list * qty : list * qty * 12);
   }, 0);
-
   const netTotal = priceable.reduce((s, l) => {
     const qty = getEffectiveLineQuantity(l), net = l.net_price ?? l.list_price ?? 0;
     const isCred = l.product_type === 'credits' && l.unit_type === 'per_credit';
     return s + (isCred ? net * qty : net * qty * 12);
   }, 0);
-
   const headerDiscPct = quote.header_discount || 0;
   const headerDiscAmt = netTotal * (headerDiscPct / 100);
-  const finalACV      = netTotal - headerDiscAmt;
-  const lineDiscAmt   = listTotal - netTotal;
-  const totalDisc     = lineDiscAmt + headerDiscAmt;
-  const hasDiscount   = totalDisc > 0.01;
+  const finalACV = netTotal - headerDiscAmt;
+  const lineDiscAmt = listTotal - netTotal;
+  const totalDisc = lineDiscAmt + headerDiscAmt;
+  const hasDiscount = totalDisc > 0.01;
 
-  // Right-aligned totals block
-  const summaryX = PW - MR - 116;
-  const valueX   = PW - MR;
+  const totalsRows = hasDiscount ? `
+    <tr class="total-row">
+      <td class="total-label">Total Annual List Price</td>
+      <td class="total-value">${fmtCurrency(listTotal)}</td>
+    </tr>
+    <tr class="total-row discount-row">
+      <td class="total-label">${headerDiscPct > 0 && lineDiscAmt > 0.01
+        ? 'Discount'
+        : headerDiscPct > 0
+          ? `Discount (${headerDiscPct}%)`
+          : 'Discount'}</td>
+      <td class="total-value">–${fmtCurrency(totalDisc)}</td>
+    </tr>` : '';
 
-  const renderTotalRow = (label, value, { bold = false, large = false, topRule = false } = {}) => {
-    y = checkPage(doc, y, 12);
-    if (topRule) {
-      rule(doc, y - 2, { x: summaryX, w: PW - MR - summaryX, weight: 0.2 });
-      y += 4;
-    }
-    if (large) {
-      set(doc, { size: 7, color: C_MUTED });
-      txt(doc, label.toUpperCase(), summaryX, y);
-      y += 5;
-      set(doc, { size: 20, style: 'bold', color: C_BLACK });
-      txt(doc, value, valueX, y, { align: 'right' });
-      y += 12;
-    } else {
-      set(doc, { size: 8, color: C_MUTED });
-      txt(doc, label, summaryX, y);
-      set(doc, { size: 9, style: bold ? 'bold' : 'normal', color: C_BODY });
-      txt(doc, value, valueX, y, { align: 'right' });
-      y += 7;
-    }
-  };
+  const totalsHtml = `
+    <div class="totals-block">
+      <table class="totals-table">
+        <tbody>
+          ${totalsRows}
+          <tr class="total-row acv-row">
+            <td class="total-label">Net Annual Fees</td>
+            <td class="total-value acv-value">${fmtCurrency(finalACV)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="monthly-equiv">${fmtCurrency(finalACV / 12)} / month</div>
+      ${(quote.term_months || 12) > 12 ? `<div class="term-badge">${quote.term_months}-Month Term</div>` : ''}
+    </div>`;
 
-  if (hasDiscount) {
-    renderTotalRow('Total Annual List Price', fmtCurrency(listTotal));
-    if (headerDiscPct > 0 && lineDiscAmt > 0.01) {
-      renderTotalRow('Line Discounts', `–${fmtCurrency(lineDiscAmt)}`);
-      renderTotalRow(`Header Discount (${headerDiscPct}%)`, `–${fmtCurrency(headerDiscAmt)}`);
-    } else {
-      const discLabel = headerDiscPct > 0 ? `Discount (${headerDiscPct}%)` : 'Discount';
-      renderTotalRow(discLabel, `–${fmtCurrency(totalDisc)}`);
-    }
-    renderTotalRow('Net Annual Fees', fmtCurrency(finalACV), { bold: true, large: true, topRule: true });
-  } else {
-    renderTotalRow('Net Annual Fees', fmtCurrency(finalACV), { bold: true, large: true });
-  }
-
-  // Monthly equiv
-  set(doc, { size: 8, color: C_MUTED });
-  txt(doc, `${fmtCurrency(finalACV / 12)} / month`, valueX, y, { align: 'right' });
-  y += 5;
-
-  // Multi-year badge
-  if ((quote.term_months || 12) > 12) {
-    set(doc, { size: 7, color: C_GOLD });
-    txt(doc, `${quote.term_months}-Month Term`, valueX, y, { align: 'right' });
-    y += 5;
-  }
-
-  y += 4;
-
-  // Disclaimer
-  set(doc, { size: 7, color: C_GHOST });
-  const note = 'All prices are quoted in USD and are exclusive of any applicable taxes, commissions, import duties, or other similar fees.';
-  const noteLines = doc.splitTextToSize(note, CW);
-  doc.text(noteLines, ML, y);
-  y += noteLines.length * 3.5 + 6;
-
-  // ── TERMS & CONDITIONS ─────────────────────────────────────────────────────
+  // ── TERMS ───────────────────────────────────────────────────────────────────
   const termsSections = settings?.terms?.sections || [];
-  const hasSettingsTerms = termsSections.some((s) => {
-    return Boolean(s?.title?.trim()) || !isRichTextEmpty(toRichTextHtml(s?.body || ''));
-  });
+  const hasSettingsTerms = termsSections.some(s => Boolean(s?.title?.trim()) || !isRichTextEmpty(toRichTextHtml(s?.body || '')));
   const hasTerms = hasSettingsTerms || exhibitEntries.length > 0 || quote.terms_conditions?.trim();
 
-  if (hasTerms) {
-    doc.addPage();
-    y = ML;
+  const termsHtml = hasTerms ? `
+    <div class="page-break"></div>
+    <div class="terms-section">
+      <h2 class="terms-title">Terms &amp; Conditions</h2>
+      ${termsSections.map(section => {
+        const title = section?.title?.trim() || '';
+        const bodyHtml = toRichTextHtml(section?.body || '');
+        const hasBody = !isRichTextEmpty(bodyHtml);
+        if (!title && !hasBody) return '';
+        return `
+          ${title ? `<h3 class="terms-heading">${esc(title)}</h3>` : ''}
+          ${hasBody ? `<div class="terms-body">${bodyHtml}</div>` : ''}`;
+      }).join('')}
+      ${quote.terms_conditions?.trim() ? `
+        <h3 class="terms-heading">Additional Terms</h3>
+        <div class="terms-body">${toRichTextHtml(quote.terms_conditions.trim())}</div>` : ''}
+      ${exhibitEntries.map(entry => `
+        <h3 class="terms-heading exhibit-heading">${esc(entry.exhibitLabel)} — ${esc(entry.productName)}</h3>
+        <div class="terms-body">${entry.termsHtml}</div>`).join('')}
+      ${quote.quote_type === 'order_form' ? `
+        <div class="signature-block">
+          <h2 class="sig-title">Signature</h2>
+          <p class="sig-note">Your signature of this Order Form constitutes your agreement and consent to all terms referenced in this Order Form.</p>
+          <div class="sig-cols">
+            <div class="sig-col">
+              <div class="sig-party">Customer</div>
+              <div class="sig-field"><span class="sig-label">Signature</span><span class="sig-line"></span></div>
+              <div class="sig-field"><span class="sig-label">Print Name</span><span class="sig-line"></span></div>
+              <div class="sig-field"><span class="sig-label">Title</span><span class="sig-line"></span></div>
+              <div class="sig-field"><span class="sig-label">Date</span><span class="sig-line"></span></div>
+            </div>
+            <div class="sig-col">
+              <div class="sig-party">Netlify, Inc.</div>
+              <div class="sig-field"><span class="sig-label">Signature</span><span class="sig-line"></span></div>
+              <div class="sig-field"><span class="sig-label">Print Name</span><span class="sig-line"></span></div>
+              <div class="sig-field"><span class="sig-label">Title</span><span class="sig-line"></span></div>
+              <div class="sig-field"><span class="sig-label">Date</span><span class="sig-line"></span></div>
+            </div>
+          </div>
+        </div>` : ''}
+    </div>` : '';
 
-    set(doc, { style: 'bold', size: 14, color: C_BLACK });
-    txt(doc, 'Terms & Conditions', ML, y);
-    y += 4;
-    rule(doc, y, { weight: 0.3 });
-    y += 9;
+  const draftBanner = (quote.status === 'draft' || quote.status === 'draft_revision')
+    ? `<div class="draft-watermark">DRAFT</div>` : '';
 
-    // Settings terms (boilerplate + custom sections)
-    termsSections.forEach((section) => {
-      const title   = section?.title?.trim() || '';
-      const bodyHtml = toRichTextHtml(section?.body || '');
-      const hasBody  = !isRichTextEmpty(bodyHtml);
-      if (!title && !hasBody) return;
-      y = checkPage(doc, y, 16);
-      if (title) {
-        set(doc, { style: 'bold', size: 10, color: C_BLACK });
-        txt(doc, title, ML, y);
-        y += 5;
-      }
-      if (hasBody) {
-        y = renderRichText(doc, bodyHtml, {
-          x: ML, y, maxWidth: CW, fontSize: 9, lineHeight: 4.5, paragraphGap: 2, textColor: C_BODY,
-          beforeLine: (nextY) => checkPage(doc, nextY, 6),
-        });
-        y += 6;
-      }
-    });
+  // ── STANDALONES ─────────────────────────────────────────────────────────────
+  const standaloneSupport = allLines.filter(l => !l.parent_line_id && !l.is_package && l.product_type === 'support');
+  const standaloneAddons  = allLines.filter(l => !l.parent_line_id && !l.is_package && l.product_type === 'addon');
+  const standaloneEnt     = allLines.filter(l => !l.parent_line_id && !l.is_package && ['entitlements', 'seats', 'credits'].includes(l.product_type));
 
-    // Additional terms from quote field
-    if (quote.terms_conditions?.trim()) {
-      y = checkPage(doc, y, 20);
-      set(doc, { style: 'bold', size: 10, color: C_BLACK });
-      txt(doc, 'Additional Terms', ML, y);
-      y += 3;
-      rule(doc, y, { weight: 0.15 });
-      y += 5;
-      y = renderRichText(doc, toRichTextHtml(quote.terms_conditions.trim()), {
-        x: ML, y, maxWidth: CW, fontSize: 9, lineHeight: 4.5, paragraphGap: 2, textColor: C_BODY,
-        beforeLine: (nextY) => checkPage(doc, nextY, 6),
-      });
-      y += 6;
-    }
-
-    // Exhibit entries — product-level terms (e.g. Exhibit A service features)
-    exhibitEntries.forEach((entry) => {
-      y = checkPage(doc, y, 20);
-      set(doc, { style: 'bold', size: 10, color: C_BLACK });
-      txt(doc, `${entry.exhibitLabel} — ${entry.productName}`, ML, y);
-      y += 3;
-      rule(doc, y, { weight: 0.15 });
-      y += 5;
-      y = renderRichText(doc, entry.termsHtml, {
-        x: ML, y, maxWidth: CW, fontSize: 9, lineHeight: 4.5, paragraphGap: 2, textColor: C_BODY,
-        beforeLine: (nextY) => checkPage(doc, nextY, 6),
-      });
-      y += 8;
-    });
-
-    // ── SIGNATURE BLOCK — order forms only ───────────────────────────────────
-    if (quote.quote_type === 'order_form') {
-    y = checkPage(doc, y, 60);
-    y += 4;
-    set(doc, { style: 'bold', size: 12, color: C_BLACK });
-    txt(doc, 'Signature', ML, y);
-    y += 3;
-    rule(doc, y, { weight: 0.3 });
-    y += 6;
-
-    set(doc, { size: 8.5, color: C_MUTED });
-    const sigNote = 'Your signature of this Order Form constitutes your agreement and consent to all terms referenced in this Order Form.';
-    const sigNoteLines = doc.splitTextToSize(sigNote, CW);
-    doc.text(sigNoteLines, ML, y);
-    y += sigNoteLines.length * 4 + 8;
-
-    const sigColW = (CW - 10) / 2;
-    const sigCols = [ML, ML + sigColW + 10];
-    const sigHeaders = ['Customer', 'Netlify, Inc.'];
-
-    sigHeaders.forEach((header, i) => {
-      set(doc, { style: 'bold', size: 10, color: C_BLACK });
-      txt(doc, header, sigCols[i], y);
-    });
-    y += 14;
-
-    const sigFields = ['Signature', 'Print Name', 'Title', 'Date'];
-    sigFields.forEach((field) => {
-      sigCols.forEach((x) => {
-        set(doc, { size: 8.5, color: C_MUTED });
-        txt(doc, `${field}:`, x, y);
-        rule(doc, y + 1, { x: x + 18, w: sigColW - 22, weight: 0.3, color: [200, 200, 200] });
-      });
-      y += 12;
-    });
-    } // end order_form signature block
+  // ── FULL HTML ───────────────────────────────────────────────────────────────
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${esc(quote.quote_number || 'Quote')} — ${esc(quote.customer_name || '')}</title>
+<style>
+  /* ── RESET & BASE ──────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  html { font-size: 10pt; }
+  
+  body {
+    font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    color: #1a1a1a;
+    background: #fff;
+    line-height: 1.5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
-  addFooters(doc, quote.quote_number || '');
+  /* ── PRINT BUTTON ──────────────────────────────────────────── */
+  .print-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 12px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    gap: 12px;
+  }
+  .print-bar-left {
+    font-size: 8.5pt;
+    color: #9ca3af;
+  }
+  .btn-print {
+    background: #00ad9f;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-size: 9pt;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+  }
+  .btn-print:hover { background: #009e91; }
 
-  // ── OUTPUT ─────────────────────────────────────────────────────────────────
-  if (preview) {
-    const pdfBlob = doc.output('blob');
-    const blobUrl = URL.createObjectURL(pdfBlob);
-    const win = window.open('', '_blank');
-    if (win) {
-      const title = quote.quote_number || 'Quote';
-      win.document.write(
-        `<html><head><title>${title}</title></head>` +
-        `<body style="margin:0"><iframe src="${blobUrl}" style="border:none;position:fixed;top:0;left:0;width:100%;height:100%"></iframe></body></html>`
-      );
-      win.document.close();
-      win.addEventListener('beforeunload', () => URL.revokeObjectURL(blobUrl), { once: true });
-    } else {
-      window.open(blobUrl, '_blank');
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+  /* ── PAGE LAYOUT ───────────────────────────────────────────── */
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 80px 48px 60px;
+  }
+
+  @media print {
+    .print-bar { display: none !important; }
+    .page { padding: 0; max-width: 100%; }
+    body { font-size: 9.5pt; }
+    .page-break { page-break-before: always; }
+  }
+
+  /* ── DRAFT WATERMARK ───────────────────────────────────────── */
+  .draft-watermark {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 120pt;
+    font-weight: 700;
+    color: rgba(0,0,0,0.04);
+    pointer-events: none;
+    z-index: 0;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── HEADER ────────────────────────────────────────────────── */
+  .doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+  }
+  .logo-wrap { display: flex; align-items: center; gap: 10px; }
+  .logo { height: 22px; width: auto; }
+  .logo-text { font-size: 16pt; font-weight: 700; color: #1a1a1a; }
+  .partner { font-size: 8.5pt; color: #9ca3af; }
+  .quote-number { font-size: 8pt; color: #9ca3af; letter-spacing: 0.04em; }
+
+  .header-rule { border: none; border-top: 1.5px solid #1a1a1a; margin-bottom: 24px; }
+
+  /* ── CUSTOMER + META ───────────────────────────────────────── */
+  .customer-block {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .customer-name {
+    font-size: 20pt;
+    font-weight: 700;
+    color: #0f1114;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .customer-address {
+    font-size: 9pt;
+    color: #9ca3af;
+    margin-top: 4px;
+  }
+  .meta-right { text-align: right; }
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-bottom: 6px;
+  }
+  .meta-label { font-size: 6.5pt; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; }
+  .meta-value { font-size: 9pt; color: #1e2024; font-weight: 400; }
+
+  .billing-rule { border: none; border-top: 1px solid #e5e7eb; margin: 20px 0; }
+  .billing-rule-heavy { border-top-width: 1.5px; border-top-color: #1a1a1a; }
+
+  /* ── BILLING METADATA 3-COL ────────────────────────────────── */
+  .billing-meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+  .meta-col {}
+  .col-label {
+    font-size: 6.5pt;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 5px;
+  }
+  .col-value {
+    font-size: 9pt;
+    color: #32343a;
+    line-height: 1.6;
+  }
+
+  /* ── SECTIONS ──────────────────────────────────────────────── */
+  .section { margin-bottom: 28px; }
+
+  .section-eyebrow {
+    font-size: 6.5pt;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  /* ── BASE PACKAGE ──────────────────────────────────────────── */
+  .base-package { margin-bottom: 28px; }
+  .base-eyebrow {
+    font-size: 6.5pt;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .base-eyebrow-cols { display: flex; gap: 32px; }
+  .pkg-rule { border: none; border-top: 1px solid #e5e7eb; margin-bottom: 14px; }
+
+  .pkg-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .pkg-name {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #0f1114;
+    letter-spacing: -0.01em;
+  }
+  .pkg-prices { display: flex; gap: 32px; }
+  .price-group { text-align: right; }
+  .price-label { font-size: 6.5pt; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; }
+  .price-value { font-size: 11pt; color: #1e2024; font-weight: 500; }
+
+  .pkg-included { margin-bottom: 8px; }
+  .included-label {
+    font-size: 6.5pt;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .included-item {
+    font-size: 9.5pt;
+    color: #32343a;
+    padding: 3px 0 3px 12px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .included-item .qty { color: #9ca3af; }
+  .exhibit-ref { color: #9ca3af; font-size: 0.88em; }
+
+  /* ── LINE TABLES ───────────────────────────────────────────── */
+  .line-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+  }
+  .line-table thead tr {
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .line-table th {
+    font-size: 6.5pt;
+    font-weight: 400;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0 6px 8px;
+  }
+  .line-table th.col-name { text-align: left; padding-left: 0; }
+  .line-table th.col-num  { text-align: right; }
+
+  .line-row td {
+    padding: 9px 6px;
+    color: #32343a;
+    border-top: 1px solid #f3f4f6;
+  }
+  .line-row:first-child td { border-top: none; }
+  .col-name { text-align: left; padding-left: 0 !important; }
+  .col-num  { text-align: right; white-space: nowrap; }
+
+  .feature-row td {
+    font-size: 8pt;
+    color: #9ca3af;
+    padding: 1px 6px 1px 20px;
+    border-top: none;
+  }
+
+  /* ── TOTALS ────────────────────────────────────────────────── */
+  .totals-block {
+    margin-top: 8px;
+    margin-left: auto;
+    width: 320px;
+  }
+  .totals-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+  .total-row td { padding: 5px 0; }
+  .total-label { font-size: 8pt; color: #6b7280; }
+  .total-value { font-size: 9pt; color: #32343a; text-align: right; }
+  .discount-row .total-label,
+  .discount-row .total-value { color: #6b7280; }
+
+  .acv-row { border-top: 1px solid #e5e7eb; }
+  .acv-row td { padding-top: 10px; }
+  .acv-row .total-label { font-size: 7pt; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; }
+  .acv-value { font-size: 22pt !important; font-weight: 700; color: #0f1114 !important; letter-spacing: -0.02em; }
+
+  .monthly-equiv { font-size: 8pt; color: #9ca3af; text-align: right; margin-top: 2px; }
+  .term-badge { font-size: 7pt; color: #fbb13d; text-align: right; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .disclaimer {
+    font-size: 7pt;
+    color: #d1d5db;
+    margin-top: 20px;
+    line-height: 1.5;
+  }
+
+  /* ── TERMS ─────────────────────────────────────────────────── */
+  .terms-section { margin-top: 8px; }
+  .terms-title {
+    font-size: 16pt;
+    font-weight: 700;
+    color: #0f1114;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .terms-rule { border: none; border-top: 1.5px solid #1a1a1a; margin-bottom: 24px; }
+  .terms-heading {
+    font-size: 10pt;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-top: 20px;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .exhibit-heading { margin-top: 32px; }
+  .terms-body {
+    font-size: 9pt;
+    color: #32343a;
+    line-height: 1.65;
+  }
+  .terms-body p { margin-bottom: 8px; }
+  .terms-body ol, .terms-body ul { padding-left: 20px; margin-bottom: 8px; }
+  .terms-body li { margin-bottom: 3px; }
+
+  /* ── SIGNATURE ─────────────────────────────────────────────── */
+  .signature-block { margin-top: 40px; }
+  .sig-title {
+    font-size: 14pt;
+    font-weight: 700;
+    color: #0f1114;
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+  .sig-note { font-size: 8.5pt; color: #6b7280; margin-bottom: 24px; line-height: 1.5; }
+  .sig-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+  .sig-party { font-size: 11pt; font-weight: 600; color: #0f1114; margin-bottom: 20px; }
+  .sig-field {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .sig-label { font-size: 8pt; color: #6b7280; white-space: nowrap; min-width: 70px; }
+  .sig-line { flex: 1; border-bottom: 1px solid #d1d5db; height: 18px; }
+
+  /* ── FOOTER (print only) ───────────────────────────────────── */
+  @media print {
+    @page { margin: 18mm 18mm 14mm; size: A4; }
+    .footer-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      display: flex;
+      justify-content: space-between;
+      font-size: 7pt;
+      color: #d1d5db;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 5px;
     }
+  }
+  .footer-bar { display: none; }
+  @media print { .footer-bar { display: flex; } }
+</style>
+</head>
+<body>
+
+<div class="print-bar">
+  <span class="print-bar-left">Confidential – Do Not Distribute</span>
+  <button class="btn-print" onclick="window.print()">Save as PDF</button>
+</div>
+
+${draftBanner}
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="doc-header">
+    <div class="logo-wrap">
+      ${logoHtml}
+      ${partnerHtml}
+    </div>
+    <div class="quote-number">${esc((quote.quote_number || '').replace('QUO-', 'QUOTE · '))}</div>
+  </div>
+  <hr class="header-rule">
+
+  <!-- CUSTOMER -->
+  <div class="customer-block">
+    <div>
+      <div class="customer-name">${esc(quote.customer_name || '')}</div>
+      ${quote.address ? `<div class="customer-address">${esc(quote.address)}</div>` : ''}
+    </div>
+    <div class="meta-right">${metaRight}</div>
+  </div>
+
+  <hr class="billing-rule">
+
+  <!-- BILLING METADATA -->
+  <div class="billing-meta">
+    ${renderMetaCol('Bill To', billToLines)}
+    ${renderMetaCol('Billing Contact', billingLines)}
+    ${renderMetaCol('Contract Terms', termLines)}
+  </div>
+
+  <hr class="billing-rule billing-rule-heavy">
+
+  <!-- BASE PACKAGE -->
+  ${packageLines.length ? `
+  <div class="base-package">
+    <div class="base-eyebrow">
+      <span>Base Package</span>
+      <div class="base-eyebrow-cols">
+        <span>Monthly</span>
+        <span>Annual</span>
+      </div>
+    </div>
+    <hr class="pkg-rule">
+    ${basePackageHtml}
+  </div>` : ''}
+
+  <!-- LINE SECTIONS -->
+  ${renderSection('Support', standaloneSupport)}
+  ${renderSection('Platform Add-Ons', standaloneAddons)}
+  ${renderSection('Additional Entitlements', standaloneEnt)}
+  ${overageHtml}
+
+  <!-- ORDER FORM TEXT -->
+  ${orderFormText}
+
+  <!-- TOTALS -->
+  <hr class="billing-rule billing-rule-heavy">
+  ${totalsHtml}
+
+  <p class="disclaimer">All prices are quoted in USD and are exclusive of any applicable taxes, commissions, import duties, or other similar fees.</p>
+
+  <!-- TERMS -->
+  ${termsHtml}
+
+</div>
+
+<div class="footer-bar">
+  <span>Confidential – Do Not Distribute</span>
+  <span>${esc(quote.quote_number || '')}</span>
+</div>
+
+</body>
+</html>`;
+}
+
+// ── MAIN EXPORT ───────────────────────────────────────────────────────────────
+export async function generateQuotePDF(quote, products, settings, { preview = false } = {}) {
+  const { NETLIFY_LOGO_B64 } = await import('../assets/netlifyLogo.js').catch(() => ({ NETLIFY_LOGO_B64: null }));
+  const html = buildQuoteHTML(quote, settings, NETLIFY_LOGO_B64);
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url  = URL.createObjectURL(blob);
+  const win  = window.open(url, '_blank');
+  if (win) {
+    win.addEventListener('beforeunload', () => URL.revokeObjectURL(url), { once: true });
   } else {
-    const slug = (quote.customer_name || 'quote').replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-    doc.save(`${quote.quote_number}-${slug}.pdf`);
+    // popup blocked — fallback: create a link and click it
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${quote.quote_number || 'quote'}.html`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
   }
 }
