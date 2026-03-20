@@ -593,7 +593,6 @@ export default function App() {
 
     // Auto-create an order when a quote is converted
     if (q.status === 'converted') {
-      console.log('[Orders] Quote converted, creating order for:', q.id);
       const orderNumber = `ORD-${String(Math.max(0, ...orders.map(x => parseInt((x.order_number||'').replace('ORD-',''),10)||0)) + 1).padStart(4,'0')}`;
       const newOrder = {
         ...q,
