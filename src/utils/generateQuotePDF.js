@@ -1,757 +1,539 @@
 import { fmtCurrency, getEffectiveLineQuantity } from '../data/quotes';
 import { isRichTextEmpty, toRichTextHtml } from './richText';
 
-// ── UTILS ─────────────────────────────────────────────────────────────────────
 function fmtDate(s) {
   if (!s) return '';
   const d = new Date(s + 'T00:00:00');
-  return isNaN(d) ? s : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return isNaN(d) ? s : d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
-
-function fmtQty(n) {
-  return n == null ? '' : Number(n).toLocaleString('en-US');
-}
-
+function fmtQty(n) { return n == null ? '' : Number(n).toLocaleString('en-US'); }
 function esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
 function hasLineDiscount(lines) {
   return lines.some(l => l.list_price != null && l.net_price != null && l.net_price < l.list_price);
 }
-
 const EXHIBIT_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-function toExhibitLabel(index) {
-  let n = index, s = '';
-  while (n >= 0) { s = EXHIBIT_CHARS[n % 26] + s; n = Math.floor(n / 26) - 1; }
+function toExhibitLabel(i) {
+  let n=i,s='';
+  while(n>=0){s=EXHIBIT_CHARS[n%26]+s;n=Math.floor(n/26)-1;}
   return `Exhibit ${s}`;
 }
-
-function collectLineTermExhibits(lines = []) {
-  const exhibitEntries = [], exhibitByLineId = new Map(), exhibitByLineRef = new Map();
-  lines.forEach((line) => {
-    const termsHtml = toRichTextHtml(line?.terms || '');
-    if (isRichTextEmpty(termsHtml)) return;
-    const exhibitLabel = toExhibitLabel(exhibitEntries.length);
-    const entry = { line, exhibitLabel, productName: line?.product_name || 'Product', termsHtml };
+function collectLineTermExhibits(lines=[]) {
+  const exhibitEntries=[],exhibitByLineId=new Map(),exhibitByLineRef=new Map();
+  lines.forEach(line=>{
+    const termsHtml=toRichTextHtml(line?.terms||'');
+    if(isRichTextEmpty(termsHtml))return;
+    const exhibitLabel=toExhibitLabel(exhibitEntries.length);
+    const entry={line,exhibitLabel,productName:line?.product_name||'Product',termsHtml};
     exhibitEntries.push(entry);
-    if (line?.id) exhibitByLineId.set(line.id, exhibitLabel);
-    exhibitByLineRef.set(line, exhibitLabel);
+    if(line?.id)exhibitByLineId.set(line.id,exhibitLabel);
+    exhibitByLineRef.set(line,exhibitLabel);
   });
-  return { exhibitEntries, exhibitByLineId, exhibitByLineRef };
+  return{exhibitEntries,exhibitByLineId,exhibitByLineRef};
 }
 
-// ── HTML BUILDER ──────────────────────────────────────────────────────────────
 function buildQuoteHTML(quote, settings, logoB64) {
   const allLines = quote.line_items || [];
   const { exhibitEntries, exhibitByLineId, exhibitByLineRef } = collectLineTermExhibits(allLines);
-
-  const getLineExhibit = (line) => {
-    if (!line) return '';
-    return (line.id && exhibitByLineId.get(line.id)) || exhibitByLineRef.get(line) || '';
+  const getLineExhibit = line => {
+    if(!line)return'';
+    return(line.id&&exhibitByLineId.get(line.id))||exhibitByLineRef.get(line)||'';
   };
-  const getLineLabel = (line, fallback = line?.product_name || 'Product') => {
-    const ex = getLineExhibit(line);
-    return ex ? `${esc(fallback)} <span class="exhibit-ref">(${esc(ex)})</span>` : esc(fallback);
+  const getLineLabel = (line,fallback=line?.product_name||'Product') => {
+    const ex=getLineExhibit(line);
+    return ex?`${esc(fallback)} <span class="ex-ref">(${esc(ex)})</span>`:esc(fallback);
   };
 
-  // ── LOGO ────────────────────────────────────────────────────────────────────
   const logoHtml = logoB64
-    ? `<img src="data:image/png;base64,${logoB64}" class="logo" alt="Netlify" />`
-    : `<span class="logo-text">netlify</span>`;
+    ? `<img src="data:image/png;base64,${logoB64}" class="logo" alt="Netlify">`
+    : `<span class="logo-fallback">netlify</span>`;
 
-  const partnerHtml = quote.partner_name
-    ? `<span class="partner">× ${esc(quote.partner_name)}</span>`
-    : '';
+  // ── TOTALS MATH ────────────────────────────────────────────────────────────
+  const priceable = allLines.filter(l => l.parent_line_id ? l.price_behavior==='related' : true);
+  const listTotal = priceable.reduce((s,l)=>{
+    const qty=getEffectiveLineQuantity(l),list=l.list_price??0;
+    const isCred=l.product_type==='credits'&&l.unit_type==='per_credit';
+    return s+(isCred?list*qty:list*qty*12);
+  },0);
+  const netTotal = priceable.reduce((s,l)=>{
+    const qty=getEffectiveLineQuantity(l),net=l.net_price??l.list_price??0;
+    const isCred=l.product_type==='credits'&&l.unit_type==='per_credit';
+    return s+(isCred?net*qty:net*qty*12);
+  },0);
+  const headerDiscPct=quote.header_discount||0;
+  const headerDiscAmt=netTotal*(headerDiscPct/100);
+  const finalACV=netTotal-headerDiscAmt;
+  const lineDiscAmt=listTotal-netTotal;
+  const totalDisc=lineDiscAmt+headerDiscAmt;
+  const hasDiscount=totalDisc>0.01;
 
-  // ── HEADER META ─────────────────────────────────────────────────────────────
-  const metaRight = [
-    quote.prepared_by     && `<div class="meta-item"><span class="meta-label">Prepared by</span><span class="meta-value">${esc(quote.prepared_by)}</span></div>`,
-    quote.start_date      && `<div class="meta-item"><span class="meta-label">Quote Date</span><span class="meta-value">${fmtDate(quote.start_date)}</span></div>`,
-    quote.expiration_date && `<div class="meta-item"><span class="meta-label">Expires</span><span class="meta-value">${fmtDate(quote.expiration_date)}</span></div>`,
-  ].filter(Boolean).join('');
-
-  // ── BILLING METADATA ────────────────────────────────────────────────────────
-  const billToLines = [quote.contact_name, quote.contact_email].filter(Boolean);
-  const billingLines = [
-    quote.billing_contact_name,
-    quote.billing_contact_email,
-    quote.billing_contact_phone,
-    quote.invoice_email ? `Invoice: ${quote.invoice_email}` : null,
-  ].filter(Boolean);
-  const termLines = [
-    quote.payment_terms    ? `Payment: ${quote.payment_terms}` : null,
-    quote.billing_schedule ? `Billing: ${quote.billing_schedule}` : null,
-    quote.payment_method   ? `Method: ${quote.payment_method}` : null,
-    quote.start_date       ? `Start: ${fmtDate(quote.start_date)}` : null,
-    quote.term_months      ? `Term: ${quote.term_months} Months` : null,
-    quote.account_id       ? `Account: ${quote.account_id}` : null,
-  ].filter(Boolean);
-
-  const renderMetaCol = (label, lines) => {
-    if (!lines.length) return '';
-    return `
-      <div class="meta-col">
-        <div class="col-label">${esc(label)}</div>
-        ${lines.map(l => `<div class="col-value">${esc(l)}</div>`).join('')}
-      </div>`;
-  };
-
-  // ── BASE PACKAGE ────────────────────────────────────────────────────────────
-  const packageLines = allLines.filter(l => l.is_package);
-  const basePackageHtml = packageLines.map(pkg => {
-    const subs = allLines.filter(l => l.parent_line_id === pkg.id);
-    const monthly = pkg.net_price ?? pkg.list_price ?? 0;
-    const annual = monthly * 12;
-    return `
-      <div class="pkg-row">
-        <div class="pkg-name">${getLineLabel(pkg)}</div>
-        <div class="pkg-prices">
-          <div class="price-group">
-            <div class="price-label">Monthly</div>
-            <div class="price-value">${fmtCurrency(monthly)}</div>
-          </div>
-          <div class="price-group">
-            <div class="price-label">Annual</div>
-            <div class="price-value">${fmtCurrency(annual)}</div>
-          </div>
-        </div>
-      </div>
-      <div class="pkg-included">
-        <div class="included-label">Included</div>
-        <div class="included-items">
-          ${subs.map(s => {
-            const qty = getEffectiveLineQuantity(s);
-            const qtyStr = qty > 1 ? `<span class="qty">${fmtQty(qty)}</span>` : '';
-            return `<div class="included-item">${getLineLabel(s)}${qtyStr}</div>`;
-          }).join('')}
-        </div>
-      </div>`;
-  }).join('');
-
-  // ── LINE SECTION RENDERER ───────────────────────────────────────────────────
+  // ── SECTION RENDERER ───────────────────────────────────────────────────────
   const renderSection = (label, lines) => {
-    if (!lines.length) return '';
-    const showDisc = hasLineDiscount(lines);
-    const isEnt = !['Support', 'Platform Add-Ons'].includes(label);
-
-    let headCols, rows;
-
-    if (!isEnt) {
-      headCols = showDisc
-        ? ['', 'List Price', 'Disc. Monthly', 'Disc. Annual']
-        : ['', 'Monthly', 'Annual'];
-      rows = lines.map(l => {
-        const list = l.list_price ?? 0;
-        const net = l.net_price ?? list;
-        const cells = showDisc
-          ? [getLineLabel(l), fmtCurrency(list), fmtCurrency(net), fmtCurrency(net * 12)]
-          : [getLineLabel(l), fmtCurrency(net), fmtCurrency(net * 12)];
-        return { cells, features: Array.isArray(l.features) ? l.features : [] };
+    if(!lines.length)return'';
+    const showDisc=hasLineDiscount(lines);
+    const isEnt=!['Support','Platform Add-Ons'].includes(label);
+    let headCols,rows;
+    if(!isEnt){
+      headCols=showDisc?['','List Price','Disc. Monthly','Disc. Annual']:['','Monthly','Annual'];
+      rows=lines.map(l=>{
+        const list=l.list_price??0,net=l.net_price??list;
+        return{
+          cells:showDisc?[getLineLabel(l),fmtCurrency(list),fmtCurrency(net),fmtCurrency(net*12)]
+                        :[getLineLabel(l),fmtCurrency(net),fmtCurrency(net*12)],
+          features:Array.isArray(l.features)?l.features:[]
+        };
       });
     } else {
-      headCols = showDisc
-        ? ['', 'Qty', 'List', 'Unit Price', 'Annual']
-        : ['', 'Qty', 'Unit Price', 'Annual'];
-      rows = lines.map(l => {
-        const qty = getEffectiveLineQuantity(l);
-        const list = l.list_price ?? 0;
-        const net = l.net_price ?? list;
-        const isCred = l.product_type === 'credits' && l.unit_type === 'per_credit';
-        const annual = isCred ? net * qty : net * qty * 12;
-        const cells = showDisc
-          ? [getLineLabel(l), fmtQty(qty), fmtCurrency(list), fmtCurrency(net), fmtCurrency(annual)]
-          : [getLineLabel(l), fmtQty(qty), fmtCurrency(net), fmtCurrency(annual)];
-        return { cells, features: Array.isArray(l.features) ? l.features : [] };
+      headCols=showDisc?['','Qty','List','Unit Price','Annual']:['','Qty','Unit Price','Annual'];
+      rows=lines.map(l=>{
+        const qty=getEffectiveLineQuantity(l),list=l.list_price??0,net=l.net_price??list;
+        const isCred=l.product_type==='credits'&&l.unit_type==='per_credit';
+        const annual=isCred?net*qty:net*qty*12;
+        return{
+          cells:showDisc?[getLineLabel(l),fmtQty(qty),fmtCurrency(list),fmtCurrency(net),fmtCurrency(annual)]
+                        :[getLineLabel(l),fmtQty(qty),fmtCurrency(net),fmtCurrency(annual)],
+          features:Array.isArray(l.features)?l.features:[]
+        };
       });
     }
-
-    const colCount = headCols.length;
-    const firstColClass = 'col-name';
-    const numColClass = 'col-num';
-
+    const colCount=headCols.length;
     return `
-      <div class="section">
-        <div class="section-eyebrow">${esc(label)}</div>
-        <table class="line-table">
-          <thead>
-            <tr>
-              ${headCols.map((h, i) => `<th class="${i === 0 ? firstColClass : numColClass}">${esc(h)}</th>`).join('')}
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map(row => `
-              <tr class="line-row">
-                ${row.cells.map((c, i) => `<td class="${i === 0 ? firstColClass : numColClass}">${i === 0 ? c : esc(c)}</td>`).join('')}
-              </tr>
-              ${row.features.map(f => `
-                <tr class="feature-row">
-                  <td class="feature-cell" colspan="${colCount}">${esc(f)}</td>
-                </tr>`).join('')}
-            `).join('')}
-          </tbody>
-        </table>
-      </div>`;
+<div class="section">
+  <div class="section-label">${esc(label)}</div>
+  <table class="data-table">
+    <thead><tr>${headCols.map((h,i)=>`<th class="${i===0?'td-name':'td-num'}">${esc(h)}</th>`).join('')}</tr></thead>
+    <tbody>
+      ${rows.map(row=>`
+        <tr>${row.cells.map((c,i)=>`<td class="${i===0?'td-name':'td-num'}">${i===0?c:esc(c)}</td>`).join('')}</tr>
+        ${row.features.map(f=>`<tr class="feat-row"><td class="feat-cell" colspan="${colCount}">${esc(f)}</td></tr>`).join('')}
+      `).join('')}
+    </tbody>
+  </table>
+</div>`;
   };
 
-  // ── OVERAGE RATES ───────────────────────────────────────────────────────────
-  const overageRows = [];
-  const seen = new Set();
-  allLines.filter(l => ['seats', 'credits', 'entitlements'].includes(l.product_type)).forEach(l => {
-    const key = l.product_type === 'seats' ? 'Enterprise Seats'
-      : l.product_type === 'credits' ? 'Credits'
-      : l.product_name;
-    if (seen.has(key)) return;
-    seen.add(key);
-    let overage = '—';
-    if (l.product_type === 'seats'   && quote.overage_rate_seats)   overage = quote.overage_rate_seats;
-    if (l.product_type === 'credits' && quote.overage_rate_credits) overage = quote.overage_rate_credits;
-    overageRows.push([key, fmtQty(l.quantity), overage]);
-  });
-
-  const overageHtml = overageRows.length ? `
-    <div class="section">
-      <div class="section-eyebrow">Consumption Limits &amp; Overage Rates</div>
-      <table class="line-table">
-        <thead>
-          <tr>
-            <th class="col-name"></th>
-            <th class="col-num">Included</th>
-            <th class="col-num">Overage Rate</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${overageRows.map(([name, qty, rate]) => `
-            <tr class="line-row">
-              <td class="col-name">${esc(name)}</td>
-              <td class="col-num">${esc(qty)}</td>
-              <td class="col-num">${esc(rate)}</td>
-            </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>` : '';
-
-  // ── ORDER FORM HEADER TEXT ──────────────────────────────────────────────────
-  const ofHtml = toRichTextHtml(settings?.orderFormHeaderText || '');
-  const orderFormText = !isRichTextEmpty(ofHtml)
-    ? `<div class="order-form-text">${ofHtml}</div>`
-    : '';
-
-  // ── TOTALS ──────────────────────────────────────────────────────────────────
-  const priceable = allLines.filter(l => l.parent_line_id ? l.price_behavior === 'related' : true);
-  const listTotal = priceable.reduce((s, l) => {
-    const qty = getEffectiveLineQuantity(l), list = l.list_price ?? 0;
-    const isCred = l.product_type === 'credits' && l.unit_type === 'per_credit';
-    return s + (isCred ? list * qty : list * qty * 12);
-  }, 0);
-  const netTotal = priceable.reduce((s, l) => {
-    const qty = getEffectiveLineQuantity(l), net = l.net_price ?? l.list_price ?? 0;
-    const isCred = l.product_type === 'credits' && l.unit_type === 'per_credit';
-    return s + (isCred ? net * qty : net * qty * 12);
-  }, 0);
-  const headerDiscPct = quote.header_discount || 0;
-  const headerDiscAmt = netTotal * (headerDiscPct / 100);
-  const finalACV = netTotal - headerDiscAmt;
-  const lineDiscAmt = listTotal - netTotal;
-  const totalDisc = lineDiscAmt + headerDiscAmt;
-  const hasDiscount = totalDisc > 0.01;
-
-  const totalsRows = hasDiscount ? `
-    <tr class="total-row">
-      <td class="total-label">Total Annual List Price</td>
-      <td class="total-value">${fmtCurrency(listTotal)}</td>
-    </tr>
-    <tr class="total-row discount-row">
-      <td class="total-label">${headerDiscPct > 0 && lineDiscAmt > 0.01
-        ? 'Discount'
-        : headerDiscPct > 0
-          ? `Discount (${headerDiscPct}%)`
-          : 'Discount'}</td>
-      <td class="total-value">–${fmtCurrency(totalDisc)}</td>
-    </tr>` : '';
-
-  const totalsHtml = `
-    <div class="totals-block">
-      <table class="totals-table">
-        <tbody>
-          ${totalsRows}
-          <tr class="total-row acv-row">
-            <td class="total-label">Net Annual Fees</td>
-            <td class="total-value acv-value">${fmtCurrency(finalACV)}</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="monthly-equiv">${fmtCurrency(finalACV / 12)} / month</div>
-      ${(quote.term_months || 12) > 12 ? `<div class="term-badge">${quote.term_months}-Month Term</div>` : ''}
-    </div>`;
-
-  // ── TERMS ───────────────────────────────────────────────────────────────────
-  const termsSections = settings?.terms?.sections || [];
-  const hasSettingsTerms = termsSections.some(s => Boolean(s?.title?.trim()) || !isRichTextEmpty(toRichTextHtml(s?.body || '')));
-  const hasTerms = hasSettingsTerms || exhibitEntries.length > 0 || quote.terms_conditions?.trim();
-
-  const termsHtml = hasTerms ? `
-    <div class="page-break"></div>
-    <div class="terms-section">
-      <h2 class="terms-title">Terms &amp; Conditions</h2>
-      ${termsSections.map(section => {
-        const title = section?.title?.trim() || '';
-        const bodyHtml = toRichTextHtml(section?.body || '');
-        const hasBody = !isRichTextEmpty(bodyHtml);
-        if (!title && !hasBody) return '';
-        return `
-          ${title ? `<h3 class="terms-heading">${esc(title)}</h3>` : ''}
-          ${hasBody ? `<div class="terms-body">${bodyHtml}</div>` : ''}`;
+  // ── BASE PACKAGE ───────────────────────────────────────────────────────────
+  const packageLines=allLines.filter(l=>l.is_package);
+  const basePkgHtml=packageLines.length?`
+<div class="section">
+  <div class="section-label">Base Package</div>
+  ${packageLines.map(pkg=>{
+    const subs=allLines.filter(l=>l.parent_line_id===pkg.id);
+    const monthly=pkg.net_price??pkg.list_price??0;
+    const annual=monthly*12;
+    return`
+  <table class="data-table">
+    <thead><tr>
+      <th class="td-name"></th>
+      <th class="td-num">Monthly</th>
+      <th class="td-num">Annual</th>
+    </tr></thead>
+    <tbody>
+      <tr class="pkg-name-row">
+        <td class="td-name"><strong>${getLineLabel(pkg)}</strong></td>
+        <td class="td-num">${fmtCurrency(monthly)}</td>
+        <td class="td-num">${fmtCurrency(annual)}</td>
+      </tr>
+      <tr class="included-header-row">
+        <td class="included-label" colspan="3">Included</td>
+      </tr>
+      ${subs.map(s=>{
+        const qty=getEffectiveLineQuantity(s);
+        const qtyStr=qty>1?` <span class="qty-muted">${fmtQty(qty)}</span>`:'';
+        return`<tr class="included-row"><td class="td-name included-item" colspan="3">${getLineLabel(s)}${qtyStr}</td></tr>`;
       }).join('')}
-      ${quote.terms_conditions?.trim() ? `
-        <h3 class="terms-heading">Additional Terms</h3>
-        <div class="terms-body">${toRichTextHtml(quote.terms_conditions.trim())}</div>` : ''}
-      ${exhibitEntries.map(entry => `
-        <h3 class="terms-heading exhibit-heading">${esc(entry.exhibitLabel)} — ${esc(entry.productName)}</h3>
-        <div class="terms-body">${entry.termsHtml}</div>`).join('')}
-      ${quote.quote_type === 'order_form' ? `
-        <div class="signature-block">
-          <h2 class="sig-title">Signature</h2>
-          <p class="sig-note">Your signature of this Order Form constitutes your agreement and consent to all terms referenced in this Order Form.</p>
-          <div class="sig-cols">
-            <div class="sig-col">
-              <div class="sig-party">Customer</div>
-              <div class="sig-field"><span class="sig-label">Signature</span><span class="sig-line"></span></div>
-              <div class="sig-field"><span class="sig-label">Print Name</span><span class="sig-line"></span></div>
-              <div class="sig-field"><span class="sig-label">Title</span><span class="sig-line"></span></div>
-              <div class="sig-field"><span class="sig-label">Date</span><span class="sig-line"></span></div>
-            </div>
-            <div class="sig-col">
-              <div class="sig-party">Netlify, Inc.</div>
-              <div class="sig-field"><span class="sig-label">Signature</span><span class="sig-line"></span></div>
-              <div class="sig-field"><span class="sig-label">Print Name</span><span class="sig-line"></span></div>
-              <div class="sig-field"><span class="sig-label">Title</span><span class="sig-line"></span></div>
-              <div class="sig-field"><span class="sig-label">Date</span><span class="sig-line"></span></div>
-            </div>
-          </div>
-        </div>` : ''}
-    </div>` : '';
+    </tbody>
+  </table>`;
+  }).join('')}
+</div>`:'';
 
-  const draftBanner = (quote.status === 'draft' || quote.status === 'draft_revision')
-    ? `<div class="draft-watermark">DRAFT</div>` : '';
+  // ── OVERAGE ────────────────────────────────────────────────────────────────
+  const overageRows=[];
+  const seen=new Set();
+  allLines.filter(l=>['seats','credits','entitlements'].includes(l.product_type)).forEach(l=>{
+    const key=l.product_type==='seats'?'Enterprise Seats':l.product_type==='credits'?'Credits':l.product_name;
+    if(seen.has(key))return;seen.add(key);
+    let overage='—';
+    if(l.product_type==='seats'&&quote.overage_rate_seats)overage=quote.overage_rate_seats;
+    if(l.product_type==='credits'&&quote.overage_rate_credits)overage=quote.overage_rate_credits;
+    overageRows.push([key,fmtQty(l.quantity),overage]);
+  });
+  const overageHtml=overageRows.length?`
+<div class="section">
+  <div class="section-label">Consumption Limits &amp; Overage Rates</div>
+  <table class="data-table">
+    <thead><tr><th class="td-name"></th><th class="td-num">Included</th><th class="td-num">Overage Rate</th></tr></thead>
+    <tbody>${overageRows.map(([n,q,r])=>`<tr><td class="td-name">${esc(n)}</td><td class="td-num">${esc(q)}</td><td class="td-num">${esc(r)}</td></tr>`).join('')}</tbody>
+  </table>
+</div>`:'';
 
-  // ── STANDALONES ─────────────────────────────────────────────────────────────
-  const standaloneSupport = allLines.filter(l => !l.parent_line_id && !l.is_package && l.product_type === 'support');
-  const standaloneAddons  = allLines.filter(l => !l.parent_line_id && !l.is_package && l.product_type === 'addon');
-  const standaloneEnt     = allLines.filter(l => !l.parent_line_id && !l.is_package && ['entitlements', 'seats', 'credits'].includes(l.product_type));
+  // ── ORDER FORM TEXT ────────────────────────────────────────────────────────
+  const ofHtml=toRichTextHtml(settings?.orderFormHeaderText||'');
+  const orderFormText=!isRichTextEmpty(ofHtml)?`<div class="of-text">${ofHtml}</div>`:'';
 
-  // ── FULL HTML ───────────────────────────────────────────────────────────────
+  // ── STANDALONES ────────────────────────────────────────────────────────────
+  const standaloneSupport=allLines.filter(l=>!l.parent_line_id&&!l.is_package&&l.product_type==='support');
+  const standaloneAddons=allLines.filter(l=>!l.parent_line_id&&!l.is_package&&l.product_type==='addon');
+  const standaloneEnt=allLines.filter(l=>!l.parent_line_id&&!l.is_package&&['entitlements','seats','credits'].includes(l.product_type));
+
+  // ── TERMS ──────────────────────────────────────────────────────────────────
+  const hasTerms=exhibitEntries.length>0||quote.terms_conditions?.trim();
+  const termsHtml=hasTerms?`
+<div class="page-break"></div>
+<div class="terms-wrap">
+  <h2 class="terms-title">Terms &amp; Conditions</h2>
+  <div class="thick-rule"></div>
+  ${quote.terms_conditions?.trim()?`
+  <h3 class="terms-h3">Additional Terms</h3>
+  <div class="terms-body">${toRichTextHtml(quote.terms_conditions.trim())}</div>`:''}
+  ${exhibitEntries.map(e=>`
+  <h3 class="terms-h3 exhibit-h3">${esc(e.exhibitLabel)} — ${esc(e.productName)}</h3>
+  <div class="terms-body">${e.termsHtml}</div>`).join('')}
+  ${quote.quote_type==='order_form'?`
+  <div class="sig-block">
+    <h2 class="sig-title">Signature</h2>
+    <p class="sig-note">Your signature of this Order Form constitutes your agreement and consent to all terms referenced in this Order Form.</p>
+    <div class="sig-grid">
+      ${['Customer','Netlify, Inc.'].map(party=>`
+      <div class="sig-col">
+        <div class="sig-party">${esc(party)}</div>
+        ${['Signature','Print Name','Title','Date'].map(f=>`
+        <div class="sig-field">
+          <span class="sig-label">${esc(f)}</span>
+          <span class="sig-line"></span>
+        </div>`).join('')}
+      </div>`).join('')}
+    </div>
+  </div>`:''}
+</div>`:'';
+
+  const isDraft=quote.status==='draft'||quote.status==='draft_revision';
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${esc(quote.quote_number || 'Quote')} — ${esc(quote.customer_name || '')}</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(quote.quote_number||'Quote')} — ${esc(quote.customer_name||'')}</title>
 <style>
-  /* ── RESET & BASE ──────────────────────────────────────────── */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  
-  html { font-size: 10pt; }
-  
-  body {
-    font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
-    color: #1a1a1a;
-    background: #fff;
-    line-height: 1.5;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:10pt}
+body{
+  font-family:-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;
+  color:#111;
+  background:#fff;
+  line-height:1.5;
+  -webkit-print-color-adjust:exact;
+  print-color-adjust:exact;
+}
 
-  /* ── PRINT BUTTON ──────────────────────────────────────────── */
-  .print-bar {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    background: #fff;
-    border-bottom: 1px solid #e5e7eb;
-    padding: 12px 40px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    z-index: 100;
-    gap: 12px;
-  }
-  .print-bar-left {
-    font-size: 8.5pt;
-    color: #9ca3af;
-  }
-  .btn-print {
-    background: #00ad9f;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 20px;
-    font-size: 9pt;
-    font-weight: 500;
-    cursor: pointer;
-    letter-spacing: 0.01em;
-  }
-  .btn-print:hover { background: #009e91; }
+/* ── PRINT BAR ── */
+.print-bar{
+  position:fixed;top:0;left:0;right:0;
+  background:#fff;
+  border-bottom:1px solid #e5e7eb;
+  padding:10px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  z-index:999;
+}
+.print-tip{font-size:8pt;color:#9ca3af}
+.btn-save{
+  background:#00ad9f;color:#fff;border:none;border-radius:5px;
+  padding:7px 18px;font-size:9pt;font-weight:500;cursor:pointer;
+  letter-spacing:.01em;
+}
+.btn-save:hover{background:#009e91}
 
-  /* ── PAGE LAYOUT ───────────────────────────────────────────── */
-  .page {
-    max-width: 760px;
-    margin: 0 auto;
-    padding: 80px 48px 60px;
-  }
+/* ── PAGE ── */
+.page{
+  max-width:720px;
+  margin:0 auto;
+  padding:72px 48px 64px;
+}
 
-  @media print {
-    .print-bar { display: none !important; }
-    .page { padding: 0; max-width: 100%; }
-    body { font-size: 9.5pt; }
-    .page-break { page-break-before: always; }
-  }
+/* ── PRINT ── */
+@media print{
+  @page{margin:15mm 17mm 15mm;size:A4}
+  .print-bar{display:none!important}
+  .page{padding:0;max-width:100%}
+  .page-break{page-break-before:always}
+  body{font-size:9pt}
+}
 
-  /* ── DRAFT WATERMARK ───────────────────────────────────────── */
-  .draft-watermark {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(-30deg);
-    font-size: 120pt;
-    font-weight: 700;
-    color: rgba(0,0,0,0.04);
-    pointer-events: none;
-    z-index: 0;
-    letter-spacing: 0.1em;
-  }
+/* ── DRAFT ── */
+.draft-bg{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%) rotate(-35deg);
+  font-size:100pt;font-weight:800;
+  color:rgba(0,0,0,.035);
+  pointer-events:none;z-index:0;letter-spacing:.1em;
+}
 
-  /* ── HEADER ────────────────────────────────────────────────── */
-  .doc-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 28px;
-  }
-  .logo-wrap { display: flex; align-items: center; gap: 10px; }
-  .logo { height: 22px; width: auto; }
-  .logo-text { font-size: 16pt; font-weight: 700; color: #1a1a1a; }
-  .partner { font-size: 8.5pt; color: #9ca3af; }
-  .quote-number { font-size: 8pt; color: #9ca3af; letter-spacing: 0.04em; }
+/* ── HEADER ── */
+.doc-header{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:24px;
+}
+.logo{height:20px;width:auto}
+.logo-fallback{font-size:15pt;font-weight:700}
+.partner-tag{font-size:8pt;color:#9ca3af;margin-left:10px}
+.qnum{font-size:8pt;color:#9ca3af;letter-spacing:.05em}
+.h-rule{border:none;border-top:1.5px solid #111;margin-bottom:22px}
 
-  .header-rule { border: none; border-top: 1.5px solid #1a1a1a; margin-bottom: 24px; }
+/* ── CUSTOMER BLOCK ── */
+.customer-row{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:6px;
+}
+.customer-name{
+  font-size:22pt;font-weight:700;color:#0a0a0a;
+  letter-spacing:-.03em;line-height:1.1;
+}
+.customer-address{font-size:9pt;color:#9ca3af;margin-top:5px;line-height:1.5}
+.meta-stack{text-align:right}
+.meta-item{margin-bottom:7px}
+.meta-lbl{display:block;font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:1px}
+.meta-val{display:block;font-size:9pt;color:#374151;font-weight:400}
 
-  /* ── CUSTOMER + META ───────────────────────────────────────── */
-  .customer-block {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 8px;
-  }
-  .customer-name {
-    font-size: 20pt;
-    font-weight: 700;
-    color: #0f1114;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
-  }
-  .customer-address {
-    font-size: 9pt;
-    color: #9ca3af;
-    margin-top: 4px;
-  }
-  .meta-right { text-align: right; }
-  .meta-item {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    margin-bottom: 6px;
-  }
-  .meta-label { font-size: 6.5pt; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; }
-  .meta-value { font-size: 9pt; color: #1e2024; font-weight: 400; }
+/* ── DIVIDERS ── */
+.rule{border:none;border-top:1px solid #e5e7eb;margin:18px 0}
+.rule-heavy{border-top-width:1.5px;border-top-color:#111;margin:22px 0}
 
-  .billing-rule { border: none; border-top: 1px solid #e5e7eb; margin: 20px 0; }
-  .billing-rule-heavy { border-top-width: 1.5px; border-top-color: #1a1a1a; }
+/* ── 3-COL BILLING META ── */
+.billing-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:24px;
+  margin-bottom:24px;
+}
+.bcol-label{
+  font-size:6pt;color:#9ca3af;text-transform:uppercase;
+  letter-spacing:.08em;margin-bottom:6px;
+}
+.bcol-line{font-size:9pt;color:#374151;line-height:1.7}
 
-  /* ── BILLING METADATA 3-COL ────────────────────────────────── */
-  .billing-meta {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-    margin-bottom: 28px;
-  }
-  .meta-col {}
-  .col-label {
-    font-size: 6.5pt;
-    color: #9ca3af;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 5px;
-  }
-  .col-value {
-    font-size: 9pt;
-    color: #32343a;
-    line-height: 1.6;
-  }
+/* ── SECTIONS ── */
+.section{margin-bottom:24px}
+.section-label{
+  font-size:6pt;color:#9ca3af;text-transform:uppercase;
+  letter-spacing:.09em;margin-bottom:7px;
+}
 
-  /* ── SECTIONS ──────────────────────────────────────────────── */
-  .section { margin-bottom: 28px; }
+/* ── DATA TABLE ── */
+.data-table{width:100%;border-collapse:collapse;font-size:9.5pt}
+.data-table thead tr{border-bottom:1px solid #e5e7eb}
+.data-table th{
+  font-size:6pt;font-weight:400;color:#9ca3af;
+  text-transform:uppercase;letter-spacing:.08em;
+  padding:0 8px 7px;
+}
+.td-name{text-align:left;padding-left:0!important}
+.td-num{text-align:right;white-space:nowrap}
+.data-table tbody tr{border-top:1px solid #f3f4f6}
+.data-table tbody tr:first-child{border-top:none}
+.data-table td{padding:8px 8px;color:#374151;vertical-align:top}
+.data-table td.td-name{padding-left:0}
 
-  .section-eyebrow {
-    font-size: 6.5pt;
-    color: #9ca3af;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 6px;
-  }
+/* ── BASE PACKAGE SPECIFICS ── */
+.pkg-name-row td{padding-top:12px;padding-bottom:8px}
+.pkg-name-row .td-name strong{font-size:12pt;font-weight:700;color:#0a0a0a;letter-spacing:-.01em}
+.pkg-name-row .td-num{font-size:11pt;color:#111;font-weight:500}
+.included-header-row td{padding-top:6px;padding-bottom:3px;border-top:none}
+.included-label{
+  font-size:6pt;color:#9ca3af;text-transform:uppercase;
+  letter-spacing:.08em;padding-left:0!important;
+}
+.included-row td{border-top:none!important;padding:2px 0 2px 10px}
+.included-item{font-size:9pt;color:#4b5563}
+.qty-muted{color:#9ca3af;margin-left:4px}
+.ex-ref{color:#9ca3af;font-size:.85em}
 
-  /* ── BASE PACKAGE ──────────────────────────────────────────── */
-  .base-package { margin-bottom: 28px; }
-  .base-eyebrow {
-    font-size: 6.5pt;
-    color: #9ca3af;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 6px;
-  }
-  .base-eyebrow-cols { display: flex; gap: 32px; }
-  .pkg-rule { border: none; border-top: 1px solid #e5e7eb; margin-bottom: 14px; }
+/* ── FEATURE SUB-ROWS ── */
+.feat-row td{
+  font-size:8pt;color:#9ca3af;
+  padding:1px 8px 1px 20px;
+  border-top:none!important;
+}
+.feat-cell{text-align:left!important;padding-left:20px!important}
 
-  .pkg-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 10px;
-  }
-  .pkg-name {
-    font-size: 13pt;
-    font-weight: 700;
-    color: #0f1114;
-    letter-spacing: -0.01em;
-  }
-  .pkg-prices { display: flex; gap: 32px; }
-  .price-group { text-align: right; }
-  .price-label { font-size: 6.5pt; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; }
-  .price-value { font-size: 11pt; color: #1e2024; font-weight: 500; }
+/* ── ORDER FORM TEXT ── */
+.of-text{
+  font-size:8.5pt;color:#6b7280;
+  line-height:1.65;
+  margin-bottom:20px;
+  padding:16px 0;
+  border-top:1px solid #e5e7eb;
+  border-bottom:1px solid #e5e7eb;
+}
+.of-text p{margin-bottom:6px}
 
-  .pkg-included { margin-bottom: 8px; }
-  .included-label {
-    font-size: 6.5pt;
-    color: #9ca3af;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 6px;
-  }
-  .included-item {
-    font-size: 9.5pt;
-    color: #32343a;
-    padding: 3px 0 3px 12px;
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-  }
-  .included-item .qty { color: #9ca3af; }
-  .exhibit-ref { color: #9ca3af; font-size: 0.88em; }
+/* ── TOTALS ── */
+.totals-wrap{
+  display:flex;justify-content:flex-end;
+  margin-top:4px;
+  margin-bottom:8px;
+}
+.totals-inner{width:300px}
+.totals-table{width:100%;border-collapse:collapse}
+.totals-table td{padding:4px 0;font-size:9pt}
+.t-label{color:#6b7280}
+.t-value{text-align:right;color:#374151}
+.t-disc .t-label,.t-disc .t-value{color:#9ca3af}
+.t-acv{border-top:1px solid #e5e7eb}
+.t-acv td{padding-top:12px}
+.t-acv .t-label{
+  font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;
+}
+.t-acv .t-value{
+  font-size:24pt;font-weight:700;color:#0a0a0a;
+  letter-spacing:-.03em;line-height:1;
+}
+.mo-equiv{font-size:8pt;color:#9ca3af;text-align:right;margin-top:4px}
+.term-badge{font-size:7pt;color:#f59e0b;text-align:right;margin-top:4px;text-transform:uppercase;letter-spacing:.06em}
+.disclaimer{font-size:7pt;color:#d1d5db;margin-top:18px;line-height:1.6}
 
-  /* ── LINE TABLES ───────────────────────────────────────────── */
-  .line-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 9.5pt;
-  }
-  .line-table thead tr {
-    border-bottom: 1px solid #e5e7eb;
-  }
-  .line-table th {
-    font-size: 6.5pt;
-    font-weight: 400;
-    color: #9ca3af;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 0 6px 8px;
-  }
-  .line-table th.col-name { text-align: left; padding-left: 0; }
-  .line-table th.col-num  { text-align: right; }
+/* ── TERMS ── */
+.terms-wrap{padding-top:4px}
+.terms-title{font-size:18pt;font-weight:700;color:#0a0a0a;letter-spacing:-.03em;margin-bottom:10px}
+.thick-rule{border:none;border-top:1.5px solid #111;margin-bottom:24px}
+.terms-h3{
+  font-size:10pt;font-weight:600;color:#111;
+  margin-top:24px;margin-bottom:8px;
+  padding-bottom:5px;border-bottom:1px solid #f3f4f6;
+}
+.exhibit-h3{margin-top:36px}
+.terms-body{font-size:9pt;color:#374151;line-height:1.7}
+.terms-body p{margin-bottom:8px}
+.terms-body>ol,.terms-body>ul{padding-left:20px;margin-bottom:8px}
+.terms-body ol ol,.terms-body ul ul,.terms-body ol ul,.terms-body ul ol{padding-left:18px;margin-top:3px;margin-bottom:3px}
+.terms-body li{margin-bottom:4px}
+.terms-body ol{list-style-type:decimal}
+.terms-body ol ol{list-style-type:lower-alpha}
+.terms-body ol ol ol{list-style-type:lower-roman}
 
-  .line-row td {
-    padding: 9px 6px;
-    color: #32343a;
-    border-top: 1px solid #f3f4f6;
-  }
-  .line-row:first-child td { border-top: none; }
-  .col-name { text-align: left; padding-left: 0 !important; }
-  .col-num  { text-align: right; white-space: nowrap; }
+/* ── SIGNATURE ── */
+.sig-block{margin-top:48px}
+.sig-title{font-size:15pt;font-weight:700;color:#0a0a0a;letter-spacing:-.02em;margin-bottom:6px}
+.sig-note{font-size:8.5pt;color:#6b7280;margin-bottom:28px;line-height:1.5;max-width:540px}
+.sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px}
+.sig-party{font-size:10.5pt;font-weight:600;color:#0a0a0a;margin-bottom:22px}
+.sig-field{display:flex;align-items:flex-end;gap:10px;margin-bottom:22px}
+.sig-label{font-size:8pt;color:#9ca3af;white-space:nowrap;min-width:72px}
+.sig-line{flex:1;border-bottom:1px solid #d1d5db;height:16px}
 
-  .feature-row td {
-    font-size: 8pt;
-    color: #9ca3af;
-    padding: 1px 6px 1px 20px;
-    border-top: none;
+/* ── PRINT FOOTER ── */
+@media print{
+  .print-footer{
+    position:running(footer);
+    display:flex;justify-content:space-between;
+    font-size:7pt;color:#d1d5db;
+    border-top:1px solid #e5e7eb;
+    padding-top:6px;
   }
-
-  /* ── TOTALS ────────────────────────────────────────────────── */
-  .totals-block {
-    margin-top: 8px;
-    margin-left: auto;
-    width: 320px;
-  }
-  .totals-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
-  .total-row td { padding: 5px 0; }
-  .total-label { font-size: 8pt; color: #6b7280; }
-  .total-value { font-size: 9pt; color: #32343a; text-align: right; }
-  .discount-row .total-label,
-  .discount-row .total-value { color: #6b7280; }
-
-  .acv-row { border-top: 1px solid #e5e7eb; }
-  .acv-row td { padding-top: 10px; }
-  .acv-row .total-label { font-size: 7pt; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; }
-  .acv-value { font-size: 22pt !important; font-weight: 700; color: #0f1114 !important; letter-spacing: -0.02em; }
-
-  .monthly-equiv { font-size: 8pt; color: #9ca3af; text-align: right; margin-top: 2px; }
-  .term-badge { font-size: 7pt; color: #fbb13d; text-align: right; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
-
-  .disclaimer {
-    font-size: 7pt;
-    color: #d1d5db;
-    margin-top: 20px;
-    line-height: 1.5;
-  }
-
-  /* ── TERMS ─────────────────────────────────────────────────── */
-  .terms-section { margin-top: 8px; }
-  .terms-title {
-    font-size: 16pt;
-    font-weight: 700;
-    color: #0f1114;
-    margin-bottom: 8px;
-    letter-spacing: -0.02em;
-  }
-  .terms-rule { border: none; border-top: 1.5px solid #1a1a1a; margin-bottom: 24px; }
-  .terms-heading {
-    font-size: 10pt;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin-top: 20px;
-    margin-bottom: 6px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid #f3f4f6;
-  }
-  .exhibit-heading { margin-top: 32px; }
-  .terms-body {
-    font-size: 9pt;
-    color: #32343a;
-    line-height: 1.65;
-  }
-  .terms-body p { margin-bottom: 8px; }
-  .terms-body ol, .terms-body ul { padding-left: 20px; margin-bottom: 8px; }
-  .terms-body li { margin-bottom: 3px; }
-
-  /* ── SIGNATURE ─────────────────────────────────────────────── */
-  .signature-block { margin-top: 40px; }
-  .sig-title {
-    font-size: 14pt;
-    font-weight: 700;
-    color: #0f1114;
-    margin-bottom: 6px;
-    letter-spacing: -0.01em;
-  }
-  .sig-note { font-size: 8.5pt; color: #6b7280; margin-bottom: 24px; line-height: 1.5; }
-  .sig-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-  .sig-party { font-size: 11pt; font-weight: 600; color: #0f1114; margin-bottom: 20px; }
-  .sig-field {
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    margin-bottom: 20px;
-  }
-  .sig-label { font-size: 8pt; color: #6b7280; white-space: nowrap; min-width: 70px; }
-  .sig-line { flex: 1; border-bottom: 1px solid #d1d5db; height: 18px; }
-
-  /* ── FOOTER (print only) ───────────────────────────────────── */
-  @media print {
-    @page { margin: 18mm 18mm 14mm; size: A4; }
-    .footer-bar {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      display: flex;
-      justify-content: space-between;
-      font-size: 7pt;
-      color: #d1d5db;
-      border-top: 1px solid #e5e7eb;
-      padding-top: 5px;
-    }
-  }
-  .footer-bar { display: none; }
-  @media print { .footer-bar { display: flex; } }
+}
 </style>
 </head>
 <body>
 
 <div class="print-bar">
-  <span class="print-bar-left">Confidential – Do Not Distribute</span>
-  <button class="btn-print" onclick="window.print()">Save as PDF</button>
+  <span class="print-tip">When saving: set Margins → None · uncheck Headers and Footers</span>
+  <button class="btn-save" onclick="window.print()">Save as PDF</button>
 </div>
 
-${draftBanner}
+${isDraft?'<div class="draft-bg">DRAFT</div>':''}
 
 <div class="page">
 
   <!-- HEADER -->
   <div class="doc-header">
-    <div class="logo-wrap">
+    <div style="display:flex;align-items:center">
       ${logoHtml}
-      ${partnerHtml}
+      ${quote.partner_name?`<span class="partner-tag">× ${esc(quote.partner_name)}</span>`:''}
     </div>
-    <div class="quote-number">${esc((quote.quote_number || '').replace('QUO-', 'QUOTE · '))}</div>
+    <span class="qnum">${esc((quote.quote_number||'').replace('QUO-','QUOTE · '))}</span>
   </div>
-  <hr class="header-rule">
+  <hr class="h-rule">
 
   <!-- CUSTOMER -->
-  <div class="customer-block">
+  <div class="customer-row">
     <div>
-      <div class="customer-name">${esc(quote.customer_name || '')}</div>
-      ${quote.address ? `<div class="customer-address">${esc(quote.address)}</div>` : ''}
+      <div class="customer-name">${esc(quote.customer_name||'')}</div>
+      ${quote.address?`<div class="customer-address">${esc(quote.address)}</div>`:''}
     </div>
-    <div class="meta-right">${metaRight}</div>
+    <div class="meta-stack">
+      ${[
+        quote.prepared_by&&['Prepared by',quote.prepared_by],
+        quote.start_date&&['Quote Date',fmtDate(quote.start_date)],
+        quote.expiration_date&&['Expires',fmtDate(quote.expiration_date)],
+      ].filter(Boolean).map(([l,v])=>`
+      <div class="meta-item">
+        <span class="meta-lbl">${esc(l)}</span>
+        <span class="meta-val">${esc(v)}</span>
+      </div>`).join('')}
+    </div>
   </div>
 
-  <hr class="billing-rule">
+  <hr class="rule">
 
-  <!-- BILLING METADATA -->
-  <div class="billing-meta">
-    ${renderMetaCol('Bill To', billToLines)}
-    ${renderMetaCol('Billing Contact', billingLines)}
-    ${renderMetaCol('Contract Terms', termLines)}
+  <!-- BILLING META -->
+  <div class="billing-grid">
+    ${[
+      {label:'Bill To',lines:[quote.contact_name,quote.contact_email].filter(Boolean)},
+      {label:'Billing Contact',lines:[
+        quote.billing_contact_name,
+        quote.billing_contact_email,
+        quote.billing_contact_phone,
+        quote.invoice_email?`Invoice: ${quote.invoice_email}`:null,
+      ].filter(Boolean)},
+      {label:'Contract Terms',lines:[
+        quote.payment_terms?`Payment: ${quote.payment_terms}`:null,
+        quote.billing_schedule?`Billing: ${quote.billing_schedule}`:null,
+        quote.payment_method?`Method: ${quote.payment_method}`:null,
+        quote.start_date?`Start: ${fmtDate(quote.start_date)}`:null,
+        quote.term_months?`Term: ${quote.term_months} Months`:null,
+        quote.account_id?`Account: ${quote.account_id}`:null,
+      ].filter(Boolean)},
+    ].map(col=>col.lines.length?`
+    <div>
+      <div class="bcol-label">${esc(col.label)}</div>
+      ${col.lines.map(l=>`<div class="bcol-line">${esc(l)}</div>`).join('')}
+    </div>`:'').join('')}
   </div>
 
-  <hr class="billing-rule billing-rule-heavy">
-
-  <!-- BASE PACKAGE -->
-  ${packageLines.length ? `
-  <div class="base-package">
-    <div class="base-eyebrow">
-      <span>Base Package</span>
-      <div class="base-eyebrow-cols">
-        <span>Monthly</span>
-        <span>Annual</span>
-      </div>
-    </div>
-    <hr class="pkg-rule">
-    ${basePackageHtml}
-  </div>` : ''}
+  <hr class="rule-heavy">
 
   <!-- LINE SECTIONS -->
-  ${renderSection('Support', standaloneSupport)}
-  ${renderSection('Platform Add-Ons', standaloneAddons)}
-  ${renderSection('Additional Entitlements', standaloneEnt)}
+  ${basePkgHtml}
+  ${renderSection('Support',standaloneSupport)}
+  ${renderSection('Platform Add-Ons',standaloneAddons)}
+  ${renderSection('Additional Entitlements',standaloneEnt)}
   ${overageHtml}
-
-  <!-- ORDER FORM TEXT -->
   ${orderFormText}
 
   <!-- TOTALS -->
-  <hr class="billing-rule billing-rule-heavy">
-  ${totalsHtml}
+  <hr class="rule-heavy">
+  <div class="totals-wrap">
+    <div class="totals-inner">
+      <table class="totals-table">
+        <tbody>
+          ${hasDiscount?`
+          <tr>
+            <td class="t-label">Total Annual List Price</td>
+            <td class="t-value">${fmtCurrency(listTotal)}</td>
+          </tr>
+          <tr class="t-disc">
+            <td class="t-label">${headerDiscPct>0?`Discount (${headerDiscPct}%)`:'Discount'}</td>
+            <td class="t-value">–${fmtCurrency(totalDisc)}</td>
+          </tr>`:''}
+          <tr class="t-acv">
+            <td class="t-label">Net Annual Fees</td>
+            <td class="t-value">${fmtCurrency(finalACV)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="mo-equiv">${fmtCurrency(finalACV/12)} / month</div>
+      ${(quote.term_months||12)>12?`<div class="term-badge">${quote.term_months}-Month Term</div>`:''}
+    </div>
+  </div>
 
   <p class="disclaimer">All prices are quoted in USD and are exclusive of any applicable taxes, commissions, import duties, or other similar fees.</p>
 
@@ -759,28 +541,19 @@ ${draftBanner}
   ${termsHtml}
 
 </div>
-
-<div class="footer-bar">
-  <span>Confidential – Do Not Distribute</span>
-  <span>${esc(quote.quote_number || '')}</span>
-</div>
-
 </body>
 </html>`;
 }
 
-// ── MAIN EXPORT ───────────────────────────────────────────────────────────────
 export async function generateQuotePDF(quote, products, settings, { preview = false } = {}) {
   const { NETLIFY_LOGO_B64 } = await import('../assets/netlifyLogo.js').catch(() => ({ NETLIFY_LOGO_B64: null }));
   const html = buildQuoteHTML(quote, settings, NETLIFY_LOGO_B64);
-
   const blob = new Blob([html], { type: 'text/html' });
   const url  = URL.createObjectURL(blob);
   const win  = window.open(url, '_blank');
   if (win) {
     win.addEventListener('beforeunload', () => URL.revokeObjectURL(url), { once: true });
   } else {
-    // popup blocked — fallback: create a link and click it
     const a = document.createElement('a');
     a.href = url;
     a.download = `${quote.quote_number || 'quote'}.html`;
