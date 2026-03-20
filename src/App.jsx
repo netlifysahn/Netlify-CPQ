@@ -590,6 +590,28 @@ export default function App() {
       return i >= 0 ? prev.map((x) => (x.id === q.id ? q : x)) : [...prev, q];
     });
     setActiveQuote(q);
+
+    // Auto-create an order when a quote is converted
+    if (q.status === 'converted') {
+      console.log('[Orders] Quote converted, creating order for:', q.id);
+      const orderNumber = `ORD-${String(Math.max(0, ...orders.map(x => parseInt((x.order_number||'').replace('ORD-',''),10)||0)) + 1).padStart(4,'0')}`;
+      const newOrder = {
+        ...q,
+        id: genId(),
+        order_number: orderNumber,
+        name: q.name,
+        status: 'active',
+        quote_id: q.id,
+        quote_number: q.quote_number,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        activity_log: [{ type: 'created', timestamp: new Date().toISOString(), note: `Order created from ${q.quote_number}`, actor: q.prepared_by || '' }],
+      };
+      setOrders((prev) => {
+        if (prev.some((o) => o.quote_id === q.id)) return prev;
+        return [...prev, newOrder];
+      });
+    }
   };
 
   const delQuote = (id) =>
