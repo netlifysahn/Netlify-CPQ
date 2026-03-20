@@ -11,12 +11,6 @@ const STATUS_TONES = {
   invoiced: 'blue',
 };
 
-const fmtDate = (s) => {
-  if (!s) return '—';
-  const d = new Date(s + 'T00:00:00');
-  return isNaN(d) ? s : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-};
-
 export default function OrderList({ orders, onNew, onOpen, onDupe, onDelete }) {
   if (!orders || orders.length === 0) {
     return (
@@ -45,8 +39,6 @@ export default function OrderList({ orders, onNew, onOpen, onDupe, onDelete }) {
             <th className="col-owner">Owner</th>
             <th className="col-status">Status</th>
             <th className="col-acv">ACV</th>
-            <th className="col-date">Start Date</th>
-            <th className="col-updated">Updated</th>
             <th className="col-actions">Actions</th>
           </tr>
         </thead>
@@ -69,10 +61,6 @@ export default function OrderList({ orders, onNew, onOpen, onDupe, onDelete }) {
                   </div>
                 </td>
                 <td className="col-acv cell-currency">{fmtCurrency(totals.annual)}</td>
-                <td className="col-date">{fmtDate(order.start_date)}</td>
-                <td className="col-updated cell-muted">
-                  {order.updated_at ? new Date(order.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
-                </td>
                 <td className="col-actions" onClick={(e) => e.stopPropagation()}>
                   <div className="actions-group">
                     <button className="action-btn duplicate" title="Clone" aria-label="Clone" onClick={() => onDupe(order)}>
