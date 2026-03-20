@@ -1046,14 +1046,27 @@ select.field-select::-ms-expand {
   background: #fff;
 }
 .modal-theme-quotes .btn-save {
-  background: #fbb13d;
-  border-color: #fbb13d;
+  background: #fbb13d !important;
+  border-color: #fbb13d !important;
+  color: #fff !important;
 }
 .modal-theme-quotes .btn-save:hover {
+  background: #e9a235 !important;
+  border-color: #e9a235 !important;
+}
+.modal-theme-quotes .btn-save:disabled {
+  background: #fbb13d !important;
+  border-color: #fbb13d !important;
+  opacity: 0.5;
 }
 .modal-theme-quotes .btn-cancel {
-  border-color: #fbb13d;
-  color: #fbb13d;
+  border-color: #fbb13d !important;
+  color: #fbb13d !important;
+}
+.modal-theme-quotes .btn-cancel:disabled {
+  border-color: #fbb13d !important;
+  color: #fbb13d !important;
+  opacity: 0.5;
 }
 .modal-theme-scope {
   --modal-focus-accent: #9A2D99;
@@ -1064,17 +1077,27 @@ select.field-select::-ms-expand {
   --modal-focus-accent-tint: rgba(46, 81, 237, 0.12);
 }
 .modal-theme-orders .btn-save {
-  background: #2E51ED;
-  border-color: #2E51ED;
-  color: #fff;
+  background: #2E51ED !important;
+  border-color: #2E51ED !important;
+  color: #fff !important;
 }
 .modal-theme-orders .btn-save:hover {
-  background: #2743c9;
-  border-color: #2743c9;
+  background: #2743c9 !important;
+  border-color: #2743c9 !important;
+}
+.modal-theme-orders .btn-save:disabled {
+  background: #2E51ED !important;
+  border-color: #2E51ED !important;
+  opacity: 0.5;
 }
 .modal-theme-orders .btn-cancel {
-  border-color: #2E51ED;
-  color: #2E51ED;
+  border-color: #2E51ED !important;
+  color: #2E51ED !important;
+}
+.modal-theme-orders .btn-cancel:disabled {
+  border-color: #2E51ED !important;
+  color: #2E51ED !important;
+  opacity: 0.5;
 }
 .modal
   :is(
