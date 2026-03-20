@@ -9682,6 +9682,9 @@ button {
   width: 25%;
   text-align: right;
 }
+.qd-es-th--center {
+  text-align: center;
+}
 .qd-es-cell {
   font-family: var(--qd-quote-content-font-family, "Poppins", sans-serif);
   font-size: var(--qd-quote-content-font-size, 13px);
@@ -9701,10 +9704,10 @@ button {
   padding-left: 0;
 }
 .qd-es-cell--qty {
-  text-align: right;
+  text-align: center;
 }
 .qd-es-cell--rate {
-  text-align: right;
+  text-align: center;
 }
 .qd-es-value {
   font-family: var(--qd-quote-content-font-family, "Poppins", sans-serif);
