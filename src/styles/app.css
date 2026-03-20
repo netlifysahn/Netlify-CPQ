@@ -11374,6 +11374,12 @@ button {
 }
 
 /* QuoteDetail card header clickable */
+.quote-detail .qd-detail-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+}
 .qd-detail-card-header--clickable {
   cursor: pointer;
   user-select: none;
