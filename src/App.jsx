@@ -834,7 +834,6 @@ export default function App() {
 
             <div className="toolbar">
               <div className="search-wrap">
-                <span className="search-label">Search</span>
                 <input
                   className="search-input"
                   value={search}
@@ -903,13 +902,23 @@ export default function App() {
                   placeholder="Search Orders"
                 />
               </div>
+              <div className="toolbar-select-wrap">
+                <select className="field-select toolbar-picklist" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                  {['All', ...['draft', 'submitted', 'pending_approval', 'approved', 'rejected', 'active', 'invoiced', 'completed', 'cancelled'].filter((s) => orders.some((o) => o.status === s))].map((s) => (
+                    <option key={s} value={s}>{s === 'All' ? 'Order Status' : s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
+                  ))}
+                </select>
+                <span className="toolbar-select-icon" aria-hidden="true">
+                  <span>▾</span>
+                </span>
+              </div>
               <button className="btn-primary btn-order-add" onClick={() => setModal({ type: 'order' })}>
                 New Order
               </button>
             </div>
 
             <OrderList
-              orders={orders.filter((o) => { if (!search) return true; const q = search.toLowerCase(); return (o.name||'').toLowerCase().includes(q)||(o.order_number||'').toLowerCase().includes(q)||(o.customer_name||'').toLowerCase().includes(q); })}
+              orders={orders.filter((o) => { if (statusFilter !== 'All' && o.status !== statusFilter) return false; if (!search) return true; const q = search.toLowerCase(); return (o.name||'').toLowerCase().includes(q)||(o.order_number||'').toLowerCase().includes(q)||(o.customer_name||'').toLowerCase().includes(q); })}
               onNew={() => setModal({ type: 'order' })}
               onOpen={(o) => setActiveOrder(o)}
               onDupe={dupeOrder}
