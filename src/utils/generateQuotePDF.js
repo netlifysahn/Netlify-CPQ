@@ -227,12 +227,12 @@ body{font-family:'Mulish',sans-serif;color:#1a1a2e;background:#fff;line-height:1
 
 /* HEADER */
 .doc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-.logo{height:19px;width:auto}
+.logo{height:28px;width:auto}
 .logo-fallback{font-size:14pt;font-weight:700;font-family:'Poppins',sans-serif}
 .partner-tag{font-size:8pt;color:#9ca3af;margin-left:10px}
 .header-right{text-align:right}
 .qnum{font-size:9pt;color:#9ca3af;letter-spacing:.03em;display:block;margin-bottom:6px}
-.header-meta{font-size:8.5pt;color:#6b7280;line-height:1.9;text-align:right}
+.header-meta{font-size:8.5pt;color:#6b7280;line-height:1.5;text-align:right}
 
 /* ONE thin rule */
 .h-rule{border:none;border-top:1px solid #e5e7eb;margin:0 0 22px}
@@ -280,7 +280,7 @@ body{font-family:'Mulish',sans-serif;color:#1a1a2e;background:#fff;line-height:1
 .feat-row td{font-size:8pt;color:#9ca3af;padding:1px 8px 1px 20px;border-top:none!important}
 .feat-cell{text-align:left!important;padding-left:20px!important}
 
-.of-text{font-size:8.5pt;color:#6b7280;line-height:1.7;margin-bottom:20px;padding:16px 0;border-top:1px solid #f3f4f6;border-bottom:1px solid #f3f4f6}
+.of-text{font-size:8.5pt;color:#6b7280;line-height:1.7;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #e5e7eb}
 .of-text p{margin-bottom:6px}
 
 /* TOTALS */
@@ -378,12 +378,12 @@ ${isDraft?'<div class="draft-bg">DRAFT</div>':''}
 
   <hr class="section-divider">
 
+  ${orderFormText}
   ${basePkgHtml}
   ${renderSection('Support',standaloneSupport)}
   ${renderSection('Platform Add-Ons',standaloneAddons)}
   ${renderSection('Additional Entitlements',standaloneEnt)}
   ${overageHtml}
-  ${orderFormText}
 
   <hr class="section-divider">
 
