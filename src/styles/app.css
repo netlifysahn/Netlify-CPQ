@@ -1044,13 +1044,19 @@ select.field-select::-ms-expand {
 .modal-theme-quotes {
   --modal-focus-accent: #fbb13d;
   --modal-focus-accent-tint: rgba(251, 177, 50, 0.12);
+  background: #fff;
 }
 .modal-theme-quotes .btn-save {
   background: #fbb13d;
   border-color: #fbb13d;
+  box-shadow: 0 1px 2px rgba(251, 177, 61, 0.2);
 }
 .modal-theme-quotes .btn-save:hover {
   box-shadow: 0 2px 6px #0000001a;
+}
+.modal-theme-quotes .btn-cancel {
+  border-color: #fbb13d;
+  color: #fbb13d;
 }
 .modal-theme-scope {
   --modal-focus-accent: #9A2D99;
@@ -1064,6 +1070,7 @@ select.field-select::-ms-expand {
   background: #2E51ED;
   border-color: #2E51ED;
   color: #fff;
+  box-shadow: 0 1px 2px rgba(46, 81, 237, 0.2);
 }
 .modal-theme-orders .btn-save:hover {
   background: #2743c9;
