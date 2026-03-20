@@ -115,16 +115,15 @@ function buildQuoteHTML(quote, settings, logoB64) {
   const packageLines=allLines.filter(l=>l.is_package);
   const basePkgHtml=packageLines.length?`
 <div class="section">
-  <div class="section-label">Base Package</div>
   ${packageLines.map(pkg=>{
     const subs=allLines.filter(l=>l.parent_line_id===pkg.id);
     const monthly=pkg.net_price??pkg.list_price??0;
     const annual=monthly*12;
     return`<table class="data-table">
     <thead><tr>
-      <th class="td-name"></th>
-      <th class="td-num">Monthly</th>
-      <th class="td-num">Annual</th>
+      <th class="td-name section-label" style="padding-bottom:8px">Base Package</th>
+      <th class="td-num" style="font-size:7pt">Monthly</th>
+      <th class="td-num" style="font-size:7pt">Annual</th>
     </tr></thead>
     <tbody>
       <tr class="pkg-name-row">
@@ -133,11 +132,19 @@ function buildQuoteHTML(quote, settings, logoB64) {
         <td class="td-num pkg-price">${fmtCurrency(annual)}</td>
       </tr>
       <tr><td class="included-label" colspan="3">Included</td></tr>
-      ${subs.map(s=>{
-        const qty=getEffectiveLineQuantity(s);
-        const qtyStr=qty>1?` <span class="qty-muted">${fmtQty(qty)}</span>`:'';
-        return`<tr class="included-row"><td colspan="3" class="included-item">${getLineLabel(s)}${qtyStr}</td></tr>`;
-      }).join('')}
+      ${(() => {
+        const order = ['platform','addon','support','credits','entitlements','seats'];
+        const sorted = [...subs].sort((a,b) => {
+          const ai = order.indexOf(a.product_type); const bi = order.indexOf(b.product_type);
+          return (ai===-1?99:ai) - (bi===-1?99:bi);
+        });
+        return sorted.map(s=>{
+          const qty=getEffectiveLineQuantity(s);
+          const name=esc(s.product_name||'Product');
+          const qtyRow=qty>1?`<tr class="included-row"><td colspan="3" class="included-qty">${fmtQty(qty)}</td></tr>`:'';
+          return`<tr class="included-row"><td colspan="3" class="included-item">${name}</td></tr>${qtyRow}`;
+        }).join('');
+      })()}
     </tbody>
   </table>`;
   }).join('')}
@@ -255,7 +262,10 @@ body{font-family:'Mulish',sans-serif;color:#1a1a2e;background:#fff;line-height:1
 /* LINE SECTIONS */
 .section-divider{border:none;border-top:1px solid #e5e7eb;margin:24px 0}
 .section{margin-bottom:28px}
-.section-label{font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.09em;margin-bottom:8px}
+.section-label{font-size:7pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.09em;margin-bottom:8px}
+.section-header-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.section-header-cols{display:flex;gap:0}
+.section-header-col{font-size:7pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.09em;width:110px;text-align:right}
 
 /* DATA TABLE — consistent column widths across all sections */
 .data-table{width:100%;border-collapse:collapse;font-size:9.5pt}
@@ -277,6 +287,7 @@ body{font-family:'Mulish',sans-serif;color:#1a1a2e;background:#fff;line-height:1
 .included-label{font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;padding:4px 0 2px!important;border-top:none!important}
 .included-row td{border-top:none!important;padding:2.5px 0 2.5px 10px}
 .included-item{font-size:9pt;color:#4b5563}
+.included-qty{font-size:9pt;color:#9ca3af;padding:0 0 4px 10px!important}
 .qty-muted{color:#9ca3af;margin-left:4px}
 .ex-ref{color:#9ca3af;font-size:.85em}
 .feat-row td{font-size:8pt;color:#9ca3af;padding:1px 8px 1px 20px;border-top:none!important}
