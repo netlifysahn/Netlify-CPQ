@@ -82,13 +82,15 @@ function buildQuoteHTML(quote, settings, logoB64) {
         };
       });
     } else {
-      headCols=showDisc?['','Qty','List','Unit Price','Annual']:['','Qty','Unit Price','Annual'];
+      // Entitlements: Qty / Unit Price / Monthly / Annual
+      headCols=['','Qty','Unit Price','Monthly','Annual'];
       rows=lines.map(l=>{
-        const qty=getEffectiveLineQuantity(l),list=l.list_price??0,net=l.net_price??list;
+        const qty=getEffectiveLineQuantity(l),net=l.net_price??l.list_price??0;
         const isCred=l.product_type==='credits'&&l.unit_type==='per_credit';
+        const monthly=isCred?net*qty:net*qty;
         const annual=isCred?net*qty:net*qty*12;
         return{
-          cells:showDisc?[getLineLabel(l),fmtQty(qty),fmtCurrency(list),fmtCurrency(net),fmtCurrency(annual)]:[getLineLabel(l),fmtQty(qty),fmtCurrency(net),fmtCurrency(annual)],
+          cells:[getLineLabel(l),fmtQty(qty),fmtCurrency(net),fmtCurrency(monthly),fmtCurrency(annual)],
           features:Array.isArray(l.features)?l.features:[]
         };
       });
@@ -98,10 +100,10 @@ function buildQuoteHTML(quote, settings, logoB64) {
 <div class="section">
   <div class="section-label">${esc(label)}</div>
   <table class="data-table">
-    <thead><tr>${headCols.map((h,i)=>`<th class="${i===0?'td-name':'td-num'}">${esc(h)}</th>`).join('')}</tr></thead>
+    <thead><tr>${headCols.map((h,i)=>`<th class="${i===0?'td-name':i===1&&isEnt?'td-num-sm':'td-num'}">${esc(h)}</th>`).join('')}</tr></thead>
     <tbody>
       ${rows.map(row=>`
-        <tr>${row.cells.map((c,i)=>`<td class="${i===0?'td-name':'td-num'}">${i===0?c:esc(c)}</td>`).join('')}</tr>
+        <tr>${row.cells.map((c,i)=>`<td class="${i===0?'td-name':i===1&&isEnt?'td-num-sm':'td-num'}${i===0?' line-bold':''}">${i===0?c:esc(c)}</td>`).join('')}</tr>
         ${row.features.map(f=>`<tr class="feat-row"><td class="feat-cell" colspan="${colCount}">${esc(f)}</td></tr>`).join('')}
       `).join('')}
     </tbody>
@@ -257,20 +259,22 @@ body{font-family:'Mulish',sans-serif;color:#1a1a2e;background:#fff;line-height:1
 .section{margin-bottom:28px}
 .section-label{font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.09em;margin-bottom:8px}
 
-/* DATA TABLE */
+/* DATA TABLE — consistent column widths across all sections */
 .data-table{width:100%;border-collapse:collapse;font-size:9.5pt}
 .data-table thead tr{border-bottom:1px solid #e5e7eb}
 .data-table th{font-size:6pt;font-weight:400;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;padding:0 8px 8px}
-.td-name{text-align:left;padding-left:0!important}
-.td-num{text-align:right;white-space:nowrap}
+.td-name{text-align:left;padding-left:0!important;width:auto}
+.td-num{text-align:right;white-space:nowrap;width:110px}
+.td-num-sm{text-align:right;white-space:nowrap;width:72px}
 .data-table tbody tr{border-top:1px solid #f3f4f6}
 .data-table tbody tr:first-child{border-top:none}
 .data-table td{padding:9px 8px;color:#374151;vertical-align:top}
 .data-table td.td-name{padding-left:0}
+.line-bold{font-family:'Poppins',sans-serif;font-weight:600;color:#0a0a0a}
 
 /* BASE PACKAGE */
 .pkg-title{font-family:'Poppins',sans-serif;font-size:11pt;font-weight:600;color:#0a0a0a;letter-spacing:-.01em}
-.pkg-price{font-size:10pt;font-weight:600;color:#1a1a2e;font-family:'Poppins',sans-serif}
+.pkg-price{font-size:9.5pt;font-weight:400;color:#374151;font-family:'Mulish',sans-serif}
 .pkg-name-row td{padding-top:12px;padding-bottom:6px}
 .included-label{font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;padding:4px 0 2px!important;border-top:none!important}
 .included-row td{border-top:none!important;padding:2.5px 0 2.5px 10px}
