@@ -141,8 +141,8 @@ function buildQuoteHTML(quote, settings, logoB64) {
         return sorted.map(s=>{
           const qty=getEffectiveLineQuantity(s);
           const name=esc(s.product_name||'Product');
-          const qtyRow=qty>1?`<tr class="included-row"><td colspan="3" class="included-qty">${fmtQty(qty)}</td></tr>`:'';
-          return`<tr class="included-row"><td colspan="3" class="included-item">${name}</td></tr>${qtyRow}`;
+          const qtyCell=qty>1?`<td class="included-qty">${fmtQty(qty)}</td>`:`<td></td>`;
+          return`<tr class="included-row"><td class="included-item">${name}</td>${qtyCell}<td></td></tr>`;
         }).join('');
       })()}
     </tbody>
@@ -243,19 +243,13 @@ body{font-family:'Mulish',sans-serif;color:#1a1a2e;background:#fff;line-height:1
 .qnum{font-size:9pt;color:#9ca3af;letter-spacing:.03em;display:block;margin-bottom:6px}
 .header-meta{font-size:8.5pt;color:#6b7280;line-height:1.5;text-align:right}
 
-/* ONE thin rule — only below header */
-.h-rule{border:none;border-top:1px solid #e5e7eb;margin:0 0 22px}
-
-/* CUSTOMER BLOCK — 2 col */
-.customer-block{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;margin-bottom:0}
+/* CUSTOMER NAME BLOCK */
+.customer-name-block{margin-bottom:20px}
 .customer-name{font-family:'Poppins',sans-serif;font-size:13pt;font-weight:700;color:#0a0a0a;letter-spacing:-.02em;line-height:1.2;margin-bottom:3px}
 .customer-address{font-size:8.5pt;color:#9ca3af;line-height:1.5}
-.pc-label{font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;display:block}
-.pc-name{font-size:9.5pt;color:#1a1a2e;font-weight:600;display:block;margin-bottom:2px}
-.pc-email{font-size:8.5pt;color:#6b7280;display:block}
 
-/* BILLING META — no top border, just padding */
-.billing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:20px 0 0;margin-top:20px;border-top:none}
+/* BILLING META — 4 cols */
+.billing-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;padding:18px 0 0;margin-top:0;border-top:1px solid #e5e7eb}
 .bcol-label{font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
 .bcol-line{font-size:9pt;color:#374151;line-height:1.85}
 
@@ -287,14 +281,14 @@ body{font-family:'Mulish',sans-serif;color:#1a1a2e;background:#fff;line-height:1
 .included-label{font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;padding:4px 0 2px!important;border-top:none!important}
 .included-row td{border-top:none!important;padding:2.5px 0 2.5px 10px}
 .included-item{font-size:9pt;color:#4b5563}
-.included-qty{font-size:9pt;color:#9ca3af;padding:0 0 4px 10px!important}
+.included-qty{font-size:9pt;color:#9ca3af;padding:3px 8px!important;text-align:left}
 .qty-muted{color:#9ca3af;margin-left:4px}
 .ex-ref{color:#9ca3af;font-size:.85em}
 .feat-row td{font-size:8pt;color:#9ca3af;padding:1px 8px 1px 20px;border-top:none!important}
 .feat-cell{text-align:left!important;padding-left:20px!important}
 
-.of-text{font-size:8.5pt;color:#6b7280;line-height:1.7;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #e5e7eb}
-.of-text p{margin-bottom:6px}
+.of-text{font-size:8.5pt;color:#6b7280;line-height:1.6;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #e5e7eb}
+.of-text p{margin-bottom:3px}
 
 /* TOTALS */
 .totals-wrap{display:flex;justify-content:flex-end;margin-top:8px;margin-bottom:8px}
@@ -366,23 +360,18 @@ ${isDraft?'<div class="draft-bg">DRAFT</div>':''}
 
   <hr class="h-rule">
 
-  <div class="customer-block">
-    <div>
-      <div class="customer-name">${esc(quote.customer_name||'')}</div>
-      ${quote.address?`<div class="customer-address">${esc(quote.address)}</div>`:''}
-    </div>
-    <div>
-      ${quote.contact_name?`<span class="pc-label">Primary Contact</span><span class="pc-name">${esc(quote.contact_name)}</span>`:''}
-      ${quote.contact_email?`<span class="pc-email">${esc(quote.contact_email)}</span>`:''}
-    </div>
+  <div class="customer-name-block">
+    <div class="customer-name">${esc(quote.customer_name||'')}</div>
+    ${quote.address?`<div class="customer-address">${esc(quote.address)}</div>`:''}
   </div>
 
   <div class="billing-grid">
     ${[
+      quote.contact_name||quote.contact_email ? {label:'Primary Contact',lines:[quote.contact_name,quote.contact_email].filter(Boolean)} : null,
       {label:'Billing Contact',lines:[quote.billing_contact_name,quote.billing_contact_email,quote.billing_contact_phone,quote.invoice_email?`Invoice: ${quote.invoice_email}`:null].filter(Boolean)},
       {label:'Payment Terms',lines:[quote.payment_terms?`Payment: ${quote.payment_terms}`:null,quote.billing_schedule?`Billing: ${quote.billing_schedule}`:null,quote.payment_method?`Method: ${quote.payment_method}`:null].filter(Boolean)},
       {label:'Subscription',lines:[quote.start_date?`Start: ${fmtDate(quote.start_date)}`:null,quote.term_months?`Term: ${quote.term_months} Months`:null,quote.account_id?`Account: ${quote.account_id}`:null].filter(Boolean)},
-    ].map(col=>col.lines.length?`<div><div class="bcol-label">${esc(col.label)}</div>${col.lines.map(l=>`<div class="bcol-line">${esc(l)}</div>`).join('')}</div>`:'').join('')}
+    ].filter(Boolean).map(col=>col.lines.length?`<div><div class="bcol-label">${esc(col.label)}</div>${col.lines.map(l=>`<div class="bcol-line">${esc(l)}</div>`).join('')}</div>`:'').join('')}
   </div>
 
   <hr class="section-divider">
