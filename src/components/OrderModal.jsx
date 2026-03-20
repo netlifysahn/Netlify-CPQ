@@ -102,7 +102,7 @@ export default function OrderModal({ order, existingOrders, pricebooks, onSave, 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal modal-theme-quotes" onClick={(e) => e.stopPropagation()}>
+      <div className="modal modal-theme-orders" onClick={(e) => e.stopPropagation()}>
         <div className="modal-title">{order ? 'Edit Order' : 'New Order'}</div>
 
         <div className="field">

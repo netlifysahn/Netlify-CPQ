@@ -1038,6 +1038,15 @@ select.field-select::-ms-expand {
   --modal-focus-accent: #2e51ed;
   --modal-focus-accent-tint: rgba(46, 81, 237, 0.12);
 }
+.modal-theme-orders .btn-save {
+  background: #2e51ed;
+  border-color: #2e51ed;
+}
+.modal-theme-orders .btn-save:hover {
+  background: #2743c9;
+  border-color: #2743c9;
+  box-shadow: 0 2px 6px #0000001a;
+}
 .modal
   :is(
     input:not([type="checkbox"]):not([type="radio"]),
