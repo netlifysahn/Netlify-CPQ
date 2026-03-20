@@ -847,6 +847,8 @@
 }
 .cell-actions {
   min-width: 80px;
+  justify-content: center;
+  padding-right: 16px;
 }
 .row-action-btn {
   background: transparent;
@@ -854,7 +856,7 @@
   color: transparent;
   cursor: pointer;
   padding: 4px;
-  font-size: 13px;
+  font-size: 14px;
   opacity: 0;
   transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
@@ -862,12 +864,10 @@
   opacity: 1;
   color: var(--text-faint);
 }
-.row-action-btn:hover {
+.row-action-btn:hover,
+.row-action-btn--danger:hover {
   color: #fbb13d !important;
   transform: scale(1.1);
-}
-.row-action-btn--danger:hover {
-  color: var(--red, #ef4444) !important;
 }
 
 .modal-overlay {
@@ -7347,6 +7347,9 @@ input[type="number"].number-stepper-seat::-webkit-inner-spin-button {
 .quote-summary-header .quote-summary-cell:nth-child(6) {
   text-align: right;
   padding-left: 10px;
+}
+.quote-summary-header .quote-summary-cell:nth-child(7) {
+  text-align: center;
 }
 .quote-summary-row > .quote-summary-cell:nth-child(3) {
   justify-self: start;
