@@ -98,9 +98,11 @@ function buildQuoteHTML(quote, settings, logoB64) {
     const colCount=headCols.length;
     return `
 <div class="section">
-  <div class="section-label">${esc(label)}</div>
   <table class="data-table">
-    <thead><tr>${headCols.map((h,i)=>`<th class="${i===0?'td-name':i===1&&isEnt?'td-num-sm':'td-num'}">${esc(h)}</th>`).join('')}</tr></thead>
+    <thead><tr>
+      <th class="td-name section-label" style="padding-bottom:8px">${esc(label)}</th>
+      ${headCols.slice(1).map((h,i)=>`<th class="${i===0&&isEnt?'td-num-sm':'td-num'}">${esc(h)}</th>`).join('')}
+    </tr></thead>
     <tbody>
       ${rows.map(row=>`
         <tr>${row.cells.map((c,i)=>`<td class="${i===0?'td-name':i===1&&isEnt?'td-num-sm':'td-num'}${i===0?' line-bold':''}">${i===0?c:esc(c)}</td>`).join('')}</tr>
@@ -163,9 +165,12 @@ function buildQuoteHTML(quote, settings, logoB64) {
   });
   const overageHtml=overageRows.length?`
 <div class="section">
-  <div class="section-label">Consumption Limits &amp; Overage Rates</div>
   <table class="data-table">
-    <thead><tr><th class="td-name"></th><th class="td-num">Included</th><th class="td-num">Overage Rate</th></tr></thead>
+    <thead><tr>
+      <th class="td-name section-label" style="padding-bottom:8px">Consumption Limits &amp; Overage Rates</th>
+      <th class="td-num">Included</th>
+      <th class="td-num">Overage Rate</th>
+    </tr></thead>
     <tbody>${overageRows.map(([n,q,r])=>`<tr><td class="td-name">${esc(n)}</td><td class="td-num">${esc(q)}</td><td class="td-num">${esc(r)}</td></tr>`).join('')}</tbody>
   </table>
 </div>`:'';
@@ -245,12 +250,14 @@ body{font-family:'Mulish',sans-serif;color:#1a1a2e;background:#fff;line-height:1
 
 /* CUSTOMER NAME BLOCK */
 .customer-name-block{margin-bottom:20px}
+.customer-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
 .customer-name{font-family:'Poppins',sans-serif;font-size:13pt;font-weight:700;color:#0a0a0a;letter-spacing:-.02em;line-height:1.2;margin-bottom:3px}
 .customer-address{font-size:8.5pt;color:#9ca3af;line-height:1.5}
+.primary-contact-block{text-align:left;min-width:200px}
 
-/* BILLING META — 4 cols */
-.billing-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;padding:18px 0 0;margin-top:0;border-top:1px solid #e5e7eb}
-.bcol-label{font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+/* BILLING META — 3 cols, no top border */
+.billing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:18px 0 0;margin-top:0;border-top:none}
+.bcol-label{font-size:7pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
 .bcol-line{font-size:9pt;color:#374151;line-height:1.85}
 
 /* LINE SECTIONS */
@@ -292,16 +299,16 @@ body{font-family:'Mulish',sans-serif;color:#1a1a2e;background:#fff;line-height:1
 
 /* TOTALS */
 .totals-wrap{display:flex;justify-content:flex-end;margin-top:8px;margin-bottom:8px}
-.totals-inner{width:310px}
+.totals-inner{width:340px}
 .totals-table{width:100%;border-collapse:collapse}
 .totals-table td{padding:5px 0}
-.t-label{color:#6b7280;font-size:9pt}
+.t-label{color:#374151;font-size:9pt}
 .t-value{text-align:right;color:#374151;font-size:9pt}
-.t-disc .t-label,.t-disc .t-value{color:#9ca3af}
+.t-disc .t-label,.t-disc .t-value{color:#374151}
 .t-acv{border-top:1px solid #e5e7eb}
 .t-acv td{padding-top:14px}
-.t-acv .t-label{font-size:6pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;vertical-align:top;padding-top:16px}
-.t-acv .t-value{font-family:'Poppins',sans-serif;font-size:26pt;font-weight:700;color:#0a0a0a;letter-spacing:-.03em;line-height:1}
+.t-acv .t-label{font-size:7pt;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;vertical-align:top;padding-top:16px}
+.t-acv .t-value{font-family:'Poppins',sans-serif;font-size:11pt;font-weight:600;color:#0a0a0a;letter-spacing:-.01em;line-height:1}
 .mo-equiv{font-size:8pt;color:#9ca3af;text-align:right;margin-top:5px}
 .term-badge{font-size:7pt;color:#f59e0b;text-align:right;margin-top:4px;text-transform:uppercase;letter-spacing:.06em}
 .disclaimer{font-size:7pt;color:#d1d5db;margin-top:20px;line-height:1.6}
@@ -360,14 +367,22 @@ ${isDraft?'<div class="draft-bg">DRAFT</div>':''}
 
   <hr class="h-rule">
 
-  <div class="customer-name-block">
-    <div class="customer-name">${esc(quote.customer_name||'')}</div>
-    ${quote.address?`<div class="customer-address">${esc(quote.address)}</div>`:''}
+  <div class="customer-top">
+    <div>
+      <div class="customer-name">${esc(quote.customer_name||'')}</div>
+      ${quote.address?`<div class="customer-address">${esc(quote.address)}</div>`:''}
+    </div>
+    <div class="primary-contact-block">
+      ${quote.contact_name||quote.contact_email?`
+        <div class="bcol-label">Primary Contact</div>
+        ${quote.contact_name?`<div class="bcol-line">${esc(quote.contact_name)}</div>`:''}
+        ${quote.contact_email?`<div class="bcol-line">${esc(quote.contact_email)}</div>`:''}
+      `:''}
+    </div>
   </div>
 
   <div class="billing-grid">
     ${[
-      quote.contact_name||quote.contact_email ? {label:'Primary Contact',lines:[quote.contact_name,quote.contact_email].filter(Boolean)} : null,
       {label:'Billing Contact',lines:[quote.billing_contact_name,quote.billing_contact_email,quote.billing_contact_phone,quote.invoice_email?`Invoice: ${quote.invoice_email}`:null].filter(Boolean)},
       {label:'Payment Terms',lines:[quote.payment_terms?`Payment: ${quote.payment_terms}`:null,quote.billing_schedule?`Billing: ${quote.billing_schedule}`:null,quote.payment_method?`Method: ${quote.payment_method}`:null].filter(Boolean)},
       {label:'Subscription',lines:[quote.start_date?`Start: ${fmtDate(quote.start_date)}`:null,quote.term_months?`Term: ${quote.term_months} Months`:null,quote.account_id?`Account: ${quote.account_id}`:null].filter(Boolean)},
