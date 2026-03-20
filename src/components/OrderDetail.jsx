@@ -14,12 +14,15 @@ import { isBundleProduct, TYPE_LABELS, getProductCategory, genId } from '../data
 import { generateQuotePDF } from '../utils/generateQuotePDF';
 
 const ORDER_STATUS_META = {
-  draft:     { label: 'Draft',     color: 'grey'   },
-  active:    { label: 'Active',    color: 'teal'   },
-  pending:   { label: 'Pending',   color: 'yellow' },
-  invoiced:  { label: 'Invoiced',  color: 'blue'   },
-  completed: { label: 'Completed', color: 'green'  },
-  cancelled: { label: 'Cancelled', color: 'red'    },
+  draft:            { label: 'Draft',            color: 'grey'   },
+  submitted:        { label: 'Submitted',         color: 'blue'   },
+  pending_approval: { label: 'Pending Approval',  color: 'yellow' },
+  approved:         { label: 'Approved',          color: 'green'  },
+  rejected:         { label: 'Rejected',          color: 'red'    },
+  active:           { label: 'Active',            color: 'teal'   },
+  invoiced:         { label: 'Invoiced',          color: 'blue'   },
+  completed:        { label: 'Completed',         color: 'green'  },
+  cancelled:        { label: 'Cancelled',         color: 'red'    },
 };
 
 const fmtDate = (s) => {
@@ -351,32 +354,62 @@ function OrderDetailInner({ order, products, pricebooks, settings, onSave, onBac
           </div>
         ) : (
           <div className="qd-action-group">
-            <button className="qd-action-btn" onClick={enterEditMode}>
-              {o.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}
-            </button>
-            <button className="qd-action-btn" onClick={() => generateQuotePDF(o, products, settings, { preview: true })}>
-              Preview PDF
-            </button>
-            <button className="qd-action-btn" onClick={() => generateQuotePDF(o, products, settings)}>
-              Download PDF
-            </button>
-
             {o.status === 'draft' && (
-              <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('active')}>Activate</button>
+              <>
+                <button className="qd-action-btn" onClick={enterEditMode}>{o.line_items.length === 0 ? 'Add Lines' : 'Edit Lines'}</button>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(o, products, settings, { preview: true })}>Preview PDF</button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('submitted')}>Submit for Approval</button>
+              </>
+            )}
+            {o.status === 'submitted' && (
+              <>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(o, products, settings, { preview: true })}>Preview PDF</button>
+                <button className="qd-action-btn" onClick={() => changeStatus('draft')}>Withdraw</button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('pending_approval')}>Mark Pending Approval</button>
+              </>
+            )}
+            {o.status === 'pending_approval' && (
+              <>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(o, products, settings, { preview: true })}>Preview PDF</button>
+                <button className="qd-action-btn" onClick={() => setConfirm({ msg: 'Reject this order and return to Draft?', label: 'Reject', fn: () => { changeStatus('rejected'); setConfirm(null); } })}>Reject</button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('approved')}>Approve</button>
+              </>
+            )}
+            {o.status === 'approved' && (
+              <>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(o, products, settings)}>Download PDF</button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('active')}>Activate</button>
+              </>
+            )}
+            {o.status === 'rejected' && (
+              <>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('draft')}>Revise Order</button>
+              </>
             )}
             {o.status === 'active' && (
-              <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('invoiced')}>Mark Invoiced</button>
+              <>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(o, products, settings)}>Download PDF</button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('invoiced')}>Mark Invoiced</button>
+              </>
             )}
             {o.status === 'invoiced' && (
-              <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('completed')}>Mark Completed</button>
+              <>
+                <button className="qd-action-btn" onClick={() => generateQuotePDF(o, products, settings)}>Download PDF</button>
+                <button className="qd-action-btn qd-action-btn-primary" onClick={() => changeStatus('completed')}>Mark Completed</button>
+              </>
             )}
-
+            {o.status === 'completed' && (
+              <button className="qd-action-btn" onClick={() => generateQuotePDF(o, products, settings)}>Download PDF</button>
+            )}
+            {o.status === 'cancelled' && (
+              <button className="qd-action-btn" onClick={() => generateQuotePDF(o, products, settings)}>Download PDF</button>
+            )}
             <div className="qd-more-wrap" ref={moreRef}>
               <button className="qd-more-btn qd-more-btn--reset" onClick={() => setShowMoreMenu(!showMoreMenu)}>···</button>
               {showMoreMenu && (
                 <div className="qd-more-menu">
                   <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); onClone(o); }}>Clone Order</button>
-                  {o.status !== 'cancelled' && (
+                  {!['cancelled','completed'].includes(o.status) && (
                     <button className="qd-more-item" onClick={() => { setShowMoreMenu(false); setConfirm({ msg: 'Cancel this order?', label: 'Cancel Order', fn: () => { changeStatus('cancelled'); setConfirm(null); } }); }}>Cancel Order</button>
                   )}
                   <button className="qd-more-item qd-more-danger" onClick={() => { setShowMoreMenu(false); onDelete(o.id); }}>Delete Order</button>
