@@ -174,8 +174,8 @@ function renderLineSection(doc, label, lines, getLineLabel, y) {
     body: bodyRows,
     margin: { left: ML, right: MR },
     theme: 'plain',
-    styles: { font: F, fontSize: 9.5, cellPadding: { top: 3.5, bottom: 3.5, left: 2, right: 2 }, textColor: C_BODY, lineWidth: 0 },
-    headStyles: { font: F, fontStyle: 'normal', fontSize: 7, textColor: C_MUTED, cellPadding: { top: 1, bottom: 3, left: 2, right: 2 } },
+    styles: { font: F, fontSize: 9.5, cellPadding: { top: 4.5, bottom: 4.5, left: 2, right: 2 }, textColor: C_BODY, lineWidth: 0 },
+    headStyles: { font: F, fontStyle: 'normal', fontSize: 7, textColor: C_MUTED, cellPadding: { top: 2, bottom: 4, left: 2, right: 2 } },
     columnStyles: colStyles,
     didParseCell: (data) => {
       if (data.section !== 'body') return;
@@ -193,7 +193,7 @@ function renderLineSection(doc, label, lines, getLineLabel, y) {
     },
   });
 
-  return doc.lastAutoTable.finalY + 10;
+  return doc.lastAutoTable.finalY + 14;
 }
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
@@ -312,10 +312,10 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
     });
     maxColY = Math.max(maxColY, cy);
   });
-  y = maxColY + 10;
+  y = maxColY + 14;
 
   rule(doc, y, { weight: 0.3 });
-  y += 10;
+  y += 12;
 
   // ── BASE PACKAGE ───────────────────────────────────────────────────────────
   const packageLines = allLines.filter(l => l.is_package);
@@ -342,11 +342,11 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       txt(doc, fmtCurrency(monthly), PW - MR - 40, y, { align: 'right' });
       y += 8;
 
-      microLabel(doc, 'Included', ML, y);
-      y += 1;
+      y = microLabel(doc, 'Included', ML, y);
+      y += 3;
 
       subs.forEach((s) => {
-        y = checkPage(doc, y, 5);
+        y = checkPage(doc, y, 6);
         const qty  = getEffectiveLineQuantity(s);
         const name = getLineLabel(s);
         set(doc, { size: 9.5, color: C_BODY });
@@ -355,9 +355,9 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
           set(doc, { size: 9.5, color: C_MUTED });
           txt(doc, fmtQty(qty), ML + 4 + doc.getTextWidth(name) + 2, y);
         }
-        y += 5.5;
+        y += 6;
       });
-      y += 5;
+      y += 8;
     });
   }
 
@@ -393,8 +393,8 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       body: overageRows,
       margin: { left: ML, right: MR },
       theme: 'plain',
-      styles: { font: F, fontSize: 9.5, cellPadding: { top: 3.5, bottom: 3.5, left: 2, right: 2 }, textColor: C_BODY, lineWidth: 0 },
-      headStyles: { font: F, fontStyle: 'normal', fontSize: 7, textColor: C_MUTED, cellPadding: { top: 1, bottom: 3, left: 2, right: 2 } },
+      styles: { font: F, fontSize: 9.5, cellPadding: { top: 4.5, bottom: 4.5, left: 2, right: 2 }, textColor: C_BODY, lineWidth: 0 },
+      headStyles: { font: F, fontStyle: 'normal', fontSize: 7, textColor: C_MUTED, cellPadding: { top: 2, bottom: 4, left: 2, right: 2 } },
       columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'right', cellWidth: 42 }, 2: { halign: 'right', cellWidth: 42 } },
       didParseCell: (data) => {
         if (data.section === 'body' && data.row.index > 0 && data.column.index === 0) {
@@ -403,7 +403,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
         }
       },
     });
-    y = doc.lastAutoTable.finalY + 10;
+    y = doc.lastAutoTable.finalY + 14;
   }
 
   // ── ORDER FORM HEADER TEXT ─────────────────────────────────────────────────
@@ -450,17 +450,25 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
   const valueX   = PW - MR;
 
   const renderTotalRow = (label, value, { bold = false, large = false, topRule = false } = {}) => {
-    y = checkPage(doc, y, 10);
+    y = checkPage(doc, y, 12);
     if (topRule) {
-      rule(doc, y - 1, { x: summaryX, w: PW - MR - summaryX, weight: 0.2 });
-      y += 2;
+      rule(doc, y - 2, { x: summaryX, w: PW - MR - summaryX, weight: 0.2 });
+      y += 4;
     }
-    set(doc, { size: 7, color: C_MUTED });
-    txt(doc, label.toUpperCase(), summaryX, y);
-    const valSize = large ? 18 : 9;
-    set(doc, { size: valSize, style: bold ? 'bold' : 'normal', color: large ? C_BLACK : C_BODY });
-    txt(doc, value, valueX, large ? y + 4 : y, { align: 'right' });
-    y += large ? 10 : 6;
+    if (large) {
+      set(doc, { size: 7, color: C_MUTED });
+      txt(doc, label.toUpperCase(), summaryX, y);
+      y += 5;
+      set(doc, { size: 20, style: 'bold', color: C_BLACK });
+      txt(doc, value, valueX, y, { align: 'right' });
+      y += 12;
+    } else {
+      set(doc, { size: 8, color: C_MUTED });
+      txt(doc, label, summaryX, y);
+      set(doc, { size: 9, style: bold ? 'bold' : 'normal', color: C_BODY });
+      txt(doc, value, valueX, y, { align: 'right' });
+      y += 7;
+    }
   };
 
   if (hasDiscount) {
@@ -566,7 +574,8 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       y += 8;
     });
 
-    // ── SIGNATURE BLOCK ──────────────────────────────────────────────────────
+    // ── SIGNATURE BLOCK — order forms only ───────────────────────────────────
+    if (quote.quote_type === 'order_form') {
     y = checkPage(doc, y, 60);
     y += 4;
     set(doc, { style: 'bold', size: 12, color: C_BLACK });
@@ -600,6 +609,7 @@ export async function generateQuotePDF(quote, products, settings, { preview = fa
       });
       y += 12;
     });
+    } // end order_form signature block
   }
 
   addFooters(doc, quote.quote_number || '');
