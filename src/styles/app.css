@@ -496,7 +496,6 @@
   transition: background 0.15s ease;
 }
 .btn-save:hover {
-  box-shadow: 0 2px 6px #0000001a;
 }
 .btn-save:active {
   transform: scale(0.98);
@@ -1049,10 +1048,8 @@ select.field-select::-ms-expand {
 .modal-theme-quotes .btn-save {
   background: #fbb13d;
   border-color: #fbb13d;
-  box-shadow: 0 1px 2px rgba(251, 177, 61, 0.2);
 }
 .modal-theme-quotes .btn-save:hover {
-  box-shadow: 0 2px 6px #0000001a;
 }
 .modal-theme-quotes .btn-cancel {
   border-color: #fbb13d;
@@ -1070,12 +1067,10 @@ select.field-select::-ms-expand {
   background: #2E51ED;
   border-color: #2E51ED;
   color: #fff;
-  box-shadow: 0 1px 2px rgba(46, 81, 237, 0.2);
 }
 .modal-theme-orders .btn-save:hover {
   background: #2743c9;
   border-color: #2743c9;
-  box-shadow: 0 2px 6px #0000001a;
 }
 .modal-theme-orders .btn-cancel {
   border-color: #2E51ED;
@@ -5310,11 +5305,9 @@ tr.drag-over {
   border-color: var(--teal);
   color: #fff;
   border-radius: var(--radius-sm);
-  box-shadow: 0 1px 2px #05bdba33;
   font-weight: 600;
 }
-.btn-product-add:hover,
-.btn-save:hover {
+.btn-product-add:hover {
   box-shadow: 0 2px 6px #0000001a;
 }
 .btn-quote-add {
@@ -5381,7 +5374,6 @@ tr.drag-over {
   border-radius: var(--radius-sm);
 }
 .btn-cancel:hover {
-  box-shadow: 0 2px 6px #0000001a;
 }
 .table-card {
   background: var(--surface);
@@ -6394,7 +6386,6 @@ tr.drag-over {
 .main-content.section-products
   .toolbar
   .btn-primary:not(.btn-product-add):focus-visible {
-  box-shadow: none !important;
   background: #fff !important;
   border-color: #0000003d;
   color: var(--text-strong);
@@ -6403,7 +6394,6 @@ tr.drag-over {
 .btn-save:hover,
 .qd-edit-lines-btn.qd-edit-lines-btn:hover,
 .qd-action-btn-teal:hover {
-  box-shadow: none !important;
   background: var(--teal);
   border-color: var(--teal);
   color: #fff;
