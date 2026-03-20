@@ -22,11 +22,11 @@ import seedPricebooks from './data/pricebooks.json';
 import seedSettings from './data/settings.json';
 
 const NAV_ITEMS = [
-  { key: 'products', label: 'Products' },
-  { key: 'pricebooks', label: 'Price Books' },
   { key: 'scope', label: 'Scope' },
   { key: 'quotes', label: 'Quotes' },
   { key: 'orders', label: 'Orders' },
+  { key: 'products', label: 'Products' },
+  { key: 'pricebooks', label: 'Price Books' },
   { key: 'settings', label: 'Settings' },
 ];
 
