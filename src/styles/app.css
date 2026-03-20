@@ -845,10 +845,13 @@
   justify-content: flex-end;
   gap: 6px;
 }
+.cell-actions {
+  min-width: 80px;
+}
 .row-action-btn {
   background: transparent;
   border: none;
-  color: #64748B;
+  color: transparent;
   cursor: pointer;
   padding: 4px;
   font-size: 13px;
@@ -857,9 +860,10 @@
 }
 .quote-summary-data-row:hover .row-action-btn {
   opacity: 1;
+  color: var(--text-faint);
 }
 .row-action-btn:hover {
-  color: #fbb13d;
+  color: #fbb13d !important;
   transform: scale(1.1);
 }
 .row-action-btn--danger:hover {
