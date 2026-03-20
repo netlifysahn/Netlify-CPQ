@@ -7227,6 +7227,69 @@ input[type="number"].number-stepper-seat::-webkit-inner-spin-button {
   border-color: var(--primary-color) !important;
   color: var(--primary-color) !important;
 }
+/* Modal button accent overrides — must follow the global !important resets above */
+.modal-theme-quotes .btn-save,
+.modal-theme-quotes .btn-save:disabled {
+  background: #fbb13d !important;
+  border-color: #fbb13d !important;
+  color: #fff !important;
+}
+.modal-theme-quotes .btn-save:hover {
+  background: #e9a235 !important;
+  border-color: #e9a235 !important;
+}
+.modal-theme-quotes .btn-save:active {
+  background: #d9922e !important;
+  border-color: #d9922e !important;
+}
+.modal-theme-quotes .btn-save:disabled {
+  opacity: 0.5;
+}
+.modal-theme-quotes .btn-cancel,
+.modal-theme-quotes .btn-cancel:disabled {
+  background: transparent !important;
+  border-color: #fbb13d !important;
+  color: #fbb13d !important;
+}
+.modal-theme-quotes .btn-cancel:hover {
+  background: rgba(251, 177, 61, 0.08) !important;
+  border-color: #fbb13d !important;
+  color: #fbb13d !important;
+}
+.modal-theme-quotes .btn-cancel:disabled {
+  opacity: 0.5;
+}
+.modal-theme-orders .btn-save,
+.modal-theme-orders .btn-save:disabled {
+  background: #2E51ED !important;
+  border-color: #2E51ED !important;
+  color: #fff !important;
+}
+.modal-theme-orders .btn-save:hover {
+  background: #2743c9 !important;
+  border-color: #2743c9 !important;
+}
+.modal-theme-orders .btn-save:active {
+  background: #1f37a8 !important;
+  border-color: #1f37a8 !important;
+}
+.modal-theme-orders .btn-save:disabled {
+  opacity: 0.5;
+}
+.modal-theme-orders .btn-cancel,
+.modal-theme-orders .btn-cancel:disabled {
+  background: transparent !important;
+  border-color: #2E51ED !important;
+  color: #2E51ED !important;
+}
+.modal-theme-orders .btn-cancel:hover {
+  background: rgba(46, 81, 237, 0.08) !important;
+  border-color: #2E51ED !important;
+  color: #2E51ED !important;
+}
+.modal-theme-orders .btn-cancel:disabled {
+  opacity: 0.5;
+}
 .quote-summary-card {
   overflow-x: auto;
 }
