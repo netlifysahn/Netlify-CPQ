@@ -840,17 +840,13 @@
   color: var(--red);
 }
 
-/* Order table action icons */
 .cell-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-}
-.cell-actions {
-  min-width: 100px;
   justify-content: center;
-  padding-right: 16px;
+  gap: 6px;
+  min-width: 100px;
+  text-align: center;
 }
 .row-action-btn {
   background: transparent;
