@@ -852,11 +852,18 @@
   cursor: pointer;
   padding: 4px;
   font-size: 13px;
-  transition: color 0.2s ease, transform 0.2s ease;
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.quote-summary-data-row:hover .row-action-btn {
+  opacity: 1;
 }
 .row-action-btn:hover {
-  color: #2e513d;
-  transform: scale(1.05);
+  color: #fbb13d;
+  transform: scale(1.1);
+}
+.row-action-btn--danger:hover {
+  color: var(--red, #ef4444) !important;
 }
 
 .modal-overlay {

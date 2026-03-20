@@ -44,7 +44,7 @@ export default function QuoteList({ quotes, onNew, onOpen, onDupe, onDelete }) {
           <div className="quote-summary-cell quote-summary-money" role="columnheader">MRR</div>
           <div className="quote-summary-cell quote-summary-money" role="columnheader">ARR</div>
           <div className="quote-summary-cell" role="columnheader">TERM</div>
-          <div className="quote-summary-cell" role="columnheader"></div>
+          <div className="quote-summary-cell" role="columnheader">ACTIONS</div>
         </div>
         <div className="quote-summary-body" role="rowgroup">
           {quotes.map((q) => {
