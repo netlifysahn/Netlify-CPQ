@@ -6689,34 +6689,39 @@ select.qd-detail-input-select::-ms-expand {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 34px;
-  padding: 4px 32px 4px 12px;
-  border: 1px solid rgba(15, 23, 42, 0.12);
+  height: 28px;
+  padding: 4px var(--select-padding-right) 4px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: var(--radius-sm);
   background: var(--surface);
+  background-image: var(--select-chevron-icon);
+  background-repeat: no-repeat;
+  background-size: var(--select-chevron-size) var(--select-chevron-size);
+  background-position: right var(--select-chevron-right) center;
   list-style: none;
   cursor: pointer;
-  color: var(--text-label-color);
+  color: var(--text-strong);
   font-family: var(--font-body);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.2;
+  box-sizing: border-box;
   -webkit-user-select: none;
   user-select: none;
 }
 .quote-detail--editing .qd-add-control:hover {
-  color: #111827;
-  border-color: rgba(15, 23, 42, 0.24);
+  color: var(--text-strong);
+  border-color: rgba(0, 0, 0, 0.24);
 }
 .quote-detail--editing .qd-add-control--disabled {
   color: #94a3b8;
   cursor: default;
 }
 .quote-detail--editing .qd-add-control-prefix {
-  font-family: var(--font-heading);
-  font-size: 14px;
+  font-family: var(--font-body);
+  font-size: 13px;
   font-weight: 500;
-  color: var(--text-subtle);
+  color: var(--text-strong);
 }
 .quote-detail--editing .qd-add-control-meta {
   margin-left: 6px;
@@ -6741,10 +6746,10 @@ select.qd-detail-input-select::-ms-expand {
   width: 100%;
   max-width: 360px;
   z-index: 9999;
-  border: 1px solid rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: var(--radius-sm);
   background: var(--surface);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   max-height: 300px;
