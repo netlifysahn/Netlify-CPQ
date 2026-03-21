@@ -9670,17 +9670,17 @@ button {
   white-space: nowrap;
 }
 .qd-es-th--product {
-  width: 38%;
+  width: 32%;
   text-align: left;
   padding-left: 0;
 }
 .qd-es-th--qty {
-  width: 12%;
-  text-align: right;
+  width: 18%;
+  text-align: center;
 }
 .qd-es-th--rate {
   width: 25%;
-  text-align: right;
+  text-align: center;
 }
 .qd-es-th--center {
   text-align: center;
