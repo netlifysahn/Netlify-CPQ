@@ -1799,9 +1799,9 @@ function QuoteDetailInner({ quote, products, pricebooks, settings, onSave, onBac
         <thead>
           <tr>
             <th className="qd-es-th qd-es-th--product"></th>
-            <th className="qd-es-th qd-es-th--qty qd-es-th--center">COMMITTED<br />TOTAL</th>
-            <th className="qd-es-th qd-es-th--rate qd-es-th--center">COMMITTED<br />RATE</th>
-            <th className="qd-es-th qd-es-th--rate qd-es-th--center">OVERAGE<br />RATE</th>
+            <th className="qd-es-th qd-es-th--qty qd-es-th--center"><span style={{display:'block',textAlign:'center'}}>COMMITTED</span><span style={{display:'block',textAlign:'center'}}>TOTAL</span></th>
+            <th className="qd-es-th qd-es-th--rate qd-es-th--center"><span style={{display:'block',textAlign:'center'}}>COMMITTED</span><span style={{display:'block',textAlign:'center'}}>RATE</span></th>
+            <th className="qd-es-th qd-es-th--rate qd-es-th--center"><span style={{display:'block',textAlign:'center'}}>OVERAGE</span><span style={{display:'block',textAlign:'center'}}>RATE</span></th>
           </tr>
         </thead>
         <tbody>
